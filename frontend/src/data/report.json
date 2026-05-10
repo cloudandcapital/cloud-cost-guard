@@ -162,5 +162,222 @@
     ],
     "policy_status": "no_enforcement",
     "industry_benchmark_pct": 95
+  },
+  "clouds": {
+    "aws": {
+      "total_cost": 18340.75,
+      "daily_average": 611.36,
+      "trend": { "direction": "up", "change_percentage": 7.8, "change_amount": 1327.45 },
+      "top_services": [
+        { "service_name": "EC2-Instance",  "total_cost": 8528.45, "percentage_of_total": 46.5 },
+        { "service_name": "RDS",           "total_cost": 4438.46, "percentage_of_total": 24.2 },
+        { "service_name": "EBS",           "total_cost": 1742.37, "percentage_of_total": 9.5  },
+        { "service_name": "ELB",           "total_cost": 1063.76, "percentage_of_total": 5.8  },
+        { "service_name": "S3",            "total_cost":  843.68, "percentage_of_total": 4.6  },
+        { "service_name": "CloudWatch",    "total_cost":  715.29, "percentage_of_total": 3.9  }
+      ],
+      "findings": [
+        {
+          "finding_id": "aws-ri-m5-4xlarge",
+          "title": "Reserved Instance opportunity for m5.4xlarge workloads",
+          "type": "compute",
+          "cloud": "aws",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 127.50,
+          "risk_level": "Low",
+          "implementation_time": "4-6 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "30-day usage pattern vs 1-year RI pricing comparison",
+          "evidence": { "resource_id": "i-0x9y8z7a6b5c4dabc", "instance_type": "m5.4xlarge", "region": "us-east-1" },
+          "commands": [
+            "aws ec2 describe-reserved-instances-offerings --instance-type m5.4xlarge --region us-east-1",
+            "aws ce get-reservation-purchase-recommendation --service EC2 --lookback-period-in-days SIXTY_DAYS"
+          ],
+          "suggested_action": "Purchase 1-year Reserved Instance for stable 24/7 workloads to reduce compute cost by up to 40%."
+        },
+        {
+          "finding_id": "aws-ebs-unattached",
+          "title": "12 unattached EBS volumes accumulating cost",
+          "type": "storage",
+          "cloud": "aws",
+          "severity": "high",
+          "confidence": "very_high",
+          "monthly_savings_usd_est": 284.40,
+          "risk_level": "Low",
+          "implementation_time": "2-3 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "Volumes in 'available' state with no attachment for 30+ days",
+          "evidence": { "resource_id": "vol-0abc123def456 (+11 more)", "region": "us-east-1, us-west-2" },
+          "commands": [
+            "aws ec2 describe-volumes --filters Name=status,Values=available --query 'Volumes[*].{ID:VolumeId,Size:Size,Type:VolumeType}' --output table"
+          ],
+          "suggested_action": "Snapshot and delete unattached EBS volumes; tag for manual review if origin is uncertain."
+        },
+        {
+          "finding_id": "aws-elb-idle",
+          "title": "3 load balancers with zero active connections for 14+ days",
+          "type": "networking",
+          "cloud": "aws",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 62.10,
+          "risk_level": "Medium",
+          "implementation_time": "1-2 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "CloudWatch RequestCount = 0 for 14 consecutive days",
+          "evidence": { "resource_id": "arn:aws:elasticloadbalancing:us-east-1:...", "region": "us-east-1" },
+          "commands": [
+            "aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{ARN:LoadBalancerArn,State:State.Code}'",
+            "aws cloudwatch get-metric-statistics --namespace AWS/ApplicationELB --metric-name RequestCount --period 86400 --statistics Sum"
+          ],
+          "suggested_action": "Verify no active traffic, then delete idle load balancers to eliminate their fixed monthly charge."
+        }
+      ]
+    },
+    "azure": {
+      "total_cost": 8920.40,
+      "daily_average": 297.35,
+      "trend": { "direction": "up", "change_percentage": 12.4, "change_amount": 987.50 },
+      "top_services": [
+        { "service_name": "Virtual Machines", "total_cost": 3924.98, "percentage_of_total": 44.0 },
+        { "service_name": "Azure SQL",        "total_cost": 1873.28, "percentage_of_total": 21.0 },
+        { "service_name": "Blob Storage",     "total_cost": 1204.25, "percentage_of_total": 13.5 },
+        { "service_name": "AKS",              "total_cost":  936.64, "percentage_of_total": 10.5 },
+        { "service_name": "Azure Monitor",    "total_cost":  579.83, "percentage_of_total": 6.5  },
+        { "service_name": "Azure CDN",        "total_cost":  401.42, "percentage_of_total": 4.5  }
+      ],
+      "findings": [
+        {
+          "finding_id": "az-vm-rightsizing",
+          "title": "8 over-provisioned VMs eligible for rightsizing",
+          "type": "compute",
+          "cloud": "azure",
+          "severity": "high",
+          "confidence": "high",
+          "monthly_savings_usd_est": 412.80,
+          "risk_level": "Low",
+          "implementation_time": "4-6 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "Azure Advisor CPU utilization — avg < 15% over 30 days",
+          "evidence": { "resource_id": "/subscriptions/.../virtualMachines/vm-prod-01 (+7 more)", "instance_type": "Standard_D8s_v3", "region": "eastus" },
+          "commands": [
+            "az vm list --output table --query '[].{Name:name,Size:hardwareProfile.vmSize,Location:location}'",
+            "az monitor metrics list --resource <vm-resource-id> --metric 'Percentage CPU' --interval PT1H"
+          ],
+          "suggested_action": "Downsize over-provisioned VMs from Standard_D8s_v3 to Standard_D4s_v3 to halve compute spend."
+        },
+        {
+          "finding_id": "az-sql-dtu",
+          "title": "Azure SQL database running at <20% DTU utilization",
+          "type": "database",
+          "cloud": "azure",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 218.40,
+          "risk_level": "Low",
+          "implementation_time": "2-4 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "Azure Monitor DTU consumption: avg 18.4% over 30-day window",
+          "evidence": { "resource_id": "/subscriptions/.../servers/sql-prod/databases/appdb", "instance_type": "S4 (200 DTU)", "region": "eastus" },
+          "commands": [
+            "az sql db show-usage --resource-group <rg> --server <server-name> --name <db-name>",
+            "az sql db update --resource-group <rg> --server <server-name> --name <db-name> --service-objective S2"
+          ],
+          "suggested_action": "Downgrade Azure SQL from S4 to S2 based on observed DTU utilization below 20%."
+        },
+        {
+          "finding_id": "az-blob-lifecycle",
+          "title": "Blob Storage missing lifecycle tiering — data staying in Hot tier",
+          "type": "storage",
+          "cloud": "azure",
+          "severity": "low",
+          "confidence": "medium",
+          "monthly_savings_usd_est": 96.20,
+          "risk_level": "Low",
+          "implementation_time": "1-2 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "No lifecycle management policy found; 60%+ of blobs unaccessed for 30+ days",
+          "evidence": { "resource_id": "/subscriptions/.../storageAccounts/prodstorageacc", "region": "eastus" },
+          "commands": [
+            "az storage account management-policy show --account-name <account> --resource-group <rg>",
+            "az storage account management-policy create --account-name <account> --resource-group <rg> --policy @lifecycle-policy.json"
+          ],
+          "suggested_action": "Add lifecycle policy: Cool tier after 30 days, Archive after 90 days of no access."
+        }
+      ]
+    },
+    "gcp": {
+      "total_cost": 6218.30,
+      "daily_average": 207.28,
+      "trend": { "direction": "down", "change_percentage": -2.1, "change_amount": -133.50 },
+      "top_services": [
+        { "service_name": "Compute Engine",   "total_cost": 2611.69, "percentage_of_total": 42.0 },
+        { "service_name": "Cloud SQL",        "total_cost": 1274.75, "percentage_of_total": 20.5 },
+        { "service_name": "Cloud Storage",    "total_cost":  901.65, "percentage_of_total": 14.5 },
+        { "service_name": "GKE",              "total_cost":  746.20, "percentage_of_total": 12.0 },
+        { "service_name": "BigQuery",         "total_cost":  466.37, "percentage_of_total": 7.5  },
+        { "service_name": "Cloud Monitoring", "total_cost":  217.64, "percentage_of_total": 3.5  }
+      ],
+      "findings": [
+        {
+          "finding_id": "gcp-cud-compute",
+          "title": "Committed Use Discount available for n2-standard-8 instances",
+          "type": "compute",
+          "cloud": "gcp",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 183.60,
+          "risk_level": "Low",
+          "implementation_time": "1-2 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "Steady-state Compute Engine usage vs on-demand price vs 1-year CUD",
+          "evidence": { "resource_id": "projects/my-project/zones/us-central1-a/instances/api-server-01", "instance_type": "n2-standard-8", "region": "us-central1" },
+          "commands": [
+            "gcloud compute instances list --filter='status:RUNNING' --format='table(name,machineType.basename(),zone)'",
+            "gcloud compute commitments list --format='table(name,plan,status,endTimestamp)'"
+          ],
+          "suggested_action": "Purchase 1-year Committed Use Discount for stable n2-standard-8 instances — saves ~37%."
+        },
+        {
+          "finding_id": "gcp-sql-ha",
+          "title": "Cloud SQL HA enabled on non-production instance",
+          "type": "database",
+          "cloud": "gcp",
+          "severity": "high",
+          "confidence": "very_high",
+          "monthly_savings_usd_est": 294.40,
+          "risk_level": "Low",
+          "implementation_time": "2-3 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "Cloud SQL inspection: HA enabled on instance tagged env=development",
+          "evidence": { "resource_id": "projects/my-project/instances/dev-postgres-01", "instance_type": "db-n1-standard-4", "region": "us-central1" },
+          "commands": [
+            "gcloud sql instances list --format='table(name,settings.availabilityType,settings.tier,region)'",
+            "gcloud sql instances patch dev-postgres-01 --availability-type=ZONAL --project=my-project"
+          ],
+          "suggested_action": "Disable HA on non-production Cloud SQL instances — switch to ZONAL availability type."
+        },
+        {
+          "finding_id": "gcp-gke-nodepool",
+          "title": "GKE node pool at 34% average utilization",
+          "type": "compute",
+          "cloud": "gcp",
+          "severity": "medium",
+          "confidence": "medium",
+          "monthly_savings_usd_est": 147.80,
+          "risk_level": "Medium",
+          "implementation_time": "4-8 hours",
+          "last_analyzed": "2026-02-10T14:18:00Z",
+          "methodology": "CPU/memory request vs allocatable capacity over 30 days via Cloud Monitoring",
+          "evidence": { "resource_id": "projects/my-project/locations/us-central1/clusters/prod-cluster", "instance_type": "e2-standard-4 (6 nodes)", "region": "us-central1" },
+          "commands": [
+            "gcloud container clusters list --format='table(name,location,currentNodeCount,status)'",
+            "gcloud container node-pools list --cluster=prod-cluster --zone=us-central1-a"
+          ],
+          "suggested_action": "Enable cluster autoscaler and reduce minimum node count from 6 to 3 for this node pool."
+        }
+      ]
+    }
   }
 }

@@ -18,14 +18,17 @@ Six tools. One pipeline. Full Cloud+AI+SaaS coverage for every scope the FinOps 
 
 ---
 
-> A cloud cost observability dashboard that highlights daily spend trends, cost by service, top movers, and prioritized savings opportunities with evidence and methodology.
+> A multi-cloud cost observability dashboard — AWS, Azure, and GCP — with daily spend trends, per-cloud service breakdowns, top movers, and prioritized optimization findings with evidence and CLI commands.
 
 [**Live Demo →**](https://guard.cloudandcapital.com) • [**Code (GitHub)**](https://github.com/cloudandcapital/cloud-cost-guard)
 
 ---
 
+- AWS, Azure, and GCP per-cloud service breakdowns with realistic synthetic demo data
+- Per-cloud optimization findings with cloud-native CLI commands (`aws`, `az`, `gcloud`)
+- Real connector modules for all three clouds — wire in credentials to switch from demo to live data
 - Clear findings cards with evidence (resource, region, type)
-- Simple CSV export of findings with savings
+- CSV export of findings across all clouds with savings estimates
 
 ## Screenshots
 
@@ -104,9 +107,63 @@ Because the dashboard depends only on this schema, data sources can evolve witho
 
 The `report.json` committed in this repository serves as a demo artifact. In a real deployment, it could be generated on a schedule or via CI.
 
+## Multi-Cloud Support
+
+Cloud Cost Guard supports AWS, Azure, and GCP. By default it runs entirely on realistic synthetic data — no credentials required. To switch a cloud to live data:
+
+### AWS (Cost Explorer)
+
+```bash
+export AWS_ACCESS_KEY_ID=AKIA...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_DEFAULT_REGION=us-east-1
+pip install boto3
+```
+
+IAM policy required: `ReadOnlyAccess` + `CostExplorerFullAccess`.
+
+### Azure (Cost Management)
+
+```bash
+export AZURE_SUBSCRIPTION_ID=<subscription-id>
+export AZURE_TENANT_ID=<tenant-id>
+export AZURE_CLIENT_ID=<app-id>
+export AZURE_CLIENT_SECRET=<password>
+pip install azure-identity azure-mgmt-costmanagement
+```
+
+Create a service principal with the **Cost Management Reader** role:
+```bash
+az ad sp create-for-rbac --name cloud-cost-guard \
+  --role "Cost Management Reader" \
+  --scopes /subscriptions/<SUBSCRIPTION_ID>
+```
+
+### GCP (BigQuery billing export)
+
+```bash
+export GCP_PROJECT_ID=my-project-123
+export GCP_BILLING_ACCOUNT_ID=01AB23-CDEF45-678901
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+export GCP_BILLING_DATASET=my_project.gcp_billing_export_v1_ABCDEF_123456_789ABC
+pip install google-cloud-bigquery
+```
+
+Enable **BigQuery billing export** in the GCP Console first (Billing → Billing export → BigQuery export). Then create a service account with `roles/billing.viewer` and `roles/bigquery.dataViewer`.
+
+### Connector location
+
+Connector modules live in `backend/connectors/`:
+- `aws_connector.py` — boto3 + Cost Explorer API
+- `azure_connector.py` — azure-mgmt-costmanagement
+- `gcp_connector.py` — google-cloud-bigquery billing export
+
+Each connector's `is_configured()` checks its env vars. When credentials are present the connector returns live data; when absent the app falls back to synthetic data automatically. Mix and match — you can have live AWS + synthetic Azure + synthetic GCP simultaneously.
+
 ## Tech
 
 - React (CRA + craco), Recharts, shadcn/ui, lucide-react
+- FastAPI synthetic data backend (multi-cloud: AWS, Azure, GCP)
 - Vercel for hosting
 - Styling in `App.css` (brand tokens + utilities)
 

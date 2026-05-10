@@ -840,7 +840,7 @@ const Dashboard = () => {
 
         {/* Data Source banner (compact caption) */}
         <div className="mb-4 text-xs text-brand-muted flex items-center gap-3">
-          <span><span className="font-medium">Data Source:</span> AWS • AI Providers • SaaS Billing • CloudWatch Metrics</span>
+          <span><span className="font-medium">Data Source:</span> AWS • Azure • GCP • AI Providers • SaaS Billing</span>
           <span className="hidden sm:inline">•</span>
           <span>Last Updated: {new Date().toLocaleDateString()}</span>
         </div>
@@ -1102,6 +1102,7 @@ const Dashboard = () => {
           <TabsList className="ccg-tabs">
             <TabsTrigger value="findings" className="ccg-tab">Findings</TabsTrigger>
             <TabsTrigger value="products" className="ccg-tab">Products</TabsTrigger>
+            <TabsTrigger value="clouds" className="ccg-tab">Clouds</TabsTrigger>
             <TabsTrigger value="overview" className="ccg-tab">Overview</TabsTrigger>
             <TabsTrigger value="ai-spend" className="ccg-tab">AI Spend</TabsTrigger>
             <TabsTrigger value="saas" className="ccg-tab">SaaS</TabsTrigger>
@@ -1151,6 +1152,185 @@ const Dashboard = () => {
                 <ProductTable products={Array.isArray(top_products) ? top_products : []} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Clouds */}
+          <TabsContent value="clouds" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">
+                Cloud Infrastructure by Provider
+              </h2>
+              <Badge className="badge-brand">{reportWindowLabel}</Badge>
+            </div>
+
+            {/* Three-cloud KPI summary row */}
+            {(() => {
+              const clouds = report?.clouds || {};
+              const cloudDefs = [
+                { key: "aws",   label: "Amazon Web Services", color: "#E8870A", bg: "#FFF8F0" },
+                { key: "azure", label: "Microsoft Azure",      color: "#0078D4", bg: "#EFF6FF" },
+                { key: "gcp",   label: "Google Cloud",         color: "#1A73E8", bg: "#EEF4FF" },
+              ];
+              const allTotal = cloudDefs.reduce((s, d) => s + toNumber((clouds[d.key] || {}).total_cost), 0);
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {cloudDefs.map(({ key, label, color }) => {
+                    const c = clouds[key] || {};
+                    const trend = toNumber(c.trend?.change_percentage);
+                    const share = allTotal > 0 ? ((toNumber(c.total_cost) / allTotal) * 100).toFixed(1) : "0";
+                    return (
+                      <Card key={key} className="kpi-card shadow-sm" style={{ borderTop: `3px solid ${color}` }}>
+                        <CardContent className="py-4">
+                          <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color }}>{label}</div>
+                          <div className="text-2xl font-bold text-brand-ink">{formatCurrency(toNumber(c.total_cost))}</div>
+                          <div className="flex items-center gap-1 mt-1 text-xs">
+                            {trend >= 0
+                              ? <TrendingUp className="h-3 w-3 text-brand-error" />
+                              : <TrendingDown className="h-3 w-3 text-brand-success" />}
+                            <span className={trend >= 0 ? "text-brand-error" : "text-brand-success"}>{formatPercent(trend)}</span>
+                            <span className="text-brand-muted ml-1">vs prior period · {share}% of cloud total</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Per-cloud drill-down */}
+            <Tabs defaultValue="aws" className="space-y-4">
+              <TabsList className="ccg-tabs">
+                <TabsTrigger value="aws" className="ccg-tab">AWS</TabsTrigger>
+                <TabsTrigger value="azure" className="ccg-tab">Azure</TabsTrigger>
+                <TabsTrigger value="gcp" className="ccg-tab">GCP</TabsTrigger>
+              </TabsList>
+
+              {[
+                { key: "aws",   label: "Amazon Web Services", color: "#E8870A" },
+                { key: "azure", label: "Microsoft Azure",      color: "#0078D4" },
+                { key: "gcp",   label: "Google Cloud",         color: "#1A73E8" },
+              ].map(({ key, label, color }) => {
+                const cloudData = report?.clouds?.[key] || {};
+                const services = Array.isArray(cloudData.top_services) ? cloudData.top_services : [];
+                const cloudFindings = sortAndPickFindings(
+                  Array.isArray(cloudData.findings) ? cloudData.findings : [],
+                  3
+                );
+                const serviceChartData = services.map(s => ({
+                  name: s.service_name,
+                  cost: toNumber(s.total_cost),
+                }));
+                const trendPct = toNumber(cloudData.trend?.change_percentage);
+
+                return (
+                  <TabsContent key={key} value={key} className="space-y-6">
+                    {/* Cloud summary row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <KPICard
+                        title={`${label} Total`}
+                        value={formatCurrency(toNumber(cloudData.total_cost))}
+                        change={trendPct}
+                        icon={DollarSign}
+                        subtitle="vs prior period"
+                      />
+                      <KPICard
+                        title="Daily Average"
+                        value={formatCurrency(toNumber(cloudData.daily_average))}
+                        icon={BarChart3}
+                        subtitle={reportWindowLabel}
+                      />
+                      <KPICard
+                        title="Savings Found"
+                        value={formatCurrency(
+                          cloudFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0)
+                        )}
+                        icon={TrendingDown}
+                        subtitle={`across ${cloudFindings.length} finding${cloudFindings.length !== 1 ? "s" : ""}`}
+                      />
+                    </div>
+
+                    {/* Service breakdown */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="kpi-card shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-brand-ink">
+                            <BarChart3 className="h-5 w-5" />
+                            <span style={{ color }}>{label}</span> — Service Breakdown
+                          </CardTitle>
+                          <CardDescription className="text-brand-muted">
+                            {reportWindowLabel} · {formatCurrency(toNumber(cloudData.total_cost))} total
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div style={{ width: "100%", height: 260 }}>
+                            <ResponsiveContainer>
+                              <BarChart data={serviceChartData} layout="vertical" margin={{ left: 8, right: 48, top: 4, bottom: 4 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
+                                <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
+                                  tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
+                                <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={11}
+                                  tick={{ fill: "#7A6B5D" }} width={116} />
+                                <Tooltip
+                                  contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                                  formatter={(value) => [formatCurrency(value), "Cost"]}
+                                />
+                                <Bar dataKey="cost" fill={color} radius={[0, 4, 4, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="kpi-card shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-brand-ink">Top Services</CardTitle>
+                          <CardDescription className="text-brand-muted">
+                            Cost share by service — {reportWindowLabel}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="table-brand rounded-lg">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-brand-muted font-semibold">Service</TableHead>
+                                  <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
+                                  <TableHead className="text-right text-brand-muted font-semibold">% of Total</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {services.map((s, i) => (
+                                  <TableRow key={i} className="hover:bg-brand-bg/30">
+                                    <TableCell className="font-medium text-brand-ink">{s.service_name}</TableCell>
+                                    <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(s.total_cost))}</TableCell>
+                                    <TableCell className="text-right text-brand-ink">{toNumber(s.percentage_of_total).toFixed(1)}%</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Cloud-specific findings */}
+                    {cloudFindings.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-brand-ink mb-4">
+                          {label} Optimization Findings
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {cloudFindings.map((f) => (
+                            <FindingCard key={f.finding_id} finding={f} onViewDetails={openFindingModal} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           </TabsContent>
 
           {/* Overview */}
