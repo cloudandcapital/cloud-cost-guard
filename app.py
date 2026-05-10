@@ -613,6 +613,85 @@ def get_cloud_findings(cloud: str, limit: int = 10):
     return m["findings"][:limit]
 
 
+# ── Kubernetes synthetic data ──────────────────────────────────────────────────
+
+K8S_NAMESPACES = [
+    ("production",    18_400, 72, 68),
+    ("data-pipeline",  8_900, 61, 74),
+    ("ml-training",    6_100, 83, 79),
+    ("staging",        5_200, 38, 42),
+    ("monitoring",     2_800, 24, 31),
+    ("dev",            1_600, 12, 18),
+]
+
+K8S_NODE_POOLS = [
+    ("general-purpose",   12, "n2-standard-8",  24_800, 34),
+    ("compute-optimized",  4, "c2-standard-16", 12_400, 71),
+    ("memory-optimized",   3, "n2-highmem-16",   8_900, 58),
+]
+
+
+def k8s_model() -> Dict[str, Any]:
+    rng = random.Random(seed_for_month(datetime.now(TZ)) + 4_000)
+
+    namespaces = []
+    for name, base_cost, cpu_pct, mem_pct in K8S_NAMESPACES:
+        cost = round(base_cost * rng.uniform(0.93, 1.07), 2)
+        namespaces.append({
+            "namespace": name,
+            "cost": cost,
+            "cpu_request_pct": cpu_pct + round(rng.uniform(-3, 3), 1),
+            "mem_request_pct": mem_pct + round(rng.uniform(-3, 3), 1),
+        })
+
+    node_pools = []
+    for pool, nodes, node_type, base_cost, util_pct in K8S_NODE_POOLS:
+        cost = round(base_cost * rng.uniform(0.93, 1.07), 2)
+        node_pools.append({
+            "pool": pool,
+            "nodes": nodes,
+            "node_type": node_type,
+            "cost": cost,
+            "utilization_pct": util_pct + round(rng.uniform(-4, 4), 1),
+        })
+
+    total_cost = round(sum(n["cost"] for n in namespaces), 2)
+    total_node_cost = sum(p["cost"] for p in node_pools) or 1.0
+    avg_util = round(
+        sum(p["utilization_pct"] * p["cost"] for p in node_pools) / total_node_cost,
+        1,
+    )
+    overprov_waste = round(total_node_cost * (1 - avg_util / 100) * 0.6, 2)
+    wasteful = sorted(
+        [n for n in namespaces if n["cpu_request_pct"] < 45 or n["mem_request_pct"] < 45],
+        key=lambda n: n["cost"],
+        reverse=True,
+    )
+    prev_total = round(total_cost * rng.uniform(0.90, 1.06), 2)
+    change_pct = round(((total_cost - prev_total) / prev_total) * 100, 1) if prev_total else 0.0
+
+    return {
+        "total_cost": total_cost,
+        "cluster_count": 2,
+        "avg_node_utilization_pct": avg_util,
+        "overprovisioning_waste_est": overprov_waste,
+        "namespaces": namespaces,
+        "node_pools": node_pools,
+        "top_wasteful_workloads": wasteful,
+        "trend": {
+            "change_percentage": change_pct,
+            "change_amount": round(total_cost - prev_total, 2),
+        },
+        "generated_at": now_iso(),
+    }
+
+
+@app.get("/api/k8s")
+def get_k8s(window: str = Query("30d", pattern="^(7d|30d|90d)$")):
+    """Kubernetes cost visibility: namespaces, node pools, utilization, waste."""
+    return k8s_model()
+
+
 @app.get("/")
 def health():
     return {"status": "ok", "time": now_iso(), "clouds": sorted(VALID_CLOUD)}

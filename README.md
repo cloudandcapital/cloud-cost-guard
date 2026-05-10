@@ -1,190 +1,165 @@
 # Cloud Cost Guard
 
-[![CI](https://github.com/cloudandcapital/cloud-cost-guard/actions/workflows/test.yml/badge.svg)](https://github.com/cloudandcapital/cloud-cost-guard/actions/workflows/test.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Multi-cloud](https://img.shields.io/badge/cloud-AWS%20%7C%20Azure%20%7C%20GCP-orange)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![Kubernetes](https://img.shields.io/badge/K8s-cost%20visibility-326CE5)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![SaaS](https://img.shields.io/badge/SaaS-spend%20tracking-blueviolet)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![AI for FinOps](https://img.shields.io/badge/AI-Lumen%20%2B%20MCP-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![FOCUS 2026](https://img.shields.io/badge/FOCUS-2026-brightgreen)](https://focus.finops.org)
 
-**Part of the Visibility → Variance → Tradeoffs pipeline.**
+**The unified FinOps dashboard for Cloud · Kubernetes · AI · SaaS — with Lumen AI and MCP server support.**
 
-| Tool | Role | Repo |
-|------|------|------|
-| FinOps Lite | Cost visibility — AWS/Azure/GCP spend, FOCUS 1.0 export | [cloudandcapital/finops-lite](https://github.com/cloudandcapital/finops-lite) |
-| FinOps Watchdog | Anomaly detection — spend spikes from any cost CSV | [cloudandcapital/finops-watchdog](https://github.com/cloudandcapital/finops-watchdog) |
-| Recovery Economics | Resilience modeling — backup/restore cost + scenario compare | [cloudandcapital/recovery-economics](https://github.com/cloudandcapital/recovery-economics) |
-| AI Cost Lens | AI spend observability — model-level cost across OpenAI, Anthropic, Bedrock | [cloudandcapital/ai-cost-lens](https://github.com/cloudandcapital/ai-cost-lens) |
-| SaaS Cost Analyzer | SaaS spend governance — unused licenses, per-seat costs, forecasting | [cloudandcapital/saas-cost-analyzer](https://github.com/cloudandcapital/saas-cost-analyzer) |
-| **Cloud Cost Guard** | Dashboard — spend trends, savings coverage, rightsizing | [cloudandcapital/cloud-cost-guard](https://github.com/cloudandcapital/cloud-cost-guard) |
-| Tech Spend Command Center | Executive summary — unified Cloud+AI+SaaS report | [cloudandcapital/tech-spend-command-center](https://github.com/cloudandcapital/tech-spend-command-center) |
-
-Six tools. One pipeline. Full Cloud+AI+SaaS coverage for every scope the FinOps Foundation 2026 Framework defines.
+[**Live Demo →**](https://guard.cloudandcapital.com) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
 ---
 
-> A multi-cloud cost observability dashboard — AWS, Azure, and GCP — with daily spend trends, per-cloud service breakdowns, top movers, and prioritized optimization findings with evidence and CLI commands.
+The first open-source dashboard that shows Cloud (AWS/Azure/GCP) + Kubernetes + AI spend + SaaS licenses in a single view — with an AI assistant (Lumen) and an MCP server so it works natively inside Claude Code and Cursor.
 
-[**Live Demo →**](https://guard.cloudandcapital.com) • [**Code (GitHub)**](https://github.com/cloudandcapital/cloud-cost-guard)
+**Features:**
+- Multi-cloud cost dashboard — AWS, Azure, GCP with per-cloud service breakdowns
+- Kubernetes visibility — namespace spend, node pool efficiency, over-provisioning waste
+- AI spend tracking — per-model costs across OpenAI, Anthropic, and AWS Bedrock
+- SaaS license governance — per-seat costs, unused seats, renewal forecasting
+- Lumen AI assistant — natural language FinOps queries via floating chat or MCP tools
+- MCP server — expose all Lumen tools directly inside Claude Code, Cursor, and other AI assistants
+- Prioritized findings with evidence, CLI remediation commands, confidence levels
+- Real connectors for all three clouds + Kubernetes — wire in credentials to switch from demo to live data
 
 ---
 
-- AWS, Azure, and GCP per-cloud service breakdowns with realistic synthetic demo data
-- Per-cloud optimization findings with cloud-native CLI commands (`aws`, `az`, `gcloud`)
-- Real connector modules for all three clouds — wire in credentials to switch from demo to live data
-- Clear findings cards with evidence (resource, region, type)
-- CSV export of findings across all clouds with savings estimates
+## Part of the Cloud & Capital Pipeline
 
-## Screenshots
-
-**Dashboard**
-![Dashboard](docs/screenshots/1-dashboard.png)
-
-**Products**
-![Products](docs/screenshots/2-products.png)
-
-**Findings**
-![Findings](docs/screenshots/3-findings.png)
+| Tool | Role |
+|------|------|
+| **Cloud Cost Guard** | Dashboard — unified view of all spend scopes |
+| [FinOps Lite](https://github.com/cloudandcapital/finops-lite) | Cost pull — AWS/Azure/GCP with FOCUS 2026 export |
+| [FinOps Watchdog](https://github.com/cloudandcapital/finops-watchdog) | Anomaly detection — baseline-aware spend spikes |
+| [Recovery Economics](https://github.com/cloudandcapital/recovery-economics) | Resilience modeling — backup and restore costs |
+| [AI Cost Lens](https://github.com/cloudandcapital/ai-cost-lens) | AI spend observability — model-level LLM costs |
+| [SaaS Cost Analyzer](https://github.com/cloudandcapital/saas-cost-analyzer) | SaaS governance — unused licenses, per-seat costs |
+| [Tech Spend Command Center](https://github.com/cloudandcapital/tech-spend-command-center) | Executive reporting — unified Cloud+AI+SaaS report |
 
 ---
 
 ## Quickstart
 
 ```bash
-# Node 20+ is recommended
+# Frontend only (no backend required — uses synthetic demo data)
+cd frontend
 npm install
-
-# Start dev server (CRA)
 npm start
-
-# Production build
-npm run build
 ```
 
-### API
-The frontend expects the following endpoints at `/api` (same-origin or via proxy):
+```bash
+# With FastAPI backend
+pip install -r backend/requirements.txt
+uvicorn app:app --reload --port 8000
 
-- `GET /api/summary?window=7d|30d|90d`
-- `GET /api/findings?sort=savings&limit=50`
-- `GET /api/movers?window=7d`
-
-If you're running a backend on a different port for local dev, add a CRA dev proxy in `package.json`:
-
-```json
-{ "proxy": "http://localhost:5000" }
+# In a second terminal:
+cd frontend && npm start
 ```
 
-Or, you can parameterize an API base via env (see **.env.example**).
+The app runs on synthetic demo data by default — no cloud credentials needed.
 
 ---
 
-## Cloud & Capital Architecture
+## MCP Server (Claude Code / Cursor)
 
-Cloud Cost Guard is a read-only dashboard that visualizes cloud financial signals produced by a small set of purpose-built Cloud & Capital tools. The dashboard itself does not fetch cloud data directly. Instead, it consumes a single normalized JSON document (`report.json`) generated by local CLI tooling. This keeps the UI decoupled from data collection, analysis, and modeling concerns.
+Cloud Cost Guard ships an MCP server that exposes Lumen's FinOps tools directly inside your AI coding assistant.
 
-## Data Pipeline
+```bash
+pip install mcp
+python backend/mcp_server.py
+```
 
-The dashboard is powered by four tools, each with a narrow responsibility:
+**Tools available via MCP:**
+- `get_cloud_summary` — AWS/Azure/GCP totals and trends
+- `get_findings` — prioritized savings findings with evidence
+- `get_cost_by_cloud` — per-cloud service breakdown
+- `get_saas_spend` — SaaS tool spend and unused license data
+- `get_ai_spend` — AI/LLM model-level costs and trends
+- `get_k8s_spend` — Kubernetes namespace and node pool data
+- `ask_lumen` — natural language FinOps query
 
-- **[FinOps Lite](https://github.com/cloudandcapital/finops-lite)** — AWS Cost Explorer CLI. Pulls account-level cloud cost data. Produces structured cost summaries (totals, trends, top services) and FOCUS 1.0 CSV exports. Output is used as the cost baseline.
-- **[FinOps Watchdog](https://github.com/cloudandcapital/finops-watchdog)** — CSV-driven anomaly detector. Identifies sustained spend spikes versus historical baselines. Emits machine-readable anomaly payloads with severity and deltas, plus markdown summaries via `--report`. Output is used for anomaly counts and "top movers."
-- **[Recovery Economics](https://github.com/cloudandcapital/recovery-economics)** — Resilience and backup cost modeling CLI. Calculates monthly storage, restore, and total resilience cost per workload; supports `compare` subcommand for scenario-level delta analysis. Output is used for resilience cost visibility.
-- **Cloud Capital Report** — Lightweight aggregator. Combines outputs from FinOps Lite, Watchdog, and Recovery Economics. Normalizes them into a single `report.json` schema. Acts as the contract between backend tooling and the dashboard.
+**Claude Code setup** (`~/.claude/mcp_servers.json`):
+```json
+{
+  "mcpServers": {
+    "cloud-cost-guard": {
+      "command": "python",
+      "args": ["/absolute/path/to/cloud-cost-guard/backend/mcp_server.py"]
+    }
+  }
+}
+```
 
-## Unified Report Schema
+**Cursor setup** (`.cursor/mcp.json` in project root):
+```json
+{
+  "mcpServers": {
+    "lumen": {
+      "command": "python",
+      "args": ["backend/mcp_server.py"]
+    }
+  }
+}
+```
 
-Cloud Cost Guard reads only from `frontend/src/data/report.json`. The report includes:
+---
 
-- Cost baseline summary (from FinOps Lite)
-- Anomaly metrics and recent anomalies (from Watchdog)
-- Resilience cost totals and top workloads (from Recovery Economics)
-- Window metadata and generation timestamp
+## Live Data Connectors
 
-Because the dashboard depends only on this schema, data sources can evolve without requiring UI changes.
+By default everything runs on synthetic demo data. To switch a scope to live data:
 
-## Local Demo Workflow
-
-1. Run FinOps Lite to generate a cost overview JSON (and FOCUS 1.0 CSV export).
-2. Run FinOps Watchdog on a local CSV to generate anomalies JSON.
-3. Run Recovery Economics on a workload CSV to generate resilience JSON.
-4. Run Cloud Capital Report to aggregate all three into `report.json`.
-5. Start the Cloud Cost Guard frontend to visualize the results.
-
-The `report.json` committed in this repository serves as a demo artifact. In a real deployment, it could be generated on a schedule or via CI.
-
-## Multi-Cloud Support
-
-Cloud Cost Guard supports AWS, Azure, and GCP. By default it runs entirely on realistic synthetic data — no credentials required. To switch a cloud to live data:
-
-### AWS (Cost Explorer)
-
+### AWS
 ```bash
 export AWS_ACCESS_KEY_ID=AKIA...
 export AWS_SECRET_ACCESS_KEY=...
 export AWS_DEFAULT_REGION=us-east-1
 pip install boto3
 ```
+IAM required: `ReadOnlyAccess` + `CostExplorerFullAccess`.
 
-IAM policy required: `ReadOnlyAccess` + `CostExplorerFullAccess`.
-
-### Azure (Cost Management)
-
+### Azure
 ```bash
-export AZURE_SUBSCRIPTION_ID=<subscription-id>
-export AZURE_TENANT_ID=<tenant-id>
-export AZURE_CLIENT_ID=<app-id>
-export AZURE_CLIENT_SECRET=<password>
+export AZURE_SUBSCRIPTION_ID=...
+export AZURE_TENANT_ID=...
+export AZURE_CLIENT_ID=...
+export AZURE_CLIENT_SECRET=...
 pip install azure-identity azure-mgmt-costmanagement
 ```
 
-Create a service principal with the **Cost Management Reader** role:
+### GCP
 ```bash
-az ad sp create-for-rbac --name cloud-cost-guard \
-  --role "Cost Management Reader" \
-  --scopes /subscriptions/<SUBSCRIPTION_ID>
-```
-
-### GCP (BigQuery billing export)
-
-```bash
-export GCP_PROJECT_ID=my-project-123
-export GCP_BILLING_ACCOUNT_ID=01AB23-CDEF45-678901
+export GCP_PROJECT_ID=my-project
+export GCP_BILLING_ACCOUNT_ID=01AB23-...
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
-export GCP_BILLING_DATASET=my_project.gcp_billing_export_v1_ABCDEF_123456_789ABC
 pip install google-cloud-bigquery
 ```
 
-Enable **BigQuery billing export** in the GCP Console first (Billing → Billing export → BigQuery export). Then create a service account with `roles/billing.viewer` and `roles/bigquery.dataViewer`.
+### Kubernetes
+```bash
+# Option A — Prometheus
+export K8S_PROMETHEUS_URL=http://prometheus.monitoring.svc:9090
+export K8S_CLUSTER_NAME=prod-cluster
+pip install requests
 
-### Connector location
+# Option B — kubeconfig / in-cluster
+export KUBECONFIG=/path/to/kubeconfig
+export K8S_CLUSTER_NAME=prod-cluster
+pip install kubernetes
+```
 
-Connector modules live in `backend/connectors/`:
-- `aws_connector.py` — boto3 + Cost Explorer API
-- `azure_connector.py` — azure-mgmt-costmanagement
-- `gcp_connector.py` — google-cloud-bigquery billing export
+Connectors live in `backend/connectors/`. Each has `is_configured()` — the app falls back to synthetic data automatically when credentials are absent. Mix and match freely.
 
-Each connector's `is_configured()` checks its env vars. When credentials are present the connector returns live data; when absent the app falls back to synthetic data automatically. Mix and match — you can have live AWS + synthetic Azure + synthetic GCP simultaneously.
+---
 
 ## Tech
 
-- React (CRA + craco), Recharts, shadcn/ui, lucide-react
-- FastAPI synthetic data backend (multi-cloud: AWS, Azure, GCP)
+- React (CRA + craco), Recharts, shadcn/ui, lucide-react, Tailwind CSS
+- FastAPI synthetic data backend (multi-cloud: AWS / Azure / GCP / Kubernetes)
+- MCP server for Claude Code and Cursor integration
 - Vercel for hosting
-- Styling in `App.css` (brand tokens + utilities)
-
----
-
-## Project Structure
-
-```
-src/
-  App.js
-  App.css
-  assets/
-  components/ui/...
-public/
-```
-
----
-
-## Contributing
-
-PRs and issues are welcome. For local development, see **Quickstart** above.
 
 ---
 
