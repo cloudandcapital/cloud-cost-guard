@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getCloudCapitalReport } from "../lib/report";
 
-const API_KEY = process.env.REACT_APP_ANTHROPIC_KEY || "";
+const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
 
 const SAMPLE_QUESTIONS = [
   "What's bleeding money right now?",
@@ -117,8 +117,7 @@ const AskClaude = () => {
     }
   };
 
-  // No key configured — show small muted notice instead of the chat interface
-  if (!API_KEY) {
+  if (!LUMEN_ENABLED) {
     return (
       <p className="ask-claude-unavailable">Lumen unavailable</p>
     );
