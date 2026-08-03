@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { AlertTriangle, CheckCircle, Clipboard, X } from "lucide-react";
 import { getCloudCapitalReport } from "../lib/report";
+import { buildAwsCostExplorerDailyCommand } from "../lib/awsCostExplorer";
 
 const fmt = (value) => new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -40,10 +41,11 @@ export default function TriageCard({ defaultExpanded = false, onDismiss }) {
   const current = Number(anomaly.current || 0);
   const increase = Math.max(0, current - baseline);
   const spikePct = baseline > 0 ? (increase / baseline) * 100 : 0;
-  const investigationCommand = `aws ce get-cost-and-usage --time-period Start=${String(anomaly.timestamp).slice(0, 10)},End=${String(anomaly.timestamp).slice(0, 10)} --granularity DAILY --metrics BlendedCost --group-by Type=DIMENSION,Key=SERVICE`;
+  const investigationCommand = buildAwsCostExplorerDailyCommand(anomaly.timestamp);
 
   const copyCommand = async () => {
     try {
+      if (!investigationCommand) throw new Error("Invalid investigation range");
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(investigationCommand);
       setCopyError(false);
@@ -104,13 +106,17 @@ export default function TriageCard({ defaultExpanded = false, onDismiss }) {
             </ol>
           </div>
 
-          <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-3">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-900">Read-only investigation command</div>
-            <pre className="text-xs m-0 overflow-auto"><code>{investigationCommand}</code></pre>
-          </div>
+          {investigationCommand ? (
+            <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-3">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-900">Read-only investigation command</div>
+              <pre className="text-xs m-0 overflow-auto"><code>{investigationCommand}</code></pre>
+            </div>
+          ) : (
+            <p className="text-sm text-amber-900">A valid investigation date is unavailable for this finding.</p>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="outline" className="btn-brand-outline rounded-lg" onClick={copyCommand}>
+            <Button size="sm" variant="outline" className="btn-brand-outline rounded-lg" onClick={copyCommand} disabled={!investigationCommand}>
               {copied ? <CheckCircle className="h-4 w-4 mr-1" /> : <Clipboard className="h-4 w-4 mr-1" />}
               {copied ? "Copied" : "Copy investigation command"}
             </Button>

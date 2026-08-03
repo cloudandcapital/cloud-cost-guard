@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./App.css";
 import { getCloudCapitalReport } from "./lib/report";
 import { buildDeterministicSeries } from "./lib/demoSeries";
+import { buildAwsCostExplorerDailyCommand } from "./lib/awsCostExplorer";
 
 // Local brand icon
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -549,6 +550,7 @@ const Dashboard = () => {
         const normalizedSeverity = ["critical", "high", "medium", "low"].includes(severity) ? severity : "medium";
         const anomalyDelta = Math.max(0, toNumber(item.delta));
         const monthlySavingsEstimate = Number((anomalyDelta * 6).toFixed(2));
+        const investigationCommand = buildAwsCostExplorerDailyCommand(item.timestamp);
         return {
           finding_id: `anomaly-${idx}-${String(group).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
           title: `${group} spend anomaly above baseline`,
@@ -560,9 +562,7 @@ const Dashboard = () => {
           risk_level: normalizedSeverity === "critical" ? "High" : "Medium",
           implementation_time: "1-3 hours",
           suggested_action: `Investigate ${group} usage growth, validate workload changes, and apply scaling or budget guardrails to reduce repeat spikes.`,
-          commands: [
-            `aws ce get-cost-and-usage --time-period Start=${String(item.timestamp || "").slice(0, 10)},End=${String(item.timestamp || "").slice(0, 10)} --granularity DAILY --metrics BlendedCost --group-by Type=DIMENSION,Key=SERVICE`
-          ],
+          commands: investigationCommand ? [investigationCommand] : [],
           last_analyzed: item.timestamp || report?.generated_at,
           evidence: {
             service: group,
