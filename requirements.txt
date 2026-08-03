@@ -1,3 +1,13 @@
 fastapi
 uvicorn
 pydantic
+
+# ── Live cloud connectors (optional) ──────────────────────────────────────────
+# Uncomment and set the corresponding env vars to pull real data.
+# The app runs on synthetic data by default when these are not installed.
+
+# boto3>=1.34.0                      # AWS — Cost Explorer API
+# azure-identity>=1.15.0             # Azure — authentication
+# azure-mgmt-costmanagement>=4.0.0   # Azure — Cost Management API
+# google-cloud-bigquery>=3.17.0      # GCP — BigQuery billing export (recommended)
+# google-cloud-billing>=1.14.0       # GCP — Cloud Billing API (catalog only)

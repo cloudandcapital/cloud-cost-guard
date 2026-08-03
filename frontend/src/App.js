@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { format } from "date-fns";
 import { getCloudCapitalReport } from "./lib/report";
+import { buildDeterministicSeries } from "./lib/demoSeries";
 
 // Local brand icon
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -11,9 +9,12 @@ import logo from "./assets/cloud-and-capital-icon.png";
 // AI/automation demo card
 import TriageCard from "./components/TriageCard";
 
+// Ask Claude floating assistant
+import AskClaude from "./components/AskClaude";
+
 // Recharts
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ReferenceLine
 } from "recharts";
 
@@ -23,20 +24,16 @@ import { Button } from "./components/ui/button";
 import { Badge } from "./components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Alert, AlertDescription } from "./components/ui/alert";
-import { Progress } from "./components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
 import { Separator } from "./components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 
 // Icons
 import {
-  DollarSign, TrendingUp, TrendingDown, AlertTriangle, HardDrive,
-  Eye, Download, BarChart3, Activity, Target, PieChart as PieChartIcon,
-  TrendingUp as TrendingUpIcon, Calendar, CheckCircle, XCircle, X
+  DollarSign, TrendingUp, TrendingDown, AlertTriangle,
+  Eye, Download, BarChart3, Activity, PieChart as PieChartIcon,
+  TrendingUp as TrendingUpIcon, Calendar, CheckCircle, XCircle, X,
+  Bot, Layers, Server
 } from "lucide-react";
-
-/** IMPORTANT: same-origin proxy */
-const API = "/api";
 
 /* -------- Utils -------- */
 const toNumber = (v) => {
@@ -72,15 +69,6 @@ const formatTimestamp = (ts) => {
   const hh = String(h).padStart(2, "0");
   const min = String(d.getMinutes()).padStart(2, "0");
   return `${mm}/${dd}/${yyyy} ${hh}:${min} ${ampm}`;
-};
-
-const getDataFreshnessHours = (ts) => {
-  if (!ts) return null;
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return null;
-  const diffMs = Date.now() - d.getTime();
-  if (!Number.isFinite(diffMs) || diffMs < 0) return null;
-  return Math.round(diffMs / 36e5);
 };
 
 const getConfidenceColor = (confidence) => ({
@@ -178,8 +166,8 @@ const KPICard = ({ title, value, change, icon: Icon, subtitle, dataFreshness }) 
       <div className="text-2xl font-bold text-brand-ink">{value}</div>
       {Number.isFinite(change) ? (
         <p className="text-xs text-brand-muted flex items-center gap-1 mt-1">
-          {change >= 0 ? <TrendingUp className="h-3 w-3 text-brand-success" /> : <TrendingDown className="h-3 w-3 text-brand-error" />}
-          <span className={change >= 0 ? "text-brand-success" : "text-brand-error"}>{formatPercent(change)}</span>
+          {change >= 0 ? <TrendingUp className="h-3 w-3 text-brand-error" /> : <TrendingDown className="h-3 w-3 text-brand-success" />}
+          <span className={change >= 0 ? "text-brand-error" : "text-brand-success"}>{formatPercent(change)}</span>
           {subtitle}
         </p>
       ) : (
@@ -221,141 +209,14 @@ const CostTrendChart = ({ data, height = 300, label = "Cost trends over the last
   );
 };
 
-const ServiceBreakdownChart = ({ data, total, rangeLabel = "30d" }) => (
-  <Card className="kpi-card shadow-sm">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-brand-ink">
-        <PieChartIcon className="h-5 w-5" />Cost by Service
-      </CardTitle>
-      <CardDescription className="text-brand-muted">Top services by cost breakdown</CardDescription>
-    </CardHeader>
-    <CardContent className="pt-0">
-      <div className="flex items-center justify-between">
-        <div className="relative" style={{ width: "60%", height: 300 }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={120} paddingAngle={2} dataKey="value">
-                {data.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-              </Pie>
-              <Tooltip
-                contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                formatter={(val, _name, props) => [formatCurrency(val), `${props.payload.name} (${props.payload.percentage}%)`]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          {/* Center label intentionally removed */}
-        </div>
-        <div className="w-2/5 space-y-2">
-          {data.slice(0, 6).map((s, i) => (
-            <div key={i} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.fill }} />
-                <span className="text-brand-ink">{s.name}</span>
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-brand-ink">{formatCurrency(s.value)}</div>
-                <div className="text-xs text-brand-muted">{s.percentage}%</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const TopMoversCard = ({ movers, windowLabel = "7d" }) => (
-  <Card className="kpi-card shadow-sm">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-brand-ink">
-        <TrendingUpIcon className="h-5 w-5" />
-        Top Movers ({windowLabel})
-      </CardTitle>
-      <CardDescription className="text-brand-muted">Biggest cost changes in {windowLabel}</CardDescription>
-    </CardHeader>
-    <CardContent className="pt-0">
-      {(!movers || movers.length === 0) ? (
-        <div className="text-sm text-brand-muted">No movers detected in {windowLabel}.</div>
-      ) : (
-        <div className="space-y-3">
-          {movers.slice(0, 6).map((m, i) => (
-            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-brand-bg/30">
-              <div className="flex items-center gap-3">
-                {/* Green is good (down); Red is up */}
-                <div className={`w-2 h-8 rounded ${toNumber(m.change_amount) >= 0 ? "bg-red-500" : "bg-green-500"}`} />
-                <div>
-                  <div className="font-medium text-brand-ink text-sm">{m.service}</div>
-                  <div className="text-xs text-brand-muted">{formatCurrency(toNumber(m.previous_cost))} → {formatCurrency(toNumber(m.current_cost))}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className={`font-semibold text-sm ${toNumber(m.change_amount) >= 0 ? "text-red-600" : "text-green-600"}`}>
-                  {toNumber(m.change_amount) >= 0 ? "+" : ""}{formatCurrency(toNumber(m.change_amount))}
-                </div>
-                <div className={`text-xs ${toNumber(m.change_amount) >= 0 ? "text-red-500" : "text-green-500"}`}>
-                  {toNumber(m.change_percent) >= 0 ? "+" : ""}{toNumber(m.change_percent).toFixed(1)}%
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
-
-const KeyInsightsCard = ({ insights }) => {
-  const dateLabel = insights?.highest_single_day?.dateISO
-    ? format(new Date(insights.highest_single_day.dateISO), "MMM d, yyyy")
-    : (insights?.highest_single_day?.date ?? "-");
-  return (
-    <Card className="kpi-card shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-brand-ink"><Target className="h-5 w-5" />Key Insights</CardTitle>
-        <CardDescription className="text-brand-muted">Important findings and projections</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-4">
-          <div>
-            <div className="text-sm text-brand-muted">Highest Single Day</div>
-            <div className="font-semibold text-brand-ink">{dateLabel}</div>
-            <div className="text-lg font-bold text-brand-accent">{formatCurrency(insights?.highest_single_day?.amount || 0)}</div>
-          </div>
-          <Separator />
-          <div>
-            <div className="text-sm text-brand-muted">Projected Month-End</div>
-            <div className="text-lg font-bold text-brand-ink">{formatCurrency(insights?.projected_month_end || 0)}</div>
-            <div className="text-xs text-brand-muted">Based on current trend</div>
-          </div>
-          <Separator />
-          <div>
-            <div className="text-sm text-brand-muted">Budget Performance</div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm">MTD: {formatCurrency(insights?.mtd_actual || 0)}</span>
-              <span className="text-sm">Budget: {formatCurrency(insights?.monthly_budget || 0)}</span>
-            </div>
-            <Progress value={Math.min(((insights?.mtd_actual || 0) / (insights?.monthly_budget || 1)) * 100, 100)} className="h-3" />
-            <div className="flex justify-between text-xs mt-2">
-              <span className="text-brand-muted">Projected: {formatCurrency(insights?.projected_month_end || 0)}</span>
-              <span className={`font-semibold ${Number(insights?.budget_variance || 0) >= 0 ? "text-red-600" : "text-green-600"}`}>
-                {Number(insights?.budget_variance || 0) >= 0 ? "+" : ""}{formatCurrency(insights?.budget_variance || 0)} vs budget
-              </span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
 /* -------- Simple Modal (no extra deps) -------- */
 const Modal = ({ open, onClose, title, children }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg" role="dialog" aria-modal="true" aria-labelledby="finding-modal-title">
         <div className="flex items-center justify-between border-b border-[#E7DCCF] px-4 py-3">
-          <h3 className="text-sm font-semibold text-brand-ink">{title}</h3>
+          <h3 id="finding-modal-title" className="text-sm font-semibold text-brand-ink">{title}</h3>
           <button
             aria-label="Close"
             onClick={onClose}
@@ -396,7 +257,7 @@ const FindingCard = ({ finding, onViewDetails }) => (
     <CardContent className="pt-0">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-brand-muted">Monthly Savings</span>
+          <span className="text-sm text-brand-muted">Estimated Monthly Opportunity</span>
           <span className="text-lg font-semibold text-brand-success">{formatCurrency(finding.monthly_savings_usd_est)}</span>
         </div>
 
@@ -468,26 +329,169 @@ const ProductTable = ({ products }) => (
   </div>
 );
 
+const AiModelBreakdown = ({ models }) => (
+  <Card className="kpi-card shadow-sm">
+    <CardHeader className="pb-3">
+      <CardTitle className="flex items-center gap-2 text-brand-ink">
+        <PieChartIcon className="h-5 w-5" />Cost by Model
+      </CardTitle>
+      <CardDescription className="text-brand-muted">AI model spend breakdown this period</CardDescription>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <div className="flex items-center justify-between">
+        <div style={{ width: "55%", height: 260 }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie data={models} cx="50%" cy="50%" innerRadius={45} outerRadius={105} paddingAngle={2} dataKey="value">
+                {models.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+              </Pie>
+              <Tooltip
+                contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                formatter={(val, _n, props) => [formatCurrency(val), `${props.payload.name} (${props.payload.percentage}%)`]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="w-2/5 space-y-2">
+          {models.map((m, i) => (
+            <div key={i} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.fill }} />
+                <span className="text-brand-ink text-xs truncate" style={{ maxWidth: "7rem" }}>{m.name}</span>
+              </div>
+              <div className="text-right flex-shrink-0 ml-2">
+                <div className="font-semibold text-brand-ink text-xs">{formatCurrency(m.value)}</div>
+                <div className="text-xs text-brand-muted">{m.percentage}%</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SaasToolChart = ({ tools }) => {
+  const data = tools.map(t => ({ name: t.tool, cost: toNumber(t.cost) }));
+  return (
+    <Card className="kpi-card shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-brand-ink">
+          <BarChart3 className="h-5 w-5" />Cost by Tool
+        </CardTitle>
+        <CardDescription className="text-brand-muted">Monthly SaaS spend per product</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div style={{ width: "100%", height: 280 }}>
+          <ResponsiveContainer>
+            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
+              <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
+                tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
+              <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }} width={72} />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                formatter={(value) => [formatCurrency(value), "Monthly Cost"]}
+              />
+              <Bar dataKey="cost" fill="#8B6F47" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const SaasMonthlyChart = ({ data }) => (
+  <Card className="kpi-card shadow-sm">
+    <CardHeader className="pb-3">
+      <CardTitle className="flex items-center gap-2 text-brand-ink">
+        <TrendingUpIcon className="h-5 w-5" />Month-over-Month Trend
+      </CardTitle>
+      <CardDescription className="text-brand-muted">SaaS spend over the last 4 months</CardDescription>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <div style={{ width: "100%", height: 280 }}>
+        <ResponsiveContainer>
+          <LineChart data={data} margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
+            <XAxis dataKey="month" stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }} />
+            <YAxis stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }}
+              tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} domain={["auto", "auto"]} />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+              formatter={(value) => [formatCurrency(value), "Monthly Cost"]}
+            />
+            <Line type="monotone" dataKey="cost" stroke="#8B6F47" strokeWidth={3}
+              dot={{ fill: "#8B6F47", r: 5 }} activeDot={{ r: 7, fill: "#8B6F47" }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SaasUnusedTable = ({ tools }) => (
+  <Card className="kpi-card shadow-sm">
+    <CardHeader className="pb-3">
+      <CardTitle className="flex items-center gap-2 text-brand-ink">
+        <AlertTriangle className="h-5 w-5" />License Utilization
+      </CardTitle>
+      <CardDescription className="text-brand-muted">Seat usage and unused licenses per tool</CardDescription>
+    </CardHeader>
+    <CardContent className="pt-0">
+      <div className="table-brand rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-brand-muted font-semibold">Tool</TableHead>
+              <TableHead className="text-right text-brand-muted font-semibold">Monthly Cost</TableHead>
+              <TableHead className="text-right text-brand-muted font-semibold">Licensed</TableHead>
+              <TableHead className="text-right text-brand-muted font-semibold">Active</TableHead>
+              <TableHead className="text-right text-brand-muted font-semibold">Unused</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tools.map((t, i) => (
+              <TableRow key={i} className="hover:bg-brand-bg/30">
+                <TableCell className="font-medium text-brand-ink">{t.tool}</TableCell>
+                <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(t.cost))}</TableCell>
+                <TableCell className="text-right text-brand-ink">{t.seats_licensed > 0 ? t.seats_licensed : "—"}</TableCell>
+                <TableCell className="text-right text-brand-ink">{t.seats_active > 0 ? t.seats_active : "—"}</TableCell>
+                <TableCell className="text-right">
+                  {t.unused > 0
+                    ? <span className="font-semibold text-brand-error">{t.unused}</span>
+                    : <span className="text-brand-success">—</span>}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 /* -------- Main -------- */
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [findings, setFindings] = useState([]);
   const [costTrend, setCostTrend] = useState([]);
-  const [serviceBreakdown, setServiceBreakdown] = useState({ data: [], total: 0 });
-  const [topMovers, setTopMovers] = useState([]);
   const [keyInsights, setKeyInsights] = useState({});
+  const [aiTrend, setAiTrend] = useState([]);
+  const [saasBaseTrend, setSaasBaseTrend] = useState([]);
+  const [k8sData, setK8sData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dateRange, setDateRange] = useState("30d");
 
   const report = getCloudCapitalReport();
   const costBaseline = report?.cost_baseline || {};
   const anomalies = report?.anomalies || {};
   const resilience = report?.resilience || {};
   const reportWindowLabel = report?.window?.label || "Last 30 days";
-  const reportWindowRange = (report?.window?.start && report?.window?.end)
-    ? `${report.window.start} to ${report.window.end}`
-    : reportWindowLabel;
+  const tagging = report?.tagging || {};
+  const coveragePct = tagging.coverage_pct ?? 73;
+  const untaggedPct = tagging.untagged_pct ?? 27;
   const hasCostData = costBaseline?.cost_status?.has_data !== false;
 
   // Modal
@@ -497,7 +501,7 @@ const Dashboard = () => {
   useEffect(() => {
     loadAllData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
+  }, []);
 
   const loadAllData = async () => {
     try {
@@ -505,9 +509,7 @@ const Dashboard = () => {
       setError(null);
 
       const totalCost = hasCostData ? toNumber(costBaseline.total_cost) : 0;
-      const dailyAverage = hasCostData ? toNumber(costBaseline.daily_average) : 0;
       const trendPct = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-      const dataFreshnessHours = getDataFreshnessHours(report?.generated_at);
 
       const topServices = Array.isArray(costBaseline.top_services) ? costBaseline.top_services : [];
       const products = topServices.map((svc) => ({
@@ -525,7 +527,7 @@ const Dashboard = () => {
           finding_id: `resilience-${w.workload || idx}`,
           title: w.workload || "—",
           severity: idx === 0 ? "high" : idx === 1 ? "medium" : "low",
-          monthly_savings_usd_est: toNumber(w.total_monthly_resilience_cost)
+          monthly_cost_usd: toNumber(w.total_monthly_resilience_cost)
         }));
 
       setSummary({
@@ -533,7 +535,6 @@ const Dashboard = () => {
         kpis: {
           total_30d_cost: totalCost,
           wow_percent: trendPct,
-          data_freshness_hours: dataFreshnessHours,
           last_updated: report?.generated_at
         },
         top_products: products,
@@ -554,7 +555,8 @@ const Dashboard = () => {
           type: "anomaly",
           severity: normalizedSeverity,
           confidence: normalizedSeverity === "critical" || normalizedSeverity === "high" ? "high" : "medium",
-          monthly_savings_usd_est: monthlySavingsEstimate,
+          monthly_savings_usd_est: 0,
+          estimated_avoidable_run_rate_usd: monthlySavingsEstimate,
           risk_level: normalizedSeverity === "critical" ? "High" : "Medium",
           implementation_time: "1-3 hours",
           suggested_action: `Investigate ${group} usage growth, validate workload changes, and apply scaling or budget guardrails to reduce repeat spikes.`,
@@ -569,7 +571,7 @@ const Dashboard = () => {
             delta_usd: anomalyDelta,
             delta_pct: toNumber(item.delta_pct)
           },
-          methodology: "Derived from report.anomalies.recent to provide demo optimization actions."
+          methodology: "Illustrative anomaly investigation. The avoidable run rate is not counted as verified savings."
         };
       });
 
@@ -602,41 +604,14 @@ const Dashboard = () => {
       const demoFindings = [...anomalyFindings, ...resilienceDerivedFindings].slice(0, 6);
       setFindings(demoFindings);
 
-      // Anomalies -> movers
-      const movers = moversSeed.map((m) => ({
-        service: m.group || m.service || "—",
-        previous_cost: toNumber(m.baseline),
-        current_cost: toNumber(m.current),
-        change_amount: toNumber(m.delta),
-        change_percent: toNumber(m.delta_pct)
-      }));
-      setTopMovers(movers);
-
-      // Service Breakdown
-      const total = products.reduce((acc, p) => acc + toNumber(p.amount_usd || p.amount || 0), 0);
-      const palette = ["#8B6F47","#B5905C","#D8C3A5","#A8A7A7","#E98074","#C0B283","#F4E1D2","#E6B89C"];
-      const breakdown = products.slice(0, 8).map((p, i) => {
-        const val = toNumber(p.amount_usd || p.amount || 0);
-        return {
-          name: p.product || p.name || p.service || p._id || "Other",
-          value: val,
-          percentage: total ? Number(((val / total) * 100).toFixed(1)) : 0,
-          fill: palette[i % palette.length]
-        };
-      });
-      setServiceBreakdown({ data: breakdown, total });
-
       // Daily Spend Trend
       const days = Math.max(1, toNumber(costBaseline.period_days) || 30);
-      const endDate = report?.window?.end ? new Date(report.window.end) : new Date();
-      const avg = dailyAverage || (total && days ? total / days : 0);
-      const series = Array.from({ length: days }, (_, i) => {
-        const d = new Date(endDate);
-        d.setDate(d.getDate() - (days - 1 - i));
-        const jitter = avg * 0.06 * Math.sin(i / 2.7) + (avg * 0.03 * (Math.random() - 0.5));
-        const amount = Math.max(0, avg + jitter);
-        return { formatted_date: format(d, "MM/dd"), dateISO: d.toISOString().slice(0,10), cost: amount };
-      });
+      const endDate = report?.window?.end;
+      const series = buildDeterministicSeries({ total: totalCost, days, endDate, phase: 0 }).map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        dateISO: row.dateISO,
+        cost: row.amount,
+      }));
       setCostTrend(series);
 
       // Key Insights
@@ -645,14 +620,36 @@ const Dashboard = () => {
         { date: "-", dateISO: null, amount: 0 }
       );
       const totalWindow = series.reduce((s, pt) => s + pt.cost, 0);
-      const monthBudget = 180000;
+      const monthBudget = toNumber(report?.budgets?.cloud) || 34200;
       setKeyInsights({
         highest_single_day: highest,
-        projected_month_end: totalWindow,
-        mtd_actual: totalWindow * (new Date().getDate() / Math.max(series.length, 1)),
+        projected_month_end: totalCost + toNumber(costBaseline?.trend?.change_amount),
+        mtd_actual: totalWindow,
         monthly_budget: monthBudget,
-        budget_variance: totalWindow - monthBudget
+        budget_variance: totalCost - monthBudget
       });
+
+      // AI Spend daily trend synthesis
+      const aiSpendRaw = report?.ai_spend || {};
+      if (toNumber(aiSpendRaw.total_cost) > 0) {
+        const aiSeries = buildDeterministicSeries({ total: aiSpendRaw.total_cost, days, endDate, phase: 4 }).map((row) => ({
+          formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+          cost: row.amount,
+        }));
+        setAiTrend(aiSeries);
+      }
+
+      // SaaS daily trend synthesis (flat spread with minimal jitter)
+      const saasRaw = report?.saas_spend || {};
+      if (toNumber(saasRaw.total_cost) > 0) {
+        const saasSeries = buildDeterministicSeries({ total: saasRaw.total_cost, days, endDate, phase: 8 }).map((row) => ({
+          formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+          cost: row.amount,
+        }));
+        setSaasBaseTrend(saasSeries);
+      }
+
+      setK8sData(report?.kubernetes || null);
 
     } catch (err) {
       console.error("Error loading data:", err);
@@ -667,14 +664,18 @@ const Dashboard = () => {
     setModalOpen(true);
   };
 
-  const exportCSV = async () => {
+  const exportCSV = () => {
     try {
-      const { data } = await axios.get(`${API}/findings?sort=savings&limit=1000`);
-      const arr = Array.isArray(data) ? data : [];
-      const rowsToExport = arr.filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
-      const headers = ["Title", "Type", "Severity", "Monthly Savings", "Resource ID", "Action"];
+      const rowsToExport = (Array.isArray(findings) ? findings : [])
+        .filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
+      const headers = ["Title", "Type", "Severity", "Estimated Monthly Opportunity", "Scope", "Review Plan"];
       const rows = rowsToExport.map((f) => [
-        f.title, f.type, f.severity, f.monthly_savings_usd_est, f.resource_id || "", f.suggested_action
+        f.title,
+        f.type,
+        f.severity,
+        f.monthly_savings_usd_est,
+        f.evidence?.resource_id || f.evidence?.workload || "",
+        f.suggested_action,
       ]);
       const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
@@ -713,23 +714,61 @@ const Dashboard = () => {
   }
 
   const { top_products = [], recent_findings = [] } = summary || {};
-  const totalCost = hasCostData ? toNumber(costBaseline.total_cost) : 0;
-  const dailyAverage = hasCostData ? toNumber(costBaseline.daily_average) : 0;
   const trendPercent = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
   const totalAnomalies = toNumber(anomalies.total_anomalies);
-  const maxDeltaPct = toNumber(anomalies.max_delta_pct);
   const severityCounts = anomalies.by_severity || {};
   const criticalCount = toNumber(severityCounts.critical);
   const highCount = toNumber(severityCounts.high);
   const mediumCount = toNumber(severityCounts.medium);
-  const resilienceMonthly = toNumber(resilience.total_monthly_resilience_cost);
-  const resilienceWorkloads = toNumber(resilience.total_workloads);
-  const dataFreshnessHours = getDataFreshnessHours(report?.generated_at);
-  const trendLabel = reportWindowLabel ? `Cost trends over ${reportWindowLabel}` : "Cost trends over the last 30 days";
+
+  // AI Spend render-time constants
+  const aiSpend = report?.ai_spend || {};
+  const aiPalette = ["#8B6F47", "#B5905C", "#D8C3A5", "#A8A7A7", "#E98074"];
+  const aiModelTotal = (aiSpend.models || []).reduce((s, m) => s + toNumber(m.cost), 0);
+  const aiModelChartData = (aiSpend.models || []).map((m, i) => ({
+    name: m.model,
+    value: toNumber(m.cost),
+    percentage: aiModelTotal ? Number(((toNumber(m.cost) / aiModelTotal) * 100).toFixed(1)) : 0,
+    fill: aiPalette[i % aiPalette.length]
+  }));
+
+  // SaaS Spend render-time constants
+  const saasSpend = report?.saas_spend || {};
+
+  // Cloud+ Summary render-time constants
+  const cloudTotal = toNumber(costBaseline.total_cost);
+  const aiTotal = toNumber(aiSpend.total_cost);
+  const saasTotal = toNumber(saasSpend.total_cost);
+  const grandTotal = cloudTotal + aiTotal + saasTotal;
+  const cloudPrev = toNumber(costBaseline?.trend?.previous_period_cost) || 0;
+  const aiPrev = aiTotal - toNumber(aiSpend.trend?.change_amount);
+  const saasPrev = saasTotal - toNumber(saasSpend.trend?.change_amount);
+  const grandPrev = cloudPrev + aiPrev + saasPrev;
+  const grandDeltaAmt = grandTotal - grandPrev;
+  const grandDeltaPct = grandPrev > 0 ? (grandDeltaAmt / grandPrev) * 100 : 0;
+  const scopeDonutData = [
+    { name: "Cloud Infrastructure", value: cloudTotal, fill: "#6b8f71" },
+    { name: "AI / LLM",             value: aiTotal,    fill: "#c4956a" },
+    { name: "SaaS Tools",           value: saasTotal,  fill: "#8b9dc3" }
+  ];
+  const topAnomaly = Array.isArray(anomalies.recent) && anomalies.recent.length > 0 ? anomalies.recent[0] : null;
+  const projCloudNextMonth = (keyInsights?.projected_month_end || cloudTotal);
+  const projAiNextMonth = aiTotal + toNumber(aiSpend.trend?.change_amount);
+  const projSaasNextMonth = saasTotal + toNumber(saasSpend.trend?.change_amount);
+  const projGrandTotal = projCloudNextMonth + projAiNextMonth + projSaasNextMonth;
+
+  // Unified trend: merge cloud/ai/saas into one series for the combined chart
+  const unifiedTrend = costTrend.map((pt, i) => ({
+    formatted_date: pt.formatted_date,
+    cloud: pt.cost,
+    ai: aiTrend[i]?.cost || 0,
+    saas: saasBaseTrend[i]?.cost || 0
+  }));
 
   // Filter to savings-impact findings and recompute UI-facing metrics
   const positiveFindings = (Array.isArray(findings) ? findings : []).filter(f => toNumber(f.monthly_savings_usd_est) > 0);
   const displayFindings = sortAndPickFindings(positiveFindings, 9);
+  const totalSavingsOpportunity = displayFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light">
@@ -740,23 +779,16 @@ const Dashboard = () => {
             <div className="flex items-center gap-3">
               <img src={logo} alt="Cloud & Capital" className="brand-logo" />
               <div className="leading-tight">
-                <h1 className="brand-title">Cloud Cost Guard</h1>
-                <p className="text-[15px] text-brand-muted">Multi-cloud cost optimization</p>
+                <h1 className="brand-title">Cloud+ Cost Guard</h1>
+                <p className="text-[15px] text-brand-muted">Technology spend decision support <span style={{ opacity: 0.62, fontSize: "11px", letterSpacing: "0.04em" }}>· Illustrative demo</span></p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-38 md:w-42 btn-brand-outline rounded-2xl flex items-center justify-start px-4">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Last 30 days" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="btn-brand-outline rounded-2xl flex items-center px-4 h-10 text-sm text-brand-muted">
+                <Calendar className="h-4 w-4 mr-2" />
+                {reportWindowLabel}
+              </div>
 
               <Button variant="outline" onClick={exportCSV} className="btn-brand-outline rounded-2xl">
                 <Download className="h-4 w-4 mr-2" />
@@ -776,74 +808,287 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Data Source banner (compact caption) */}
-        <div className="mb-4 text-xs text-brand-muted flex items-center gap-3">
-          <span><span className="font-medium">Data Source:</span> AWS Cost &amp; Usage Reports • CloudWatch Metrics • Resource Inventory APIs</span>
+        <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3">
+          <span><span className="font-medium">Data:</span> Illustrative AWS, Azure, GCP, Kubernetes, AI and SaaS sample</span>
           <span className="hidden sm:inline">•</span>
-          <span>Last Updated: {formatTimestamp(report?.generated_at)}</span>
+          <span>Demo snapshot: {formatTimestamp(report?.generated_at)}</span>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <KPICard
-            title={`Total Cost (${reportWindowLabel})`}
-            value={formatCurrency(totalCost)}
-            change={hasCostData ? trendPercent : null}
-            icon={DollarSign}
-            subtitle={hasCostData ? "vs last period" : "no usage data"}
-            dataFreshness={dataFreshnessHours}
-          />
-          <KPICard
-            title="Avg Daily Cost"
-            value={formatCurrency(dailyAverage)}
-            icon={TrendingDown}
-            subtitle={hasCostData ? reportWindowRange : "no usage data"}
-            dataFreshness={dataFreshnessHours}
-          />
-          <KPICard
-            title="Total Anomalies"
-            value={totalAnomalies}
-            icon={AlertTriangle}
-            subtitle={Number.isFinite(maxDeltaPct) ? `max delta ${maxDeltaPct.toFixed(1)}%` : reportWindowLabel}
-            dataFreshness={dataFreshnessHours}
-          />
-          <KPICard
-            title="Monthly Resilience Cost"
-            value={formatCurrency(resilienceMonthly)}
-            icon={HardDrive}
-            subtitle={`${resilienceWorkloads} workloads`}
-            dataFreshness={dataFreshnessHours}
-          />
-        </div>
+        {/* ── Cloud+ Executive Summary ───────────────────── */}
+        <div className="space-y-6 mb-8">
 
-        {/* Compact triage below KPIs */}
+          {/* Hero banner: grand total + period delta + projected */}
+          <Card className="kpi-card shadow-sm">
+            <CardContent className="py-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">
+                    Total Tech Spend — Cloud · AI · SaaS
+                  </div>
+                  <div className="text-4xl font-bold text-brand-ink">{formatCurrency(grandTotal)}</div>
+                  <div className="flex items-center gap-1.5 mt-2 text-sm">
+                    {grandDeltaAmt >= 0
+                      ? <TrendingUp className="h-4 w-4 text-brand-error" />
+                      : <TrendingDown className="h-4 w-4 text-brand-success" />}
+                    <span className={grandDeltaAmt >= 0 ? "font-semibold text-brand-error" : "font-semibold text-brand-success"}>
+                      {grandDeltaAmt >= 0 ? "+" : ""}{formatCurrency(grandDeltaAmt)}
+                    </span>
+                    <span className={grandDeltaAmt >= 0 ? "text-brand-error" : "text-brand-success"}>
+                      ({formatPercent(grandDeltaPct)})
+                    </span>
+                    <span className="text-brand-muted ml-1">vs prior period · {reportWindowLabel}</span>
+                  </div>
+                </div>
+                <div className="md:text-right">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">Projected Next Month</div>
+                  <div className="text-2xl font-bold text-brand-ink">{formatCurrency(projGrandTotal)}</div>
+                  <div className="text-xs text-brand-muted mt-0.5">based on current period trends</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Three scope cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <KPICard
+              title="Cloud Infrastructure"
+              value={formatCurrency(cloudTotal)}
+              change={hasCostData ? trendPercent : null}
+              icon={DollarSign}
+              subtitle="vs last period"
+            />
+            <KPICard
+              title="AI / LLM Spend"
+              value={formatCurrency(aiTotal)}
+              change={toNumber(aiSpend.trend?.change_percentage)}
+              icon={Bot}
+              subtitle="vs last period"
+            />
+            <KPICard
+              title="SaaS Tools"
+              value={formatCurrency(saasTotal)}
+              change={toNumber(saasSpend.trend?.change_percentage)}
+              icon={Layers}
+              subtitle="vs last period"
+            />
+          </div>
+
+          {/* Tag Coverage + estimated opportunity */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="kpi-card shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-brand-muted">Tag Coverage</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl font-bold text-brand-ink">{coveragePct}%</span>
+                  <span className="text-xs text-brand-muted">{untaggedPct}% untagged</span>
+                </div>
+                <div style={{ width: "100%", height: 8, background: "#E9E3DE", borderRadius: 999 }}>
+                  <div style={{ width: `${coveragePct}%`, height: 8, background: "#6b8f71", borderRadius: 999 }} />
+                </div>
+                <p className="text-xs text-brand-muted mt-2">of resources properly tagged</p>
+              </CardContent>
+            </Card>
+
+            <Card className="kpi-card shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-brand-muted">Estimated Optimization Opportunity</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold" style={{ color: "#16803A" }}>
+                  {formatCurrency(totalSavingsOpportunity)}
+                </div>
+                <p className="text-xs text-brand-muted mt-1">
+                  illustrative monthly estimate across {displayFindings.length} finding{displayFindings.length !== 1 ? "s" : ""} · not verified savings
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Unified trend + scope donut + top anomaly & forecast */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Unified 3-scope trend chart */}
+            <Card className="kpi-card shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-brand-ink">
+                  <BarChart3 className="h-5 w-5" />Unified Spend Trend
+                </CardTitle>
+                <CardDescription className="text-brand-muted">
+                  Cloud, AI &amp; SaaS daily spend — {reportWindowLabel}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div style={{ width: "100%", height: 260 }}>
+                  <ResponsiveContainer>
+                    <LineChart data={unifiedTrend} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
+                      <XAxis dataKey="formatted_date" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} interval={6} />
+                      <YAxis stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                        formatter={(value, name) => [formatCurrency(value), name.charAt(0).toUpperCase() + name.slice(1)]}
+                      />
+                      <Line type="monotone" dataKey="cloud" name="cloud" stroke="#8B6F47" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#8B6F47" }} />
+                      <Line type="monotone" dataKey="ai" name="ai" stroke="#B5905C" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "#B5905C" }} />
+                      <Line type="monotone" dataKey="saas" name="saas" stroke="#A8A7A7" strokeWidth={2} dot={false} strokeDasharray="4 2" activeDot={{ r: 4, fill: "#A8A7A7" }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex items-center gap-5 mt-3 justify-center text-xs text-brand-muted">
+                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#8B6F47]" /><span>Cloud</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#B5905C]" /><span>AI</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#A8A7A7]" /><span>SaaS</span></div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tech Spend by Scope donut */}
+            <Card className="kpi-card shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-brand-ink">
+                  <PieChartIcon className="h-5 w-5" />Tech Spend by Scope
+                </CardTitle>
+                <CardDescription className="text-brand-muted">Cloud vs AI vs SaaS share of total</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div style={{ width: "100%", height: 200 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={scopeDonutData} cx="50%" cy="50%" innerRadius={50} outerRadius={88} paddingAngle={3} dataKey="value">
+                        {scopeDonutData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                        formatter={(val, _n, props) => [
+                          formatCurrency(val),
+                          `${props.payload.name} (${grandTotal ? ((val / grandTotal) * 100).toFixed(1) : 0}%)`
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2.5 mt-3">
+                  {scopeDonutData.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
+                        <span className="text-brand-muted text-xs">{s.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-brand-ink text-xs">{formatCurrency(s.value)}</span>
+                        <span className="text-xs text-brand-muted w-9 text-right">
+                          {grandTotal ? ((s.value / grandTotal) * 100).toFixed(1) : 0}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top anomaly + next-month forecast */}
+            <Card className="kpi-card shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-brand-ink">
+                  <AlertTriangle className="h-5 w-5" />Top Signal &amp; Forecast
+                </CardTitle>
+                <CardDescription className="text-brand-muted">Highest-impact anomaly and next-month projection</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-5">
+                {topAnomaly ? (
+                  <div className="p-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2]">
+                    <div className="flex items-center gap-2 mb-3">
+                      {getSeverityIcon(topAnomaly.severity)}
+                      <span className="text-sm font-semibold text-brand-ink">{topAnomaly.group} spend anomaly</span>
+                      <Badge className={`ml-auto ${getSeverityColor(topAnomaly.severity)} text-xs px-2 py-0.5`}>
+                        {String(topAnomaly.severity || "").toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <div className="text-brand-muted mb-0.5">Baseline</div>
+                        <div className="font-semibold text-brand-ink">{formatCurrency(toNumber(topAnomaly.baseline))}</div>
+                      </div>
+                      <div>
+                        <div className="text-brand-muted mb-0.5">Current</div>
+                        <div className="font-semibold text-brand-error">{formatCurrency(toNumber(topAnomaly.current))}</div>
+                      </div>
+                      <div>
+                        <div className="text-brand-muted mb-0.5">Delta</div>
+                        <div className="font-semibold text-brand-error">+{toNumber(topAnomaly.delta_pct).toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl border border-brand-line bg-brand-bg/30 text-sm text-brand-muted flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-success" />No anomalies detected.
+                  </div>
+                )}
+
+                <Separator />
+
+                <div>
+                  <div className="text-sm font-medium text-brand-ink mb-3">Next Month Forecast</div>
+                  <div className="space-y-2.5">
+                    {[
+                      { label: "Cloud", value: projCloudNextMonth, pct: grandTotal ? ((cloudTotal / grandTotal) * 100).toFixed(1) : "0", fill: "#8B6F47" },
+                      { label: "AI",    value: projAiNextMonth,    pct: grandTotal ? ((aiTotal    / grandTotal) * 100).toFixed(1) : "0", fill: "#B5905C" },
+                      { label: "SaaS",  value: projSaasNextMonth,  pct: grandTotal ? ((saasTotal  / grandTotal) * 100).toFixed(1) : "0", fill: "#D8C3A5" },
+                    ].map((s, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
+                          <span className="text-brand-muted">{s.label}</span>
+                          <span className="text-xs text-brand-muted">({s.pct}%)</span>
+                        </div>
+                        <span className="font-medium text-brand-ink">{formatCurrency(s.value)}</span>
+                      </div>
+                    ))}
+                    <Separator />
+                    <div className="flex items-center justify-between text-sm font-semibold pt-0.5">
+                      <span className="text-brand-ink">Total</span>
+                      <span className="text-brand-ink">{formatCurrency(projGrandTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+        </div>
+        {/* ── End Cloud+ Executive Summary ────────────────── */}
+
+        {/* Compact AI triage */}
         <div className="mb-6">
           <TriageCard defaultExpanded={false} />
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <CostTrendChart data={costTrend} label={trendLabel} />
-          <ServiceBreakdownChart data={Array.isArray(serviceBreakdown.data) ? serviceBreakdown.data : []} total={serviceBreakdown.total} rangeLabel={reportWindowLabel} />
-        </div>
+        {/* K8s spend summary in the unified header area */}
+        {k8sData && (
+          <div className="mb-4 text-xs text-brand-muted flex items-center gap-3">
+            <Server className="h-3 w-3" />
+            <span>
+              <span className="font-medium">Kubernetes:</span>{" "}
+              {formatCurrency(k8sData.total_cost)}/mo ·{" "}
+              {k8sData.avg_node_utilization_pct}% avg node util ·{" "}
+              <span className="text-brand-error font-medium">{formatCurrency(k8sData.overprovisioning_waste_est)} estimated opportunity</span>
+              <span> · allocated within cloud spend</span>
+            </span>
+          </div>
+        )}
 
-        {/* Movers & Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <TopMoversCard movers={topMovers} windowLabel={reportWindowLabel} />
-          <KeyInsightsCard insights={keyInsights} />
-        </div>
-
-        {/* Tabs */}
+        {/* Tabs — drill-down by scope */}
         <Tabs defaultValue="findings" className="space-y-6">
           <TabsList className="ccg-tabs">
-            <TabsTrigger value="findings" className="ccg-tab">
-              Findings
-            </TabsTrigger>
-            <TabsTrigger value="products" className="ccg-tab">
-              Products
-            </TabsTrigger>
-            <TabsTrigger value="overview" className="ccg-tab">
-              Overview
-            </TabsTrigger>
+            <TabsTrigger value="findings" className="ccg-tab">Findings</TabsTrigger>
+            <TabsTrigger value="products" className="ccg-tab">Products</TabsTrigger>
+            <TabsTrigger value="clouds" className="ccg-tab">Clouds</TabsTrigger>
+            <TabsTrigger value="kubernetes" className="ccg-tab">Kubernetes</TabsTrigger>
+            <TabsTrigger value="overview" className="ccg-tab">Overview</TabsTrigger>
+            <TabsTrigger value="ai-spend" className="ccg-tab">AI Spend</TabsTrigger>
+            <TabsTrigger value="saas" className="ccg-tab">SaaS</TabsTrigger>
           </TabsList>
 
           {/* Findings */}
@@ -861,8 +1106,8 @@ const Dashboard = () => {
               <Card className="kpi-card shadow-sm">
                 <CardContent className="text-center py-12">
                   <CheckCircle className="h-12 w-12 text-brand-success mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-brand-ink mb-2">All Optimized!</h3>
-                  <p className="text-brand-muted">No cost optimization opportunities found at this time.</p>
+                  <h3 className="text-lg font-medium text-brand-ink mb-2">No estimated opportunities</h3>
+                  <p className="text-brand-muted">This demo dataset has no supported optimization findings for the selected period.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -892,6 +1137,362 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* Clouds */}
+          <TabsContent value="clouds" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">
+                Cloud Infrastructure by Provider
+              </h2>
+              <Badge className="badge-brand">{reportWindowLabel}</Badge>
+            </div>
+
+            {/* Three-cloud KPI summary row */}
+            {(() => {
+              const clouds = report?.clouds || {};
+              const cloudDefs = [
+                { key: "aws",   label: "Amazon Web Services", color: "#E8870A", bg: "#FFF8F0" },
+                { key: "azure", label: "Microsoft Azure",      color: "#0078D4", bg: "#EFF6FF" },
+                { key: "gcp",   label: "Google Cloud",         color: "#1A73E8", bg: "#EEF4FF" },
+              ];
+              const allTotal = cloudDefs.reduce((s, d) => s + toNumber((clouds[d.key] || {}).total_cost), 0);
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {cloudDefs.map(({ key, label, color }) => {
+                    const c = clouds[key] || {};
+                    const trend = toNumber(c.trend?.change_percentage);
+                    const share = allTotal > 0 ? ((toNumber(c.total_cost) / allTotal) * 100).toFixed(1) : "0";
+                    return (
+                      <Card key={key} className="kpi-card shadow-sm" style={{ borderTop: `3px solid ${color}` }}>
+                        <CardContent className="py-4">
+                          <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color }}>{label}</div>
+                          <div className="text-2xl font-bold text-brand-ink">{formatCurrency(toNumber(c.total_cost))}</div>
+                          <div className="flex items-center gap-1 mt-1 text-xs">
+                            {trend >= 0
+                              ? <TrendingUp className="h-3 w-3 text-brand-error" />
+                              : <TrendingDown className="h-3 w-3 text-brand-success" />}
+                            <span className={trend >= 0 ? "text-brand-error" : "text-brand-success"}>{formatPercent(trend)}</span>
+                            <span className="text-brand-muted ml-1">vs prior period · {share}% of cloud total</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Per-cloud drill-down */}
+            <Tabs defaultValue="aws" className="space-y-4">
+              <TabsList className="ccg-tabs">
+                <TabsTrigger value="aws" className="ccg-tab">AWS</TabsTrigger>
+                <TabsTrigger value="azure" className="ccg-tab">Azure</TabsTrigger>
+                <TabsTrigger value="gcp" className="ccg-tab">GCP</TabsTrigger>
+              </TabsList>
+
+              {[
+                { key: "aws",   label: "Amazon Web Services", color: "#E8870A" },
+                { key: "azure", label: "Microsoft Azure",      color: "#0078D4" },
+                { key: "gcp",   label: "Google Cloud",         color: "#1A73E8" },
+              ].map(({ key, label, color }) => {
+                const cloudData = report?.clouds?.[key] || {};
+                const services = Array.isArray(cloudData.top_services) ? cloudData.top_services : [];
+                const cloudFindings = sortAndPickFindings(
+                  Array.isArray(cloudData.findings) ? cloudData.findings : [],
+                  3
+                );
+                const serviceChartData = services.map(s => ({
+                  name: s.service_name,
+                  cost: toNumber(s.total_cost),
+                }));
+                const trendPct = toNumber(cloudData.trend?.change_percentage);
+
+                return (
+                  <TabsContent key={key} value={key} className="space-y-6">
+                    {/* Cloud summary row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <KPICard
+                        title={`${label} Total`}
+                        value={formatCurrency(toNumber(cloudData.total_cost))}
+                        change={trendPct}
+                        icon={DollarSign}
+                        subtitle="vs prior period"
+                      />
+                      <KPICard
+                        title="Daily Average"
+                        value={formatCurrency(toNumber(cloudData.daily_average))}
+                        icon={BarChart3}
+                        subtitle={reportWindowLabel}
+                      />
+                      <KPICard
+                        title="Savings Found"
+                        value={formatCurrency(
+                          cloudFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0)
+                        )}
+                        icon={TrendingDown}
+                        subtitle={`across ${cloudFindings.length} finding${cloudFindings.length !== 1 ? "s" : ""}`}
+                      />
+                    </div>
+
+                    {/* Service breakdown */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="kpi-card shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2 text-brand-ink">
+                            <BarChart3 className="h-5 w-5" />
+                            <span style={{ color }}>{label}</span> — Service Breakdown
+                          </CardTitle>
+                          <CardDescription className="text-brand-muted">
+                            {reportWindowLabel} · {formatCurrency(toNumber(cloudData.total_cost))} total
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div style={{ width: "100%", height: 260 }}>
+                            <ResponsiveContainer>
+                              <BarChart data={serviceChartData} layout="vertical" margin={{ left: 8, right: 48, top: 4, bottom: 4 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
+                                <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
+                                  tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
+                                <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={11}
+                                  tick={{ fill: "#7A6B5D" }} width={116} />
+                                <Tooltip
+                                  contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                                  formatter={(value) => [formatCurrency(value), "Cost"]}
+                                />
+                                <Bar dataKey="cost" fill={color} radius={[0, 4, 4, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="kpi-card shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-brand-ink">Top Services</CardTitle>
+                          <CardDescription className="text-brand-muted">
+                            Cost share by service — {reportWindowLabel}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="table-brand rounded-lg">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-brand-muted font-semibold">Service</TableHead>
+                                  <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
+                                  <TableHead className="text-right text-brand-muted font-semibold">% of Total</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {services.map((s, i) => (
+                                  <TableRow key={i} className="hover:bg-brand-bg/30">
+                                    <TableCell className="font-medium text-brand-ink">{s.service_name}</TableCell>
+                                    <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(s.total_cost))}</TableCell>
+                                    <TableCell className="text-right text-brand-ink">{toNumber(s.percentage_of_total).toFixed(1)}%</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Cloud-specific findings */}
+                    {cloudFindings.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-brand-ink mb-4">
+                          {label} Optimization Findings
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {cloudFindings.map((f) => (
+                            <FindingCard key={f.finding_id} finding={f} onViewDetails={openFindingModal} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          </TabsContent>
+
+          {/* Kubernetes */}
+          <TabsContent value="kubernetes" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">
+                Kubernetes Cost Visibility
+              </h2>
+              <Badge className="badge-brand">{reportWindowLabel}</Badge>
+            </div>
+
+            {k8sData ? (
+              <>
+                {/* K8s KPI row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <KPICard
+                    title="Total K8s Spend"
+                    value={formatCurrency(toNumber(k8sData.total_cost))}
+                    icon={Server}
+                    subtitle={`${k8sData.cluster_count} cluster${k8sData.cluster_count !== 1 ? "s" : ""} · included in cloud total`}
+                  />
+                  <KPICard
+                    title="Avg Node Utilization"
+                    value={`${toNumber(k8sData.avg_node_utilization_pct).toFixed(1)}%`}
+                    icon={Activity}
+                    subtitle="CPU + memory weighted"
+                  />
+                  <KPICard
+                    title="Over-provisioning Waste"
+                    value={formatCurrency(toNumber(k8sData.overprovisioning_waste_est))}
+                    icon={AlertTriangle}
+                    subtitle="illustrative monthly opportunity"
+                  />
+                  <KPICard
+                    title="Namespaces"
+                    value={(k8sData.namespaces || []).length}
+                    icon={Layers}
+                    subtitle="tracked workload scopes"
+                  />
+                </div>
+
+                {/* Namespace breakdown + node pools */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Namespace bar chart */}
+                  <Card className="kpi-card shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-brand-ink">
+                        <BarChart3 className="h-5 w-5" />Namespace Cost Breakdown
+                      </CardTitle>
+                      <CardDescription className="text-brand-muted">Monthly spend per Kubernetes namespace</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div style={{ width: "100%", height: 280 }}>
+                        <ResponsiveContainer>
+                          <BarChart
+                            data={(k8sData.namespaces || []).map(n => ({ name: n.namespace, cost: toNumber(n.cost) }))}
+                            layout="vertical"
+                            margin={{ left: 8, right: 48, top: 4, bottom: 4 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
+                            <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
+                              tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
+                            <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={12}
+                              tick={{ fill: "#7A6B5D" }} width={96} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
+                              formatter={(value) => [formatCurrency(value), "Monthly Cost"]}
+                            />
+                            <Bar dataKey="cost" fill="#6b8f71" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Node pool efficiency */}
+                  <Card className="kpi-card shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-brand-ink">
+                        <Server className="h-5 w-5" />Node Pool Efficiency
+                      </CardTitle>
+                      <CardDescription className="text-brand-muted">Utilization and cost per node pool</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="table-brand rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-brand-muted font-semibold">Pool</TableHead>
+                              <TableHead className="text-right text-brand-muted font-semibold">Nodes</TableHead>
+                              <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
+                              <TableHead className="text-right text-brand-muted font-semibold">Util %</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(k8sData.node_pools || []).map((p, i) => (
+                              <TableRow key={i} className="hover:bg-brand-bg/30">
+                                <TableCell className="font-medium text-brand-ink">
+                                  <div>{p.pool}</div>
+                                  <div className="text-xs text-brand-muted">{p.node_type}</div>
+                                </TableCell>
+                                <TableCell className="text-right text-brand-ink">{p.nodes}</TableCell>
+                                <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(p.cost))}</TableCell>
+                                <TableCell className="text-right">
+                                  <span className={toNumber(p.utilization_pct) < 50 ? "text-brand-error font-semibold" : "text-brand-success font-semibold"}>
+                                    {toNumber(p.utilization_pct).toFixed(1)}%
+                                  </span>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Wasteful workloads */}
+                {(k8sData.top_wasteful_workloads || []).length > 0 && (
+                  <Card className="kpi-card shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-brand-ink">
+                        <AlertTriangle className="h-5 w-5" />Top Wasteful Workloads
+                      </CardTitle>
+                      <CardDescription className="text-brand-muted">
+                        Namespaces with low CPU or memory request utilization and reviewable opportunities
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="table-brand rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-brand-muted font-semibold">Namespace</TableHead>
+                              <TableHead className="text-right text-brand-muted font-semibold">Monthly Cost</TableHead>
+                              <TableHead className="text-right text-brand-muted font-semibold">CPU Request %</TableHead>
+                              <TableHead className="text-right text-brand-muted font-semibold">Memory Request %</TableHead>
+                              <TableHead className="text-brand-muted font-semibold">Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(k8sData.top_wasteful_workloads || []).map((w, i) => (
+                              <TableRow key={i} className="hover:bg-brand-bg/30">
+                                <TableCell className="font-medium text-brand-ink">{w.namespace}</TableCell>
+                                <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(w.cost))}</TableCell>
+                                <TableCell className="text-right">
+                                  <span className={toNumber(w.cpu_request_pct) < 40 ? "text-brand-error font-semibold" : "text-brand-ink"}>
+                                    {toNumber(w.cpu_request_pct).toFixed(0)}%
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <span className={toNumber(w.mem_request_pct) < 40 ? "text-brand-error font-semibold" : "text-brand-ink"}>
+                                    {toNumber(w.mem_request_pct).toFixed(0)}%
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-brand-muted text-xs">
+                                  {toNumber(w.cpu_request_pct) < 30
+                                    ? "Right-size requests; consider namespace resource quotas"
+                                    : "Review pod resource requests vs actual usage"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <Card className="kpi-card shadow-sm">
+                <CardContent className="text-center py-12">
+                  <Server className="h-12 w-12 text-brand-muted mx-auto mb-4" />
+                  <p className="text-brand-muted">Loading Kubernetes data…</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* Overview */}
           <TabsContent value="overview" className="space-y-6">
             <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">Cost Overview</h2>
@@ -903,9 +1504,9 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
                   {[
-                    { type: "Critical", count: criticalCount, color: "bg-blue-500" },
-                    { type: "High", count: highCount, color: "bg-yellow-500" },
-                    { type: "Medium", count: mediumCount, color: "bg-red-500" }
+                    { type: "Critical", count: criticalCount, color: "bg-red-700" },
+                    { type: "High", count: highCount, color: "bg-orange-500" },
+                    { type: "Medium", count: mediumCount, color: "bg-yellow-500" }
                   ].map((it, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -925,19 +1526,138 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    {(Array.isArray(recent_findings) ? recent_findings.filter(f => toNumber(f.monthly_savings_usd_est) > 0).slice(0, 5) : []).map((f, i) => (
+                    {(Array.isArray(recent_findings) ? recent_findings.slice(0, 5) : []).map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-brand-bg/50 rounded-lg border border-brand-line">
                         <div className="flex items-center gap-2">
                           {getSeverityIcon(f.severity)}
                           <span className="text-sm text-brand-ink truncate max-w-48">{f.title}</span>
                         </div>
-                        <span className="text-sm font-medium text-brand-success">{formatCurrency(f.monthly_savings_usd_est)}</span>
+                        <span className="text-sm font-medium text-brand-ink">{formatCurrency(f.monthly_cost_usd)}</span>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* AI Spend */}
+          <TabsContent value="ai-spend" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">AI Spend</h2>
+              <Badge className="badge-brand">{reportWindowLabel}</Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <KPICard
+                title="Total AI Spend"
+                value={formatCurrency(toNumber(aiSpend.total_cost))}
+                change={toNumber(aiSpend.trend?.change_percentage)}
+                icon={Bot}
+                subtitle="vs last period"
+              />
+              <KPICard
+                title="Daily Average"
+                value={formatCurrency(toNumber(aiSpend.daily_average))}
+                icon={TrendingUp}
+                subtitle={reportWindowLabel}
+              />
+              <KPICard
+                title="Period Change"
+                value={formatCurrency(toNumber(aiSpend.trend?.change_amount))}
+                icon={TrendingUp}
+                subtitle={`${formatPercent(toNumber(aiSpend.trend?.change_percentage))} vs prior period`}
+              />
+              <KPICard
+                title="Models in Use"
+                value={(aiSpend.models || []).length}
+                icon={Layers}
+                subtitle="across all providers"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CostTrendChart data={aiTrend} label="AI spend over the last 30 days" />
+              <AiModelBreakdown models={aiModelChartData} />
+            </div>
+
+            <Card className="kpi-card shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-brand-ink">
+                  <Bot className="h-5 w-5" />Top Models by Cost
+                </CardTitle>
+                <CardDescription className="text-brand-muted">AI model spend ranked by cost this period</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="table-brand rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-brand-muted font-semibold">Model</TableHead>
+                        <TableHead className="text-brand-muted font-semibold">Provider</TableHead>
+                        <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
+                        <TableHead className="text-right text-brand-muted font-semibold">% of AI Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(aiSpend.models || []).map((m, i) => (
+                        <TableRow key={i} className="hover:bg-brand-bg/30">
+                          <TableCell className="font-medium text-brand-ink">{m.model}</TableCell>
+                          <TableCell className="text-brand-muted capitalize">{m.provider}</TableCell>
+                          <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(m.cost))}</TableCell>
+                          <TableCell className="text-right text-brand-ink">
+                            {aiModelTotal ? Number(((toNumber(m.cost) / aiModelTotal) * 100).toFixed(1)) : 0}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SaaS */}
+          <TabsContent value="saas" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">SaaS Spend</h2>
+              <Badge className="badge-brand">{reportWindowLabel}</Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <KPICard
+                title="Total SaaS Spend"
+                value={formatCurrency(toNumber(saasSpend.total_cost))}
+                change={toNumber(saasSpend.trend?.change_percentage)}
+                icon={Layers}
+                subtitle="vs last period"
+              />
+              <KPICard
+                title="Period Change"
+                value={formatCurrency(toNumber(saasSpend.trend?.change_amount))}
+                icon={TrendingUp}
+                subtitle={`${formatPercent(toNumber(saasSpend.trend?.change_percentage))} vs prior period`}
+              />
+              <KPICard
+                title="Unused Licenses"
+                value={toNumber(saasSpend.total_unused_licenses)}
+                icon={AlertTriangle}
+                subtitle="across all tools"
+              />
+              <KPICard
+                title="Estimated Waste"
+                value={formatCurrency(toNumber(saasSpend.estimated_waste))}
+                icon={DollarSign}
+                subtitle="unused license cost"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SaasToolChart tools={saasSpend.tools || []} />
+              <SaasMonthlyChart data={saasSpend.monthly_trend || []} />
+            </div>
+
+            <SaasUnusedTable tools={saasSpend.tools || []} />
           </TabsContent>
         </Tabs>
       </div>
@@ -960,7 +1680,7 @@ const Dashboard = () => {
                 <div className="font-medium">{String(modalFinding.confidence || "").replace("_"," ").toUpperCase()}</div>
               </div>
               <div>
-                <div className="text-brand-muted">Monthly Savings</div>
+                <div className="text-brand-muted">Estimated Monthly Opportunity</div>
                 <div className="font-semibold text-brand-success">{formatCurrency(modalFinding.monthly_savings_usd_est)}</div>
               </div>
               <div>
@@ -978,7 +1698,7 @@ const Dashboard = () => {
 
             {modalFinding.commands && modalFinding.commands.length > 0 && (
               <div>
-                <div className="text-brand-muted mb-1">Recommended Command</div>
+                <div className="text-brand-muted mb-1">Read-only Review Command</div>
                 <pre className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 text-xs overflow-auto">{pickBestCommand(modalFinding)}</pre>
               </div>
             )}
@@ -1007,6 +1727,9 @@ const Dashboard = () => {
           <div>No finding selected.</div>
         )}
       </Modal>
+
+      {/* Ask Claude floating assistant */}
+      <AskClaude />
     </div>
   );
 };
@@ -1016,9 +1739,7 @@ const Home = () => <Dashboard />;
 export default function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes><Route path="/" element={<Home />} /></Routes>
-      </BrowserRouter>
+      <Home />
     </div>
   );
 }

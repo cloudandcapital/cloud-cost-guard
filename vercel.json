@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "functions": {
+    "api/ask-claude.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
+}

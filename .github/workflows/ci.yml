@@ -10,83 +10,57 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Locate package.json (set PKG_DIR and LOCKFILE)
-        id: locate
-        shell: bash
-        run: |
-          set -euo pipefail
-          PKG_DIR=""
-          for dir in . frontend app web; do
-            if [ -f "$dir/package.json" ]; then
-              PKG_DIR="$dir"
-              break
-            fi
-          done
-
-          if [ -z "$PKG_DIR" ]; then
-            echo "::error::No package.json found at repo root, frontend/, app/, or web/."
-            exit 254
-          fi
-
-          echo "Using package dir: $PKG_DIR"
-          # make it available to this job's later steps
-          echo "PKG_DIR=$PKG_DIR" >> "$GITHUB_ENV"
-
-          # Detect lockfile (so setup-node can cache correctly)
-          if [ -f "$PKG_DIR/package-lock.json" ]; then
-            echo "LOCKFILE=true" >> "$GITHUB_ENV"
-            echo "LOCKFILE_PATH=$PKG_DIR/package-lock.json" >> "$GITHUB_ENV"
-          elif [ -f "$PKG_DIR/npm-shrinkwrap.json" ]; then
-            echo "LOCKFILE=true" >> "$GITHUB_ENV"
-            echo "LOCKFILE_PATH=$PKG_DIR/npm-shrinkwrap.json" >> "$GITHUB_ENV"
-          elif [ -f "$PKG_DIR/yarn.lock" ]; then
-            echo "LOCKFILE=true" >> "$GITHUB_ENV"
-            echo "LOCKFILE_PATH=$PKG_DIR/yarn.lock" >> "$GITHUB_ENV"
-          else
-            echo "LOCKFILE=false" >> "$GITHUB_ENV"
-          fi
-
-      - name: Show app folder contents (debug)
-        run: |
-          echo "Listing $PKG_DIR"
-          ls -la "$PKG_DIR"
-
-      - name: Use Node.js 20 (with cache)
-        if: env.LOCKFILE == 'true'
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: ${{ env.LOCKFILE_PATH }}
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Use Node.js 20 (no cache)
-        if: env.LOCKFILE != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
 
-      - name: Install dependencies
-        working-directory: ${{ env.PKG_DIR }}
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+      - name: Validate the unified demo report
+        working-directory: frontend
+        run: npm run validate:data
 
-      - name: Lint (if present)
-        working-directory: ${{ env.PKG_DIR }}
-        run: npm run lint --if-present
+      - name: Audit production dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
 
-      - name: Build
-        working-directory: ${{ env.PKG_DIR }}
+      - name: Run frontend tests
+        working-directory: frontend
+        env:
+          CI: true
+        run: npm test -- --watchAll=false
+
+      - name: Run API safety tests
+        working-directory: frontend
+        run: npm run test:api
+
+      - name: Build frontend
+        working-directory: frontend
         env:
           CI: true
         run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run backend unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v

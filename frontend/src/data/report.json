@@ -1,66 +1,81 @@
 {
-  "schema_version": "1.0",
-  "generated_at": "2026-02-10T14:18:00Z",
+  "schema_version": "1.1",
+  "data_mode": "illustrative_demo",
+  "generated_at": "2026-08-03T04:30:00Z",
+  "data_note": "Illustrative demo data. No customer billing accounts or production resources are connected.",
   "window": {
     "label": "Last 30 days",
-    "start": "2026-01-11",
-    "end": "2026-02-09"
+    "start": "2026-07-02",
+    "end": "2026-07-31"
   },
   "cost_baseline": {
-    "source": "finops-lite",
+    "source": "illustrative_unified_report",
     "currency": "USD",
     "period_days": 30,
-    "window_start": "2026-01-11",
-    "window_end": "2026-02-09",
-    "total_cost": 18340.75,
-    "daily_average": 611.36,
+    "window_start": "2026-07-02",
+    "window_end": "2026-07-31",
+    "total_cost": 33479.45,
+    "daily_average": 1115.98,
     "trend": {
       "direction": "up",
-      "change_percentage": 7.8,
-      "change_amount": 1327.45,
-      "current_period_cost": 18340.75,
-      "previous_period_cost": 17013.3
+      "change_percentage": 6.97,
+      "change_amount": 2181.45,
+      "current_period_cost": 33479.45,
+      "previous_period_cost": 31298.0
     },
     "top_services": [
       {
-        "service_name": "AmazonEC2",
-        "total_cost": 7420.5,
-        "percentage_of_total": 40.5,
-        "daily_average": 247.35
+        "service_name": "Compute",
+        "total_cost": 15065.12,
+        "percentage_of_total": 45.0,
+        "daily_average": 502.17
       },
       {
-        "service_name": "AmazonRDS",
-        "total_cost": 3968.25,
-        "percentage_of_total": 21.6,
-        "daily_average": 132.28
+        "service_name": "Databases",
+        "total_cost": 7586.49,
+        "percentage_of_total": 22.7,
+        "daily_average": 252.88
       },
       {
-        "service_name": "AmazonS3",
-        "total_cost": 2875.4,
-        "percentage_of_total": 15.7,
-        "daily_average": 95.85
+        "service_name": "Storage",
+        "total_cost": 4691.95,
+        "percentage_of_total": 14.0,
+        "daily_average": 156.4
       },
       {
-        "service_name": "AmazonCloudWatch",
-        "total_cost": 1876.6,
-        "percentage_of_total": 10.2,
-        "daily_average": 62.55
+        "service_name": "Managed Kubernetes",
+        "total_cost": 1682.84,
+        "percentage_of_total": 5.0,
+        "daily_average": 56.09
       },
       {
-        "service_name": "ElasticLoadBalancing",
-        "total_cost": 2200.0,
-        "percentage_of_total": 12.0,
-        "daily_average": 73.33
+        "service_name": "Observability",
+        "total_cost": 1512.76,
+        "percentage_of_total": 4.5,
+        "daily_average": 50.43
+      },
+      {
+        "service_name": "Networking",
+        "total_cost": 1465.18,
+        "percentage_of_total": 4.4,
+        "daily_average": 48.84
+      },
+      {
+        "service_name": "Analytics",
+        "total_cost": 466.37,
+        "percentage_of_total": 1.4,
+        "daily_average": 15.55
+      },
+      {
+        "service_name": "Other cloud services",
+        "total_cost": 1008.74,
+        "percentage_of_total": 3.0,
+        "daily_average": 33.62
       }
     ],
     "cost_status": {
       "has_data": true,
-      "reason": "Billable AWS usage data available for selected window"
-    },
-    "raw": {
-      "finops_lite_report": {
-        "...": "full raw payload here"
-      }
+      "reason": "Illustrative AWS, Azure, and GCP billing data available for the selected demo window"
     }
   },
   "anomalies": {
@@ -73,7 +88,7 @@
     "max_delta_pct": 154.3,
     "recent": [
       {
-        "timestamp": "2026-02-04T00:00:00Z",
+        "timestamp": "2026-07-28T00:00:00Z",
         "group": "AmazonEC2",
         "baseline": 482.35,
         "current": 1226.48,
@@ -99,5 +114,313 @@
         "total_monthly_resilience_cost": 467.6
       }
     ]
+  },
+  "ai_spend": {
+    "total_cost": 892.40,
+    "daily_average": 29.75,
+    "trend": {
+      "direction": "up",
+      "change_percentage": 12.4,
+      "change_amount": 98.60
+    },
+    "models": [
+      { "model": "gpt-4o",              "provider": "openai",    "cost": 512.30 },
+      { "model": "claude-sonnet-4-6",   "provider": "anthropic", "cost": 280.10 },
+      { "model": "amazon.titan-lite",   "provider": "bedrock",   "cost": 62.40  },
+      { "model": "gpt-4o-mini",         "provider": "openai",    "cost": 21.80  },
+      { "model": "amazon.nova-pro",     "provider": "bedrock",   "cost": 15.80  }
+    ]
+  },
+  "combined_spend": {
+    "total_cost": 35951.85,
+    "previous_total_cost": 33623.00,
+    "change_amount": 2328.85,
+    "change_percentage": 6.93,
+    "by_scope": {
+      "cloud": 33479.45,
+      "ai": 892.40,
+      "saas": 1580.00
+    },
+    "projected_next_month": 38280.70
+  },
+  "budgets": {
+    "total": 37000.00,
+    "cloud": 34200.00,
+    "ai": 1000.00,
+    "saas": 1800.00
+  },
+  "saas_spend": {
+    "total_cost": 1580.00,
+    "trend": {
+      "direction": "up",
+      "change_percentage": 3.2,
+      "change_amount": 48.80
+    },
+    "total_unused_licenses": 19,
+    "estimated_waste": 241.50,
+    "tools": [
+      { "tool": "Salesforce", "cost": 600.00, "seats_licensed": 10, "seats_active": 8,  "unused": 2 },
+      { "tool": "Slack",      "cost": 437.50, "seats_licensed": 50, "seats_active": 42, "unused": 8 },
+      { "tool": "Snowflake",  "cost": 320.00, "seats_licensed": 0,  "seats_active": 0,  "unused": 0 },
+      { "tool": "GitHub",     "cost": 126.50, "seats_licensed": 25, "seats_active": 18, "unused": 7 },
+      { "tool": "Notion",     "cost":  96.00, "seats_licensed": 12, "seats_active": 10, "unused": 2 }
+    ],
+    "monthly_trend": [
+      { "month": "Nov", "cost": 1490.40 },
+      { "month": "Dec", "cost": 1521.80 },
+      { "month": "Jan", "cost": 1531.20 },
+      { "month": "Feb", "cost": 1580.00 }
+    ]
+  },
+  "tagging": {
+    "coverage_pct": 73,
+    "untagged_pct": 27,
+    "untagged_monthly_cost": 9039.45,
+    "untagged_resources": [
+      { "resource_id": "i-0a1b2c3d4e5f6g7h8", "type": "EC2",       "service": "AmazonEC2", "monthly_cost": 312.45 },
+      { "resource_id": "vol-0123456789abcdef0","type": "EBS Volume", "service": "AmazonEBS", "monthly_cost": 87.20  },
+      { "resource_id": "lb-prod-orders-2026",  "type": "ELB",       "service": "AmazonELB", "monthly_cost": 45.10  }
+    ],
+    "policy_status": "no_enforcement",
+    "sample_policy_target_pct": 95
+  },
+  "kubernetes": {
+    "cost_treatment": "allocated_view_of_cloud_spend",
+    "total_cost": 6280.00,
+    "cluster_count": 2,
+    "avg_node_utilization_pct": 53.2,
+    "overprovisioning_waste_est": 1384.50,
+    "namespaces": [
+      { "namespace": "production", "cost": 2500.00, "cpu_request_pct": 72, "mem_request_pct": 68 },
+      { "namespace": "data-pipeline", "cost": 1320.00, "cpu_request_pct": 61, "mem_request_pct": 74 },
+      { "namespace": "ml-training", "cost": 940.00, "cpu_request_pct": 83, "mem_request_pct": 79 },
+      { "namespace": "staging", "cost": 650.00, "cpu_request_pct": 38, "mem_request_pct": 42 },
+      { "namespace": "monitoring", "cost": 510.00, "cpu_request_pct": 24, "mem_request_pct": 31 },
+      { "namespace": "dev", "cost": 360.00, "cpu_request_pct": 12, "mem_request_pct": 18 }
+    ],
+    "node_pools": [
+      { "pool": "general-purpose", "nodes": 8, "node_type": "n2-standard-8", "cost": 3280.00, "utilization_pct": 41 },
+      { "pool": "compute-optimized", "nodes": 3, "node_type": "c2-standard-16", "cost": 1870.00, "utilization_pct": 71 },
+      { "pool": "memory-optimized", "nodes": 2, "node_type": "n2-highmem-16", "cost": 1130.00, "utilization_pct": 58 }
+    ],
+    "top_wasteful_workloads": [
+      { "namespace": "staging", "cost": 650.00, "cpu_request_pct": 38, "mem_request_pct": 42 },
+      { "namespace": "monitoring", "cost": 510.00, "cpu_request_pct": 24, "mem_request_pct": 31 },
+      { "namespace": "dev", "cost": 360.00, "cpu_request_pct": 12, "mem_request_pct": 18 }
+    ]
+  },
+  "clouds": {
+    "aws": {
+      "total_cost": 18340.75,
+      "daily_average": 611.36,
+      "trend": { "direction": "up", "change_percentage": 7.8, "change_amount": 1327.45 },
+      "top_services": [
+        { "service_name": "EC2-Instance",  "total_cost": 8528.45, "percentage_of_total": 46.5 },
+        { "service_name": "RDS",           "total_cost": 4438.46, "percentage_of_total": 24.2 },
+        { "service_name": "EBS",           "total_cost": 1742.37, "percentage_of_total": 9.5  },
+        { "service_name": "ELB",           "total_cost": 1063.76, "percentage_of_total": 5.8  },
+        { "service_name": "S3",            "total_cost":  843.68, "percentage_of_total": 4.6  },
+        { "service_name": "CloudWatch",    "total_cost":  715.29, "percentage_of_total": 3.9  }
+      ],
+      "findings": [
+        {
+          "finding_id": "aws-ri-m5-4xlarge",
+          "title": "Reserved Instance opportunity for m5.4xlarge workloads",
+          "type": "compute",
+          "cloud": "aws",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 127.50,
+          "risk_level": "Medium",
+          "implementation_time": "4-6 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "30-day usage pattern vs 1-year RI pricing comparison",
+          "evidence": { "resource_id": "i-0x9y8z7a6b5c4dabc", "instance_type": "m5.4xlarge", "region": "us-east-1" },
+          "commands": [
+            "aws ec2 describe-reserved-instances-offerings --instance-type m5.4xlarge --region us-east-1",
+            "aws ce get-reservation-purchase-recommendation --service EC2 --lookback-period-in-days SIXTY_DAYS"
+          ],
+          "suggested_action": "Model a 1-year Reserved Instance against the stable usage floor and break-even period before finance approval."
+        },
+        {
+          "finding_id": "aws-ebs-unattached",
+          "title": "12 unattached EBS volumes accumulating cost",
+          "type": "storage",
+          "cloud": "aws",
+          "severity": "high",
+          "confidence": "very_high",
+          "monthly_savings_usd_est": 284.40,
+          "risk_level": "Medium",
+          "implementation_time": "2-3 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "Volumes in 'available' state with no attachment for 30+ days",
+          "evidence": { "resource_id": "vol-0abc123def456 (+11 more)", "region": "us-east-1, us-west-2" },
+          "commands": [
+            "aws ec2 describe-volumes --filters Name=status,Values=available --query 'Volumes[*].{ID:VolumeId,Size:Size,Type:VolumeType}' --output table"
+          ],
+          "suggested_action": "Confirm ownership and retention requirements, create recoverable snapshots, and route a deletion plan for approval."
+        },
+        {
+          "finding_id": "aws-elb-idle",
+          "title": "3 load balancers with zero active connections for 14+ days",
+          "type": "networking",
+          "cloud": "aws",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 62.10,
+          "risk_level": "Medium",
+          "implementation_time": "1-2 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "CloudWatch RequestCount = 0 for 14 consecutive days",
+          "evidence": { "resource_id": "arn:aws:elasticloadbalancing:us-east-1:...", "region": "us-east-1" },
+          "commands": [
+            "aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{ARN:LoadBalancerArn,State:State.Code}'",
+            "aws cloudwatch get-metric-statistics --namespace AWS/ApplicationELB --metric-name RequestCount --period 86400 --statistics Sum"
+          ],
+          "suggested_action": "Validate traffic, dependencies, and ownership before scheduling an approved decommission with rollback coverage."
+        }
+      ]
+    },
+    "azure": {
+      "total_cost": 8920.40,
+      "daily_average": 297.35,
+      "trend": { "direction": "up", "change_percentage": 12.4, "change_amount": 987.50 },
+      "top_services": [
+        { "service_name": "Virtual Machines", "total_cost": 3924.98, "percentage_of_total": 44.0 },
+        { "service_name": "Azure SQL",        "total_cost": 1873.28, "percentage_of_total": 21.0 },
+        { "service_name": "Blob Storage",     "total_cost": 1204.25, "percentage_of_total": 13.5 },
+        { "service_name": "AKS",              "total_cost":  936.64, "percentage_of_total": 10.5 },
+        { "service_name": "Azure Monitor",    "total_cost":  579.83, "percentage_of_total": 6.5  },
+        { "service_name": "Azure CDN",        "total_cost":  401.42, "percentage_of_total": 4.5  }
+      ],
+      "findings": [
+        {
+          "finding_id": "az-vm-rightsizing",
+          "title": "8 over-provisioned VMs eligible for rightsizing",
+          "type": "compute",
+          "cloud": "azure",
+          "severity": "high",
+          "confidence": "high",
+          "monthly_savings_usd_est": 412.80,
+          "risk_level": "Medium",
+          "implementation_time": "4-6 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "Azure Advisor CPU utilization — avg < 15% over 30 days",
+          "evidence": { "resource_id": "/subscriptions/.../virtualMachines/vm-prod-01 (+7 more)", "instance_type": "Standard_D8s_v3", "region": "eastus" },
+          "commands": [
+            "az vm list --output table --query '[].{Name:name,Size:hardwareProfile.vmSize,Location:location}'",
+            "az monitor metrics list --resource <vm-resource-id> --metric 'Percentage CPU' --interval PT1H"
+          ],
+          "suggested_action": "Model a D8s_v3 to D4s_v3 rightsizing scenario, load test it, and obtain the workload owner's approval before changing capacity."
+        },
+        {
+          "finding_id": "az-sql-dtu",
+          "title": "Azure SQL database running at <20% DTU utilization",
+          "type": "database",
+          "cloud": "azure",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 218.40,
+          "risk_level": "Medium",
+          "implementation_time": "2-4 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "Azure Monitor DTU consumption: avg 18.4% over 30-day window",
+          "evidence": { "resource_id": "/subscriptions/.../servers/sql-prod/databases/appdb", "instance_type": "S4 (200 DTU)", "region": "eastus" },
+          "commands": [
+            "az sql db show-usage --resource-group <rg> --server <server-name> --name <db-name>"
+          ],
+          "suggested_action": "Evaluate an S4 to S2 scenario against peak demand, performance requirements, and rollback time before owner approval."
+        },
+        {
+          "finding_id": "az-blob-lifecycle",
+          "title": "Blob Storage missing lifecycle tiering — data staying in Hot tier",
+          "type": "storage",
+          "cloud": "azure",
+          "severity": "low",
+          "confidence": "medium",
+          "monthly_savings_usd_est": 96.20,
+          "risk_level": "Medium",
+          "implementation_time": "1-2 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "No lifecycle management policy found; 60%+ of blobs unaccessed for 30+ days",
+          "evidence": { "resource_id": "/subscriptions/.../storageAccounts/prodstorageacc", "region": "eastus" },
+          "commands": [
+            "az storage account management-policy show --account-name <account> --resource-group <rg>"
+          ],
+          "suggested_action": "Draft a lifecycle policy and validate access, retrieval-cost, retention, and compliance requirements before approval."
+        }
+      ]
+    },
+    "gcp": {
+      "total_cost": 6218.30,
+      "daily_average": 207.28,
+      "trend": { "direction": "down", "change_percentage": -2.1, "change_amount": -133.50 },
+      "top_services": [
+        { "service_name": "Compute Engine",   "total_cost": 2611.69, "percentage_of_total": 42.0 },
+        { "service_name": "Cloud SQL",        "total_cost": 1274.75, "percentage_of_total": 20.5 },
+        { "service_name": "Cloud Storage",    "total_cost":  901.65, "percentage_of_total": 14.5 },
+        { "service_name": "GKE",              "total_cost":  746.20, "percentage_of_total": 12.0 },
+        { "service_name": "BigQuery",         "total_cost":  466.37, "percentage_of_total": 7.5  },
+        { "service_name": "Cloud Monitoring", "total_cost":  217.64, "percentage_of_total": 3.5  }
+      ],
+      "findings": [
+        {
+          "finding_id": "gcp-cud-compute",
+          "title": "Committed Use Discount available for n2-standard-8 instances",
+          "type": "compute",
+          "cloud": "gcp",
+          "severity": "medium",
+          "confidence": "high",
+          "monthly_savings_usd_est": 183.60,
+          "risk_level": "Medium",
+          "implementation_time": "1-2 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "Steady-state Compute Engine usage vs on-demand price vs 1-year CUD",
+          "evidence": { "resource_id": "projects/my-project/zones/us-central1-a/instances/api-server-01", "instance_type": "n2-standard-8", "region": "us-central1" },
+          "commands": [
+            "gcloud compute instances list --filter='status:RUNNING' --format='table(name,machineType.basename(),zone)'",
+            "gcloud compute commitments list --format='table(name,plan,status,endTimestamp)'"
+          ],
+          "suggested_action": "Model a 1-year commitment against the stable usage floor, demand uncertainty, and break-even period before finance approval."
+        },
+        {
+          "finding_id": "gcp-sql-ha",
+          "title": "Cloud SQL HA enabled on non-production instance",
+          "type": "database",
+          "cloud": "gcp",
+          "severity": "high",
+          "confidence": "very_high",
+          "monthly_savings_usd_est": 294.40,
+          "risk_level": "High",
+          "implementation_time": "2-3 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "Cloud SQL inspection: HA enabled on instance tagged env=development",
+          "evidence": { "resource_id": "projects/my-project/instances/dev-postgres-01", "instance_type": "db-n1-standard-4", "region": "us-central1" },
+          "commands": [
+            "gcloud sql instances list --format='table(name,settings.availabilityType,settings.tier,region)'"
+          ],
+          "suggested_action": "Confirm the environment's recovery objectives and business criticality before proposing any HA change for approval."
+        },
+        {
+          "finding_id": "gcp-gke-nodepool",
+          "title": "GKE node pool at 34% average utilization",
+          "type": "compute",
+          "cloud": "gcp",
+          "severity": "medium",
+          "confidence": "medium",
+          "monthly_savings_usd_est": 147.80,
+          "risk_level": "Medium",
+          "implementation_time": "4-8 hours",
+          "last_analyzed": "2026-07-31T16:00:00Z",
+          "methodology": "CPU/memory request vs allocatable capacity over 30 days via Cloud Monitoring",
+          "evidence": { "resource_id": "projects/my-project/locations/us-central1/clusters/prod-cluster", "instance_type": "e2-standard-4 (6 nodes)", "region": "us-central1" },
+          "commands": [
+            "gcloud container clusters list --format='table(name,location,currentNodeCount,status)'",
+            "gcloud container node-pools list --cluster=prod-cluster --zone=us-central1-a"
+          ],
+          "suggested_action": "Model autoscaling and a lower minimum node count, then validate disruption budgets and peak demand before owner approval."
+        }
+      ]
+    }
   }
 }
