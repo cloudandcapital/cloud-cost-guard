@@ -300,9 +300,9 @@
       "label": "Estimated License Opportunity",
       "scope": "saas",
       "category": "license_utilization",
-      "estimated_monthly_amount": 241.50,
+      "estimated_monthly_amount": 241.42,
       "confidence": "medium",
-      "source_methodology": "Illustrative allocated cost of 19 inactive licensed seats.",
+      "source_methodology": "Sum of each seated tool's monthly cost multiplied by unused seats divided by licensed seats; tools without licensed-seat data are excluded.",
       "may_overlap": false,
       "included_in_aggregates": []
     }
@@ -321,7 +321,7 @@
       "change_amount": 48.80
     },
     "total_unused_licenses": 19,
-    "estimated_waste": 241.50,
+    "estimated_waste": 241.42,
     "opportunity_id": "opp-saas-unused-licenses",
     "tools": [
       { "tool": "Salesforce", "cost": 600.00, "seats_licensed": 10, "seats_active": 8,  "unused": 2 },

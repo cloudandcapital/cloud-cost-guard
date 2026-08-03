@@ -7,6 +7,7 @@ import { formatCompactCurrencyTick } from "./lib/chartFormat";
 import {
   buildProductComparisons,
   formatProductChange,
+  formatUtcTimestamp,
   getOpportunity,
   getOpportunityAggregate,
 } from "./lib/reportTrust";
@@ -61,22 +62,6 @@ const formatPercent = (percent) => {
   const p = Number(percent || 0);
   const sign = p >= 0 ? "+" : "";
   return `${sign}${p.toFixed(1)}%`;
-};
-
-/* US date for "Last Updated" */
-const formatTimestamp = (ts) => {
-  if (!ts) return "-";
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return "-";
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  let h = d.getHours();
-  const ampm = h >= 12 ? "pm" : "am";
-  h = h % 12; if (h === 0) h = 12;
-  const hh = String(h).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  return `${mm}/${dd}/${yyyy} ${hh}:${min} ${ampm}`;
 };
 
 const getConfidenceColor = (confidence) => ({
@@ -293,7 +278,7 @@ const FindingCard = ({ finding, onViewDetails }) => (
         )}
 
         <div className="flex items-center justify-between text-xs text-brand-muted">
-          {finding.last_analyzed && <span>Analyzed: {formatTimestamp(finding.last_analyzed)}</span>}
+          {finding.last_analyzed && <span>Analyzed: {formatUtcTimestamp(finding.last_analyzed)}</span>}
         </div>
 
         <Button variant="outline" size="sm" onClick={() => onViewDetails(finding)} className="w-full btn-brand-outline">
@@ -799,7 +784,7 @@ const Dashboard = () => {
         <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3">
           <span><span className="font-medium">Data:</span> Illustrative AWS, Azure, GCP, Kubernetes, AI and SaaS sample</span>
           <span className="hidden sm:inline">•</span>
-          <span>Demo snapshot: {formatTimestamp(report?.generated_at)}</span>
+          <span>Demo snapshot: {formatUtcTimestamp(report?.generated_at)}</span>
         </div>
 
         {/* ── Cloud+ Executive Summary ───────────────────── */}
@@ -1706,7 +1691,7 @@ const Dashboard = () => {
 
             {modalFinding.last_analyzed && (
               <div className="text-xs text-brand-muted">
-                Last Analyzed: {formatTimestamp(modalFinding.last_analyzed)}
+                Last Analyzed: {formatUtcTimestamp(modalFinding.last_analyzed)}
               </div>
             )}
           </div>

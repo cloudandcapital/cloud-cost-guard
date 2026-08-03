@@ -29,6 +29,10 @@ test("Lumen uses the canonical non-additive opportunity taxonomy and narrow-pane
   assert.match(_internals.LUMEN_SYSTEM, /opportunity_catalog and opportunity_aggregates/i);
   assert.match(_internals.LUMEN_SYSTEM, /never add entries marked as potentially overlapping/i);
   assert.match(_internals.LUMEN_SYSTEM, /untagged spend as unattributed cost/i);
+  assert.match(_internals.LUMEN_SYSTEM, /confirmed waste/i);
+  assert.match(_internals.LUMEN_SYSTEM, /cross-scope total/i);
+  assert.match(_internals.LUMEN_SYSTEM, /very_high/i);
+  assert.match(_internals.LUMEN_SYSTEM, /Amazon EC2/i);
   assert.equal(_internals.TRUSTED_REPORT.opportunity_aggregates.find((entry) => entry.id === "agg-resilience-modeled").estimated_monthly_amount, 281.60);
   assert.equal(_internals.TRUSTED_REPORT.opportunity_aggregates.find((entry) => entry.id === "agg-aws-estimated").estimated_monthly_amount, 474.00);
 });

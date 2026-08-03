@@ -5,6 +5,11 @@ import {
   getOpportunity,
   getOpportunityAggregate,
   formatUtcReportDate,
+  formatUtcTimestamp,
+  calculateUnusedLicenseAllocations,
+  calculateUnusedLicenseOpportunity,
+  normalizeLumenDisplayTerm,
+  normalizeLumenDisplayText,
 } from "./reportTrust";
 
 const sum = (values) => Number(values.reduce((total, value) => total + value, 0).toFixed(2));
@@ -33,6 +38,31 @@ describe("product comparisons", () => {
 test("formats a daily anomaly as a date without an artificial time", () => {
   expect(formatUtcReportDate("2026-07-28T00:00:00Z")).toBe("Jul 28, 2026");
   expect(formatUtcReportDate("invalid")).toBe("Unknown date");
+});
+
+test("normalizes only approved user-facing Lumen terms", () => {
+  expect(normalizeLumenDisplayTerm("very_high")).toBe("Very high");
+  expect(normalizeLumenDisplayTerm("AmazonEC2")).toBe("Amazon EC2");
+  expect(normalizeLumenDisplayTerm("aws ce get-cost-and-usage")).toBe("aws ce get-cost-and-usage");
+  expect(normalizeLumenDisplayText("AmazonEC2 confidence: very_high; $284.40")).toBe("Amazon EC2 confidence: Very high; $284.40");
+  expect(normalizeLumenDisplayText("aws ce get-cost-and-usage --service EC2")).toBe("aws ce get-cost-and-usage --service EC2");
+});
+
+test("formats report and analyzed timestamps explicitly in UTC", () => {
+  expect(formatUtcTimestamp("2026-08-03T04:30:00Z")).toBe("Aug 3, 2026 · 4:30 AM UTC");
+  expect(formatUtcTimestamp("2026-07-31T16:00:00Z")).toBe("Jul 31, 2026 · 4:00 PM UTC");
+});
+
+test("reconciles unused-license allocations and excludes tools without seat data", () => {
+  expect(calculateUnusedLicenseAllocations(report.saas_spend.tools)).toEqual([
+    { tool: "Salesforce", allocated_unused_cost: 120.00 },
+    { tool: "Slack", allocated_unused_cost: 70.00 },
+    { tool: "GitHub", allocated_unused_cost: 35.42 },
+    { tool: "Notion", allocated_unused_cost: 16.00 },
+  ]);
+  expect(calculateUnusedLicenseOpportunity(report.saas_spend.tools)).toBe(241.42);
+  expect(calculateUnusedLicenseOpportunity(report.saas_spend.tools)).toBe(report.saas_spend.estimated_waste);
+  expect(getOpportunity(report, report.saas_spend.opportunity_id)?.estimated_monthly_amount).toBe(241.42);
 });
 
 describe("canonical opportunity taxonomy", () => {

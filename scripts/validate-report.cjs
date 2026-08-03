@@ -69,6 +69,20 @@ assert.equal(aiModelTotal, round(report.ai_spend.total_cost), "AI models must re
 
 const saasToolTotal = sum(report.saas_spend.tools.map((tool) => tool.cost));
 assert.equal(saasToolTotal, round(report.saas_spend.total_cost), "SaaS tools must reconcile to SaaS total");
+const seatedTools = report.saas_spend.tools.filter((tool) => Number(tool.seats_licensed) > 0);
+const unusedLicenseAllocations = seatedTools.map((tool) => ({
+  tool: tool.tool,
+  amount: round((tool.cost * tool.unused) / tool.seats_licensed),
+}));
+assert.deepEqual(unusedLicenseAllocations, [
+  { tool: "Salesforce", amount: 120.00 },
+  { tool: "Slack", amount: 70.00 },
+  { tool: "GitHub", amount: 35.42 },
+  { tool: "Notion", amount: 16.00 },
+], "Unused-seat allocations must derive from displayed seated-tool data");
+const unusedLicenseOpportunity = sum(unusedLicenseAllocations.map((entry) => entry.amount));
+assert.equal(unusedLicenseOpportunity, round(report.saas_spend.estimated_waste), "SaaS opportunity must equal allocated unused-seat costs");
+assert.equal(seatedTools.some((tool) => tool.tool === "Snowflake"), false, "Snowflake must be excluded without licensed-seat data");
 
 const namespaceTotal = sum(report.kubernetes.namespaces.map((namespace) => namespace.cost));
 const nodePoolTotal = sum(report.kubernetes.node_pools.map((pool) => pool.cost));
@@ -105,6 +119,7 @@ for (const workload of report.resilience.top_workloads) {
 }
 assert.equal(opportunityById.get(report.kubernetes.opportunity_id).estimated_monthly_amount, report.kubernetes.overprovisioning_waste_est, "Kubernetes opportunity must use the catalog amount");
 assert.equal(opportunityById.get(report.saas_spend.opportunity_id).estimated_monthly_amount, report.saas_spend.estimated_waste, "SaaS opportunity must use the catalog amount");
+assert.equal(opportunityById.get(report.saas_spend.opportunity_id).estimated_monthly_amount, unusedLicenseOpportunity, "SaaS catalog opportunity must reconcile to unused-seat allocations");
 assert.equal(report.tagging.amount_type, "unattributed_cost", "Untagged spend must be classified as unattributed cost");
 assert.equal(report.tagging.savings_eligible, false, "Untagged spend must not be classified as savings");
 

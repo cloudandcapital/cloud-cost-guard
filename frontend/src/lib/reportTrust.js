@@ -1,5 +1,25 @@
 const round = (value) => Number(Number(value).toFixed(2));
 
+const DISPLAY_TERMS = {
+  very_high: "Very high",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  critical: "Critical",
+  AmazonEC2: "Amazon EC2",
+};
+
+export function normalizeLumenDisplayTerm(value) {
+  const text = String(value || "");
+  return DISPLAY_TERMS[text] || text;
+}
+
+export function normalizeLumenDisplayText(value) {
+  return String(value || "")
+    .replace(/\bvery_high\b/g, "Very high")
+    .replace(/\bAmazonEC2\b/g, "Amazon EC2");
+}
+
 export function buildProductComparisons(services) {
   return (Array.isArray(services) ? services : []).map((service) => {
     const current = Number(service?.total_cost);
@@ -38,4 +58,38 @@ export function formatUtcReportDate(value) {
     year: "numeric",
     timeZone: "UTC",
   });
+}
+
+export function formatUtcTimestamp(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown time";
+  const datePart = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const timePart = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "UTC",
+  });
+  return `${datePart} · ${timePart} UTC`;
+}
+
+export function calculateUnusedLicenseAllocations(tools) {
+  return (Array.isArray(tools) ? tools : [])
+    .filter((tool) => Number(tool?.seats_licensed) > 0)
+    .map((tool) => ({
+      tool: tool.tool,
+      allocated_unused_cost: round(
+        (Number(tool.cost) * Number(tool.unused || 0)) / Number(tool.seats_licensed),
+      ),
+    }));
+}
+
+export function calculateUnusedLicenseOpportunity(tools) {
+  return round(calculateUnusedLicenseAllocations(tools)
+    .reduce((total, tool) => total + tool.allocated_unused_cost, 0));
 }

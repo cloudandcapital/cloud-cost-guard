@@ -1,17 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { parseLumenMessage } from "../lib/lumenMessage";
+import { getCloudCapitalReport } from "../lib/report";
+import { buildPresetLumenResponse, getLumenFooterLabel, SAMPLE_QUESTIONS } from "../lib/lumenPresets";
+import { normalizeLumenDisplayText } from "../lib/reportTrust";
 
 const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
-
-const SAMPLE_QUESTIONS = [
-  "What's bleeding money right now?",
-  "Where should I cut first?",
-  "Is my AI spend worth it?",
-  "What's my biggest risk this month?",
-  "Any SaaS I should cancel?",
-  "How's my tagging coverage?",
-  "What will I spend next month?"
-];
 
 const SendIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -33,7 +26,7 @@ const renderRuns = (runs, keyPrefix) => runs.map((run, index) => (
     : <React.Fragment key={`${keyPrefix}-${index}`}>{run.text}</React.Fragment>
 ));
 
-const renderMessage = (text) => parseLumenMessage(text).map((block, index) => {
+const renderMessage = (text) => parseLumenMessage(normalizeLumenDisplayText(text)).map((block, index) => {
   if (block.type === "heading") {
     return <h3 className={`lumen-heading lumen-heading--${block.level}`} key={`heading-${index}`}>{renderRuns(block.runs, `heading-${index}`)}</h3>;
   }
@@ -71,6 +64,7 @@ const AskClaude = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const report = getCloudCapitalReport();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -88,8 +82,15 @@ const AskClaude = () => {
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInput("");
-    setLoading(true);
     setError(null);
+
+    const presetReply = buildPresetLumenResponse(trimmed, report);
+    if (presetReply) {
+      setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/ask-claude", {
@@ -111,7 +112,7 @@ const AskClaude = () => {
         ? data.content.find((b) => b.type === "text")
         : null;
       const reply = textBlock?.text || "(No response)";
-      setMessages([...nextMessages, { role: "assistant", content: reply }]);
+      setMessages([...nextMessages, { role: "assistant", content: reply, source: "claude" }]);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -256,7 +257,7 @@ const AskClaude = () => {
 
         {/* Footer */}
         <div className="ask-claude-footer">
-          Illustrative analysis · Powered by Claude
+          {getLumenFooterLabel(messages)}
         </div>
       </div>
     </>
