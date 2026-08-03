@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { parseLumenMessage } from "../lib/lumenMessage";
 
 const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
 
@@ -26,17 +27,25 @@ const CloseIcon = () => (
   </svg>
 );
 
-const renderMessage = (text) => {
-  return text.split("\n").flatMap((line, li, lines) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
-      }
-      return part;
-    });
-    return li < lines.length - 1 ? [...parts, <br key={`br-${li}`} />] : parts;
-  });
-};
+const renderRuns = (runs, keyPrefix) => runs.map((run, index) => (
+  run.bold
+    ? <strong key={`${keyPrefix}-${index}`}>{run.text}</strong>
+    : <React.Fragment key={`${keyPrefix}-${index}`}>{run.text}</React.Fragment>
+));
+
+const renderMessage = (text) => parseLumenMessage(text).map((block, index) => {
+  if (block.type === "heading") {
+    return <h3 className={`lumen-heading lumen-heading--${block.level}`} key={`heading-${index}`}>{renderRuns(block.runs, `heading-${index}`)}</h3>;
+  }
+  if (block.type === "list") {
+    return (
+      <ul className="lumen-list" key={`list-${index}`}>
+        {block.items.map((runs, itemIndex) => <li key={itemIndex}>{renderRuns(runs, `list-${index}-${itemIndex}`)}</li>)}
+      </ul>
+    );
+  }
+  return <p className="lumen-paragraph" key={`paragraph-${index}`}>{renderRuns(block.runs, `paragraph-${index}`)}</p>;
+});
 
 const AskClaude = () => {
   const [open, setOpen] = useState(false);

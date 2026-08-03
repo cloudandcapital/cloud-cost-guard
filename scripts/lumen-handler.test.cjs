@@ -15,6 +15,14 @@ test("rate-limit copy names Cloud Cost Guard", () => {
   assert.doesNotMatch(_internals.RATE_LIMIT_MESSAGE, /Market Tape/);
 });
 
+test("Lumen treats the report as a completed fixed window", () => {
+  assert.match(_internals.LUMEN_SYSTEM, /fixed, completed 30-day sample window/i);
+  assert.match(_internals.LUMEN_SYSTEM, /not a live or month-to-date billing period/i);
+  assert.match(_internals.LUMEN_SYSTEM, /days remaining/i);
+  assert.match(_internals.LUMEN_SYSTEM, /budget remaining/i);
+  assert.match(_internals.LUMEN_SYSTEM, /unless the supplied report explicitly/i);
+});
+
 test("message sanitizer caps content and normalizes roles", () => {
   const messages = _internals.sanitizeMessages([
     { role: "system", content: "x".repeat(2500) },

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { getCloudCapitalReport } from "./lib/report";
-import { buildDeterministicSeries } from "./lib/demoSeries";
+import { getIllustrativeSpendScenario, SAAS_NORMALIZATION_NOTE } from "./lib/demoSpendScenario";
 import { buildAwsCostExplorerDailyCommand } from "./lib/awsCostExplorer";
+import { formatCompactCurrencyTick } from "./lib/chartFormat";
 
 // Local brand icon
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -277,7 +278,11 @@ const FindingCard = ({ finding, onViewDetails }) => (
 
         {finding.suggested_action && <p className="text-sm text-brand-ink">{finding.suggested_action}</p>}
 
-        {finding.commands && finding.commands.length > 0 && (
+        {finding.review_focus && (
+          <div className="text-xs text-brand-muted"><span className="font-semibold text-brand-ink">Review focus:</span> {finding.review_focus}</div>
+        )}
+
+        {finding.commands && finding.commands.length > 0 && !String(pickBestCommand(finding) || "").startsWith("#") && (
           <div className="p-3 rounded-lg border border-[#E7DCCF] bg-[#F7F1EA]"><code className="text-xs font-mono text-brand-ink">{pickBestCommand(finding)}</code></div>
         )}
 
@@ -589,9 +594,7 @@ const Dashboard = () => {
           risk_level: "Medium",
           implementation_time: "2-4 hours",
           suggested_action: `Review retention, backup frequency, and storage tiering for ${workloadName} while preserving required recovery objectives.`,
-          commands: [
-            `# Review backup retention and restore policy for ${workloadName}`
-          ],
+          review_focus: `Backup retention, restore frequency, storage tiering, and required recovery objectives for ${workloadName}.`,
           last_analyzed: report?.generated_at,
           evidence: {
             workload: workloadName,
@@ -604,13 +607,12 @@ const Dashboard = () => {
       const demoFindings = [...anomalyFindings, ...resilienceDerivedFindings].slice(0, 6);
       setFindings(demoFindings);
 
-      // Daily Spend Trend
-      const days = Math.max(1, toNumber(costBaseline.period_days) || 30);
-      const endDate = report?.window?.end;
-      const series = buildDeterministicSeries({ total: totalCost, days, endDate, phase: 0 }).map((row) => ({
+      // One deterministic, reconciled business scenario drives every daily chart.
+      const dailyScenario = getIllustrativeSpendScenario();
+      const series = dailyScenario.map((row) => ({
         formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
         dateISO: row.dateISO,
-        cost: row.amount,
+        cost: row.cloud,
       }));
       setCostTrend(series);
 
@@ -619,35 +621,19 @@ const Dashboard = () => {
         (m, pt) => (pt.cost > m.amount ? { date: pt.formatted_date, dateISO: pt.dateISO || new Date().toISOString().slice(0,10), amount: pt.cost } : m),
         { date: "-", dateISO: null, amount: 0 }
       );
-      const totalWindow = series.reduce((s, pt) => s + pt.cost, 0);
-      const monthBudget = toNumber(report?.budgets?.cloud) || 34200;
       setKeyInsights({
         highest_single_day: highest,
         projected_month_end: totalCost + toNumber(costBaseline?.trend?.change_amount),
-        mtd_actual: totalWindow,
-        monthly_budget: monthBudget,
-        budget_variance: totalCost - monthBudget
       });
 
-      // AI Spend daily trend synthesis
-      const aiSpendRaw = report?.ai_spend || {};
-      if (toNumber(aiSpendRaw.total_cost) > 0) {
-        const aiSeries = buildDeterministicSeries({ total: aiSpendRaw.total_cost, days, endDate, phase: 4 }).map((row) => ({
-          formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
-          cost: row.amount,
-        }));
-        setAiTrend(aiSeries);
-      }
-
-      // SaaS daily trend synthesis (flat spread with minimal jitter)
-      const saasRaw = report?.saas_spend || {};
-      if (toNumber(saasRaw.total_cost) > 0) {
-        const saasSeries = buildDeterministicSeries({ total: saasRaw.total_cost, days, endDate, phase: 8 }).map((row) => ({
-          formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
-          cost: row.amount,
-        }));
-        setSaasBaseTrend(saasSeries);
-      }
+      setAiTrend(dailyScenario.map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        cost: row.ai,
+      })));
+      setSaasBaseTrend(dailyScenario.map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        cost: row.saas,
+      })));
 
       setK8sData(report?.kubernetes || null);
 
@@ -715,7 +701,6 @@ const Dashboard = () => {
 
   const { top_products = [], recent_findings = [] } = summary || {};
   const trendPercent = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-  const totalAnomalies = toNumber(anomalies.total_anomalies);
   const severityCounts = anomalies.by_severity || {};
   const criticalCount = toNumber(severityCounts.critical);
   const highCount = toNumber(severityCounts.high);
@@ -757,12 +742,10 @@ const Dashboard = () => {
   const projSaasNextMonth = saasTotal + toNumber(saasSpend.trend?.change_amount);
   const projGrandTotal = projCloudNextMonth + projAiNextMonth + projSaasNextMonth;
 
-  // Unified trend: merge cloud/ai/saas into one series for the combined chart
+  // Daily Tech Spend is the reconciled sum of Cloud + AI + normalized SaaS.
   const unifiedTrend = costTrend.map((pt, i) => ({
     formatted_date: pt.formatted_date,
-    cloud: pt.cost,
-    ai: aiTrend[i]?.cost || 0,
-    saas: saasBaseTrend[i]?.cost || 0
+    total: pt.cost + (aiTrend[i]?.cost || 0) + (saasBaseTrend[i]?.cost || 0),
   }));
 
   // Filter to savings-impact findings and recompute UI-facing metrics
@@ -775,8 +758,8 @@ const Dashboard = () => {
       {/* Header */}
       <div className="nav-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
               <img src={logo} alt="Cloud & Capital" className="brand-logo" />
               <div className="leading-tight">
                 <h1 className="brand-title">Cloud+ Cost Guard</h1>
@@ -784,19 +767,19 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="btn-brand-outline rounded-2xl flex items-center px-4 h-10 text-sm text-brand-muted">
+            <div className="grid w-full grid-cols-3 items-center gap-2 sm:flex sm:w-auto">
+              <div className="btn-brand-outline min-w-0 rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs sm:text-sm text-brand-muted">
                 <Calendar className="h-4 w-4 mr-2" />
                 {reportWindowLabel}
               </div>
 
-              <Button variant="outline" onClick={exportCSV} className="btn-brand-outline rounded-2xl">
-                <Download className="h-4 w-4 mr-2" />
+              <Button variant="outline" onClick={exportCSV} className="btn-brand-outline min-w-0 rounded-2xl px-2 sm:px-4 text-xs sm:text-sm">
+                <Download className="h-4 w-4 mr-1 sm:mr-2" />
                 Export CSV
               </Button>
 
-              <Button onClick={loadAllData} className="btn-brand-primary rounded-2xl">
-                <Activity className="h-4 w-4 mr-2" />
+              <Button onClick={loadAllData} className="btn-brand-primary min-w-0 rounded-2xl px-2 sm:px-4 text-xs sm:text-sm">
+                <Activity className="h-4 w-4 mr-1 sm:mr-2" />
                 Refresh
               </Button>
             </div>
@@ -909,14 +892,14 @@ const Dashboard = () => {
           {/* Unified trend + scope donut + top anomaly & forecast */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* Unified 3-scope trend chart */}
+            {/* Reconciled total technology-spend trend */}
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink">
-                  <BarChart3 className="h-5 w-5" />Unified Spend Trend
+                  <BarChart3 className="h-5 w-5" />Daily Tech Spend
                 </CardTitle>
                 <CardDescription className="text-brand-muted">
-                  Cloud, AI &amp; SaaS daily spend — {reportWindowLabel}
+                  Cloud + AI + SaaS — {reportWindowLabel}. {SAAS_NORMALIZATION_NOTE}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -925,21 +908,14 @@ const Dashboard = () => {
                     <LineChart data={unifiedTrend} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
                       <XAxis dataKey="formatted_date" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} interval={6} />
-                      <YAxis stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                      <YAxis stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} tickFormatter={formatCompactCurrencyTick} width={48} />
                       <Tooltip
                         contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                        formatter={(value, name) => [formatCurrency(value), name.charAt(0).toUpperCase() + name.slice(1)]}
+                        formatter={(value) => [formatCurrency(value), "Daily Tech Spend"]}
                       />
-                      <Line type="monotone" dataKey="cloud" name="cloud" stroke="#8B6F47" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#8B6F47" }} />
-                      <Line type="monotone" dataKey="ai" name="ai" stroke="#B5905C" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "#B5905C" }} />
-                      <Line type="monotone" dataKey="saas" name="saas" stroke="#A8A7A7" strokeWidth={2} dot={false} strokeDasharray="4 2" activeDot={{ r: 4, fill: "#A8A7A7" }} />
+                      <Line type="monotone" dataKey="total" name="Daily Tech Spend" stroke="#8B6F47" strokeWidth={3} dot={false} activeDot={{ r: 4, fill: "#8B6F47" }} />
                     </LineChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="flex items-center gap-5 mt-3 justify-center text-xs text-brand-muted">
-                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#8B6F47]" /><span>Cloud</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#B5905C]" /><span>AI</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#A8A7A7]" /><span>SaaS</span></div>
                 </div>
               </CardContent>
             </Card>
@@ -1098,7 +1074,7 @@ const Dashboard = () => {
                 Cost Optimization Findings
               </h2>
               <Badge className="badge-brand text-brand-success border-brand-success/20">
-                {totalAnomalies} anomalies detected
+                {displayFindings.length} optimization finding{displayFindings.length === 1 ? "" : "s"}
               </Badge>
             </div>
 
@@ -1111,7 +1087,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {displayFindings.map((f) => (
                   <FindingCard key={f.finding_id || `${f.title}-${f.resource_id || ""}`} finding={f} onViewDetails={openFindingModal} />
                 ))}
@@ -1696,7 +1672,14 @@ const Dashboard = () => {
               </div>
             )}
 
-            {modalFinding.commands && modalFinding.commands.length > 0 && (
+            {modalFinding.review_focus && (
+              <div>
+                <div className="text-brand-muted mb-1">Review Focus</div>
+                <div className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3">{modalFinding.review_focus}</div>
+              </div>
+            )}
+
+            {modalFinding.commands && modalFinding.commands.length > 0 && !String(pickBestCommand(modalFinding) || "").startsWith("#") && (
               <div>
                 <div className="text-brand-muted mb-1">Read-only Review Command</div>
                 <pre className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 text-xs overflow-auto">{pickBestCommand(modalFinding)}</pre>
