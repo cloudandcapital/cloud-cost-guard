@@ -27,4 +27,16 @@ describe("Lumen message formatting", () => {
     expect(blocks.map((block) => block.type)).toEqual(["paragraph", "paragraph"]);
     expect(blocks[0].runs[0].text).toBe("First paragraph. Still first.");
   });
+
+  test("converts a complete Markdown table into pipe-free stacked content", () => {
+    const blocks = parseLumenMessage(
+      "Summary paragraph.\n\n| Issue | Est. Monthly Opportunity |\n| --- | ---: |\n| **EBS volumes** | **$284.40** |\n| Untagged spend | $9,039.45 allocation gap |\n\nClosing paragraph."
+    );
+    expect(blocks.map((block) => block.type)).toEqual(["paragraph", "table", "paragraph"]);
+    expect(blocks[1].rows).toHaveLength(2);
+    expect(blocks[1].rows[0][0].label[0].text).toBe("Issue");
+    expect(blocks[1].rows[0][0].value).toEqual([{ text: "EBS volumes", bold: true }]);
+    expect(blocks[1].rows[0][1].value).toEqual([{ text: "$284.40", bold: true }]);
+    expect(JSON.stringify(blocks)).not.toMatch(/\||---|##/);
+  });
 });

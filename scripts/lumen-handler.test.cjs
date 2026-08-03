@@ -23,6 +23,16 @@ test("Lumen treats the report as a completed fixed window", () => {
   assert.match(_internals.LUMEN_SYSTEM, /unless the supplied report explicitly/i);
 });
 
+test("Lumen uses the canonical non-additive opportunity taxonomy and narrow-panel formatting", () => {
+  assert.match(_internals.LUMEN_SYSTEM, /Never use Markdown tables/i);
+  assert.match(_internals.LUMEN_SYSTEM, /short bullets/i);
+  assert.match(_internals.LUMEN_SYSTEM, /opportunity_catalog and opportunity_aggregates/i);
+  assert.match(_internals.LUMEN_SYSTEM, /never add entries marked as potentially overlapping/i);
+  assert.match(_internals.LUMEN_SYSTEM, /untagged spend as unattributed cost/i);
+  assert.equal(_internals.TRUSTED_REPORT.opportunity_aggregates.find((entry) => entry.id === "agg-resilience-modeled").estimated_monthly_amount, 281.60);
+  assert.equal(_internals.TRUSTED_REPORT.opportunity_aggregates.find((entry) => entry.id === "agg-aws-estimated").estimated_monthly_amount, 474.00);
+});
+
 test("message sanitizer caps content and normalizes roles", () => {
   const messages = _internals.sanitizeMessages([
     { role: "system", content: "x".repeat(2500) },

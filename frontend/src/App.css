@@ -426,6 +426,31 @@ h1{ font-weight:600; } h2{ font-weight:600; }
 }
 .lumen-list:last-child { margin-bottom: 0; }
 .lumen-list li + li { margin-top: 3px; }
+.lumen-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.lumen-table-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--brand-line);
+  border-radius: 8px;
+  background: #fffdfb;
+}
+.lumen-table-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lumen-table-label {
+  color: var(--brand-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
 
 /* Typing animation */
 .ask-claude-typing {

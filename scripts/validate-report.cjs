@@ -19,6 +19,13 @@ assert.equal(
 
 const cloudServiceTotal = sum(report.cost_baseline.top_services.map((service) => service.total_cost));
 assert.equal(cloudServiceTotal, cloudScopeTotal, "Cloud service breakdown must reconcile to cloud total");
+const priorCloudServiceTotal = sum(report.cost_baseline.top_services.map((service) => service.prior_period_cost));
+assert.equal(priorCloudServiceTotal, round(report.cost_baseline.trend.previous_period_cost), "Prior product values must reconcile to prior cloud total");
+assert.equal(
+  sum(report.cost_baseline.top_services.map((service) => service.total_cost - service.prior_period_cost)),
+  round(report.cost_baseline.trend.change_amount),
+  "Product changes must reconcile to the cloud-level change",
+);
 
 const combinedScopeTotal = sum([
   report.cost_baseline.total_cost,
@@ -79,10 +86,35 @@ assert.equal(
   "Scope budgets must reconcile to the total budget",
 );
 
+const opportunityIds = report.opportunity_catalog.map((entry) => entry.id);
+assert.equal(new Set(opportunityIds).size, opportunityIds.length, "Opportunity IDs must be unique");
+const opportunityById = new Map(report.opportunity_catalog.map((entry) => [entry.id, entry]));
+for (const opportunity of report.opportunity_catalog) {
+  for (const field of ["id", "label", "scope", "category", "estimated_monthly_amount", "confidence", "source_methodology", "may_overlap", "included_in_aggregates"]) {
+    assert.notEqual(opportunity[field], undefined, `${opportunity.id} is missing ${field}`);
+  }
+}
+for (const aggregate of report.opportunity_aggregates) {
+  const entries = aggregate.opportunity_ids.map((id) => opportunityById.get(id));
+  assert.equal(entries.every(Boolean), true, `${aggregate.id} references an unknown opportunity`);
+  assert.equal(sum(entries.map((entry) => entry.estimated_monthly_amount)), round(aggregate.estimated_monthly_amount), `${aggregate.id} must reconcile`);
+  assert.equal(entries.every((entry) => entry.included_in_aggregates.includes(aggregate.id)), true, `${aggregate.id} membership must be explicit`);
+}
+for (const workload of report.resilience.top_workloads) {
+  assert.ok(opportunityById.has(workload.opportunity_id), `${workload.workload} must reference a canonical opportunity`);
+}
+assert.equal(opportunityById.get(report.kubernetes.opportunity_id).estimated_monthly_amount, report.kubernetes.overprovisioning_waste_est, "Kubernetes opportunity must use the catalog amount");
+assert.equal(opportunityById.get(report.saas_spend.opportunity_id).estimated_monthly_amount, report.saas_spend.estimated_waste, "SaaS opportunity must use the catalog amount");
+assert.equal(report.tagging.amount_type, "unattributed_cost", "Untagged spend must be classified as unattributed cost");
+assert.equal(report.tagging.savings_eligible, false, "Untagged spend must not be classified as savings");
+
 const staleCutoff = new Date(`${report.window.start}T00:00:00Z`);
 const mutatingCommand = /\b(delete|update|create|patch|release|terminate|stop|start|resize)\b/i;
 for (const cloud of Object.values(report.clouds)) {
   for (const finding of cloud.findings || []) {
+    const opportunity = opportunityById.get(finding.opportunity_id);
+    assert.ok(opportunity, `${finding.finding_id} must reference a canonical opportunity`);
+    assert.equal(opportunity.estimated_monthly_amount, finding.monthly_savings_usd_est, `${finding.finding_id} amount must match its catalog entry`);
     assert.ok(new Date(finding.last_analyzed) >= staleCutoff, `${finding.finding_id} has a stale analysis date`);
     for (const command of finding.commands || []) {
       assert.equal(mutatingCommand.test(command), false, `${finding.finding_id} exposes a mutating command`);

@@ -6,6 +6,7 @@ import { Separator } from "./ui/separator";
 import { AlertTriangle, CheckCircle, Clipboard, X } from "lucide-react";
 import { getCloudCapitalReport } from "../lib/report";
 import { buildAwsCostExplorerDailyCommand } from "../lib/awsCostExplorer";
+import { formatUtcReportDate } from "../lib/reportTrust";
 
 const fmt = (value) => new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -13,20 +14,6 @@ const fmt = (value) => new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 }).format(Number(value || 0));
-
-const when = (iso) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "Unknown time";
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "UTC",
-    timeZoneName: "short",
-  });
-};
 
 export default function TriageCard({ defaultExpanded = false, onDismiss }) {
   const [expanded, setExpanded] = useState(Boolean(defaultExpanded));
@@ -66,7 +53,7 @@ export default function TriageCard({ defaultExpanded = false, onDismiss }) {
             <div>
               <CardTitle className="text-sm font-semibold text-amber-900">Triage Preview: Cost Spike</CardTitle>
               <CardDescription className="text-amber-800/90">
-                Detected {when(anomaly.timestamp)} · illustrative workflow
+                Detected {formatUtcReportDate(anomaly.timestamp)} · illustrative workflow
               </CardDescription>
             </div>
           </div>

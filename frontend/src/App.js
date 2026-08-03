@@ -4,6 +4,12 @@ import { getCloudCapitalReport } from "./lib/report";
 import { getIllustrativeSpendScenario, SAAS_NORMALIZATION_NOTE } from "./lib/demoSpendScenario";
 import { buildAwsCostExplorerDailyCommand } from "./lib/awsCostExplorer";
 import { formatCompactCurrencyTick } from "./lib/chartFormat";
+import {
+  buildProductComparisons,
+  formatProductChange,
+  getOpportunity,
+  getOpportunityAggregate,
+} from "./lib/reportTrust";
 
 // Local brand icon
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -306,13 +312,13 @@ const ProductTable = ({ products }) => (
         <TableRow>
           <TableHead className="text-brand-muted font-semibold">Product</TableHead>
           <TableHead className="text-right text-brand-muted font-semibold">30d Cost</TableHead>
-          <TableHead className="text-right text-brand-muted font-semibold">WoW Change</TableHead>
+          <TableHead className="text-right text-brand-muted font-semibold">Prior-period change</TableHead>
           <TableHead className="text-right text-brand-muted font-semibold">% of Total</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {products.map((p, i) => {
-          const wow = toNumber(p.wow_delta || p.wow_usd || 0);
+          const change = p.change_percentage;
           const label = p.product || p.name || p.service || "—";
           const amount = toNumber(p.amount_usd || p.amount || 0);
           const pct = toNumber(p.percent_of_total || 0);
@@ -321,10 +327,12 @@ const ProductTable = ({ products }) => (
               <TableCell className="font-medium text-brand-ink">{label}</TableCell>
               <TableCell className="text-right text-brand-ink">{formatCurrency(amount)}</TableCell>
               <TableCell className="text-right">
-                <div className={`flex items-center justify-end gap-1 ${wow >= 0 ? "text-brand-error" : "text-brand-success"}`}>
-                  {wow >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {formatCurrency(Math.abs(wow))}
-                </div>
+                {Number.isFinite(change) ? (
+                  <div className={`flex items-center justify-end gap-1 ${change > 0 ? "text-brand-error" : change < 0 ? "text-brand-success" : "text-brand-muted"}`}>
+                    {change > 0 ? <TrendingUp className="h-3 w-3" /> : change < 0 ? <TrendingDown className="h-3 w-3" /> : null}
+                    {formatProductChange(change)}
+                  </div>
+                ) : <span className="text-brand-muted">Not available</span>}
               </TableCell>
               <TableCell className="text-right text-brand-ink">{pct.toFixed(1)}%</TableCell>
             </TableRow>
@@ -518,12 +526,7 @@ const Dashboard = () => {
       const trendPct = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
 
       const topServices = Array.isArray(costBaseline.top_services) ? costBaseline.top_services : [];
-      const products = topServices.map((svc) => ({
-        product: svc.service_name || "—",
-        amount_usd: toNumber(svc.total_cost),
-        percent_of_total: toNumber(svc.percentage_of_total),
-        wow_delta: 0
-      }));
+      const products = buildProductComparisons(topServices);
 
       const resilienceWorkloads = Array.isArray(resilience.top_workloads) ? resilience.top_workloads : [];
       const moversSeed = Array.isArray(anomalies.recent) ? anomalies.recent : [];
@@ -583,14 +586,15 @@ const Dashboard = () => {
       const resilienceDerivedFindings = resilienceWorkloads.slice(0, 2).map((workload, idx) => {
         const workloadName = workload.workload || `workload-${idx + 1}`;
         const resilienceCost = toNumber(workload.total_monthly_resilience_cost);
-        const monthlySavingsEstimate = Number((resilienceCost * 0.22).toFixed(2));
+        const opportunity = getOpportunity(report, workload.opportunity_id);
         return {
           finding_id: `resilience-finding-${idx}-${String(workloadName).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
           title: `Optimize resilience policy for ${workloadName}`,
           type: "resilience",
           severity: idx === 0 ? "high" : "medium",
-          confidence: "medium",
-          monthly_savings_usd_est: monthlySavingsEstimate,
+          opportunity_id: opportunity?.id,
+          confidence: opportunity?.confidence || "medium",
+          monthly_savings_usd_est: toNumber(opportunity?.estimated_monthly_amount),
           risk_level: "Medium",
           implementation_time: "2-4 hours",
           suggested_action: `Review retention, backup frequency, and storage tiering for ${workloadName} while preserving required recovery objectives.`,
@@ -600,7 +604,7 @@ const Dashboard = () => {
             workload: workloadName,
             monthly_resilience_cost: resilienceCost
           },
-          methodology: "Derived from report.resilience.top_workloads to surface resilience cost opportunities."
+          methodology: opportunity?.source_methodology || "Opportunity methodology unavailable."
         };
       });
 
@@ -751,7 +755,8 @@ const Dashboard = () => {
   // Filter to savings-impact findings and recompute UI-facing metrics
   const positiveFindings = (Array.isArray(findings) ? findings : []).filter(f => toNumber(f.monthly_savings_usd_est) > 0);
   const displayFindings = sortAndPickFindings(positiveFindings, 9);
-  const totalSavingsOpportunity = displayFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0);
+  const resilienceAggregate = getOpportunityAggregate(report, "agg-resilience-modeled");
+  const k8sOpportunity = getOpportunity(report, report?.kubernetes?.opportunity_id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light">
@@ -865,7 +870,7 @@ const Dashboard = () => {
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-2xl font-bold text-brand-ink">{coveragePct}%</span>
-                  <span className="text-xs text-brand-muted">{untaggedPct}% untagged</span>
+                  <span className="text-xs text-brand-muted">{untaggedPct}% untagged · {formatCurrency(tagging.untagged_monthly_cost)} unattributed</span>
                 </div>
                 <div style={{ width: "100%", height: 8, background: "#E9E3DE", borderRadius: 999 }}>
                   <div style={{ width: `${coveragePct}%`, height: 8, background: "#6b8f71", borderRadius: 999 }} />
@@ -876,14 +881,14 @@ const Dashboard = () => {
 
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-brand-muted">Estimated Optimization Opportunity</CardTitle>
+                <CardTitle className="text-sm font-medium text-brand-muted">{resilienceAggregate?.label || "Modeled Resilience Opportunity"}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-2xl font-bold" style={{ color: "#16803A" }}>
-                  {formatCurrency(totalSavingsOpportunity)}
+                  {formatCurrency(resilienceAggregate?.estimated_monthly_amount)}
                 </div>
                 <p className="text-xs text-brand-muted mt-1">
-                  illustrative monthly estimate across {displayFindings.length} finding{displayFindings.length !== 1 ? "s" : ""} · not verified savings
+                  illustrative monthly estimate across {resilienceAggregate?.opportunity_ids?.length || 0} resilience findings · not verified savings
                 </p>
               </CardContent>
             </Card>
@@ -1049,7 +1054,7 @@ const Dashboard = () => {
               <span className="font-medium">Kubernetes:</span>{" "}
               {formatCurrency(k8sData.total_cost)}/mo ·{" "}
               {k8sData.avg_node_utilization_pct}% avg node util ·{" "}
-              <span className="text-brand-error font-medium">{formatCurrency(k8sData.overprovisioning_waste_est)} estimated opportunity</span>
+              <span className="text-brand-error font-medium">{formatCurrency(k8sOpportunity?.estimated_monthly_amount)} estimated over-provisioning opportunity</span>
               <span> · allocated within cloud spend</span>
             </span>
           </div>
@@ -1105,7 +1110,7 @@ const Dashboard = () => {
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink"><BarChart3 className="h-5 w-5" />Top Products by Cost</CardTitle>
-                <CardDescription className="text-brand-muted">Your highest spending cloud products and their week-over-week changes</CardDescription>
+                <CardDescription className="text-brand-muted">Highest cloud product costs and deterministic prior-period changes</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <ProductTable products={Array.isArray(top_products) ? top_products : []} />
@@ -1181,6 +1186,7 @@ const Dashboard = () => {
                   cost: toNumber(s.total_cost),
                 }));
                 const trendPct = toNumber(cloudData.trend?.change_percentage);
+                const cloudOpportunityAggregate = getOpportunityAggregate(report, `agg-${key}-estimated`);
 
                 return (
                   <TabsContent key={key} value={key} className="space-y-6">
@@ -1200,12 +1206,10 @@ const Dashboard = () => {
                         subtitle={reportWindowLabel}
                       />
                       <KPICard
-                        title="Savings Found"
-                        value={formatCurrency(
-                          cloudFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0)
-                        )}
+                        title={cloudOpportunityAggregate?.label || `Estimated ${label} Opportunity`}
+                        value={formatCurrency(cloudOpportunityAggregate?.estimated_monthly_amount)}
                         icon={TrendingDown}
-                        subtitle={`across ${cloudFindings.length} finding${cloudFindings.length !== 1 ? "s" : ""}`}
+                        subtitle={`across ${cloudOpportunityAggregate?.opportunity_ids?.length || 0} findings`}
                       />
                     </div>
 
@@ -1318,8 +1322,8 @@ const Dashboard = () => {
                     subtitle="CPU + memory weighted"
                   />
                   <KPICard
-                    title="Over-provisioning Waste"
-                    value={formatCurrency(toNumber(k8sData.overprovisioning_waste_est))}
+                    title={k8sOpportunity?.label || "Estimated Over-provisioning Opportunity"}
+                    value={formatCurrency(k8sOpportunity?.estimated_monthly_amount)}
                     icon={AlertTriangle}
                     subtitle="illustrative monthly opportunity"
                   />
@@ -1412,7 +1416,7 @@ const Dashboard = () => {
                   <Card className="kpi-card shadow-sm">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-brand-ink">
-                        <AlertTriangle className="h-5 w-5" />Top Wasteful Workloads
+                        <AlertTriangle className="h-5 w-5" />Potential Optimization Signals
                       </CardTitle>
                       <CardDescription className="text-brand-muted">
                         Namespaces with low CPU or memory request utilization and reviewable opportunities
@@ -1621,8 +1625,8 @@ const Dashboard = () => {
                 subtitle="across all tools"
               />
               <KPICard
-                title="Estimated Waste"
-                value={formatCurrency(toNumber(saasSpend.estimated_waste))}
+                title={getOpportunity(report, saasSpend.opportunity_id)?.label || "Estimated License Opportunity"}
+                value={formatCurrency(getOpportunity(report, saasSpend.opportunity_id)?.estimated_monthly_amount)}
                 icon={DollarSign}
                 subtitle="unused license cost"
               />

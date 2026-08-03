@@ -44,6 +44,22 @@ const renderMessage = (text) => parseLumenMessage(text).map((block, index) => {
       </ul>
     );
   }
+  if (block.type === "table") {
+    return (
+      <div className="lumen-table" key={`table-${index}`}>
+        {block.rows.map((fields, rowIndex) => (
+          <div className="lumen-table-row" key={rowIndex}>
+            {fields.map((field, fieldIndex) => (
+              <div className="lumen-table-field" key={fieldIndex}>
+                <span className="lumen-table-label">{renderRuns(field.label, `table-${index}-${rowIndex}-${fieldIndex}-label`)}</span>
+                <span>{renderRuns(field.value, `table-${index}-${rowIndex}-${fieldIndex}-value`)}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
   return <p className="lumen-paragraph" key={`paragraph-${index}`}>{renderRuns(block.runs, `paragraph-${index}`)}</p>;
 });
 
