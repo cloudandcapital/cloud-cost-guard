@@ -28,8 +28,8 @@ To activate:
        export K8S_CLUSTER_NAME=prod-cluster
        pip install kubernetes
 
-  3. The app will use live data automatically; no code changes needed.
-     Without credentials, synthetic data is used.
+  3. Explicitly wire the adapter into a private backend after completing the
+     required authentication, normalization, pagination, and security review.
 """
 
 import os
@@ -135,6 +135,7 @@ class K8sConnector:
 
         return {
             "cluster_name": cluster_name,
+            "cluster_count": 1,
             "total_cost": total_cost,
             "avg_node_utilization_pct": avg_util,
             "overprovisioning_waste_est": waste,
@@ -213,6 +214,7 @@ class K8sConnector:
 
         return {
             "cluster_name": cluster_name,
+            "cluster_count": 1,
             "total_cost": total_cost,
             "avg_node_utilization_pct": None,
             "overprovisioning_waste_est": None,

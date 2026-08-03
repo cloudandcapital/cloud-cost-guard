@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { format } from "date-fns";
 import { getCloudCapitalReport } from "./lib/report";
+import { buildDeterministicSeries } from "./lib/demoSeries";
 
 // Local brand icon
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -28,7 +26,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Alert, AlertDescription } from "./components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
 import { Separator } from "./components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 
 // Icons
 import {
@@ -37,9 +34,6 @@ import {
   TrendingUp as TrendingUpIcon, Calendar, CheckCircle, XCircle, X,
   Bot, Layers, Server
 } from "lucide-react";
-
-/** IMPORTANT: same-origin proxy */
-const API = "/api";
 
 /* -------- Utils -------- */
 const toNumber = (v) => {
@@ -77,15 +71,6 @@ const formatTimestamp = (ts) => {
   return `${mm}/${dd}/${yyyy} ${hh}:${min} ${ampm}`;
 };
 
-const getDataFreshnessHours = (ts) => {
-  if (!ts) return null;
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return null;
-  const diffMs = Date.now() - d.getTime();
-  if (!Number.isFinite(diffMs) || diffMs < 0) return null;
-  return Math.round(diffMs / 36e5);
-};
-
 const getConfidenceColor = (confidence) => ({
   very_high: "text-green-700 bg-green-50",
   high: "text-green-600 bg-green-50",
@@ -117,7 +102,7 @@ const getSeverityIcon = (severity) => {
   return <AlertTriangle className={common} />;
 };
 
-/* Choose the most relevant command to display for a finding */
+/* Choose the most relevant read-only investigation command for a finding */
 const pickBestCommand = (f) => {
   const cmds = Array.isArray(f?.commands) ? f.commands : [];
   if (!cmds.length) return null;
@@ -125,8 +110,8 @@ const pickBestCommand = (f) => {
   const lcType  = String(f?.type  || "").toLowerCase();
   const serviceHints = [
     { hint: ["ec2","instance","underutilized","autoscaling"], match: /aws\s+ec2|autoscaling/i },
-    { hint: ["ebs","volume","unattached"],                     match: /aws\s+ec2.*(describe-volumes|delete-volume)/i },
-    { hint: ["eip","elastic ip"],                              match: /aws\s+ec2.*(describe-addresses|release-address)/i },
+    { hint: ["ebs","volume","unattached"],                     match: /aws\s+ec2.*describe-volumes/i },
+    { hint: ["eip","elastic ip"],                              match: /aws\s+ec2.*describe-addresses/i },
     { hint: ["rds","db"],                                      match: /aws\s+rds/i },
     { hint: ["s3","bucket"],                                   match: /aws\s+s3|s3api/i },
     { hint: ["lambda"],                                        match: /aws\s+(logs|lambda)/i },
@@ -229,9 +214,9 @@ const Modal = ({ open, onClose, title, children }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg" role="dialog" aria-modal="true" aria-labelledby="finding-modal-title">
         <div className="flex items-center justify-between border-b border-[#E7DCCF] px-4 py-3">
-          <h3 className="text-sm font-semibold text-brand-ink">{title}</h3>
+          <h3 id="finding-modal-title" className="text-sm font-semibold text-brand-ink">{title}</h3>
           <button
             aria-label="Close"
             onClick={onClose}
@@ -272,7 +257,7 @@ const FindingCard = ({ finding, onViewDetails }) => (
     <CardContent className="pt-0">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-brand-muted">Monthly Savings</span>
+          <span className="text-sm text-brand-muted">Estimated Monthly Opportunity</span>
           <span className="text-lg font-semibold text-brand-success">{formatCurrency(finding.monthly_savings_usd_est)}</span>
         </div>
 
@@ -498,7 +483,6 @@ const Dashboard = () => {
   const [k8sData, setK8sData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dateRange, setDateRange] = useState("30d");
 
   const report = getCloudCapitalReport();
   const costBaseline = report?.cost_baseline || {};
@@ -517,7 +501,7 @@ const Dashboard = () => {
   useEffect(() => {
     loadAllData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
+  }, []);
 
   const loadAllData = async () => {
     try {
@@ -525,9 +509,7 @@ const Dashboard = () => {
       setError(null);
 
       const totalCost = hasCostData ? toNumber(costBaseline.total_cost) : 0;
-      const dailyAverage = hasCostData ? toNumber(costBaseline.daily_average) : 0;
       const trendPct = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-      const dataFreshnessHours = getDataFreshnessHours(report?.generated_at);
 
       const topServices = Array.isArray(costBaseline.top_services) ? costBaseline.top_services : [];
       const products = topServices.map((svc) => ({
@@ -545,7 +527,7 @@ const Dashboard = () => {
           finding_id: `resilience-${w.workload || idx}`,
           title: w.workload || "—",
           severity: idx === 0 ? "high" : idx === 1 ? "medium" : "low",
-          monthly_savings_usd_est: toNumber(w.total_monthly_resilience_cost)
+          monthly_cost_usd: toNumber(w.total_monthly_resilience_cost)
         }));
 
       setSummary({
@@ -553,7 +535,6 @@ const Dashboard = () => {
         kpis: {
           total_30d_cost: totalCost,
           wow_percent: trendPct,
-          data_freshness_hours: dataFreshnessHours,
           last_updated: report?.generated_at
         },
         top_products: products,
@@ -574,7 +555,8 @@ const Dashboard = () => {
           type: "anomaly",
           severity: normalizedSeverity,
           confidence: normalizedSeverity === "critical" || normalizedSeverity === "high" ? "high" : "medium",
-          monthly_savings_usd_est: monthlySavingsEstimate,
+          monthly_savings_usd_est: 0,
+          estimated_avoidable_run_rate_usd: monthlySavingsEstimate,
           risk_level: normalizedSeverity === "critical" ? "High" : "Medium",
           implementation_time: "1-3 hours",
           suggested_action: `Investigate ${group} usage growth, validate workload changes, and apply scaling or budget guardrails to reduce repeat spikes.`,
@@ -589,7 +571,7 @@ const Dashboard = () => {
             delta_usd: anomalyDelta,
             delta_pct: toNumber(item.delta_pct)
           },
-          methodology: "Derived from report.anomalies.recent to provide demo optimization actions."
+          methodology: "Illustrative anomaly investigation. The avoidable run rate is not counted as verified savings."
         };
       });
 
@@ -622,20 +604,14 @@ const Dashboard = () => {
       const demoFindings = [...anomalyFindings, ...resilienceDerivedFindings].slice(0, 6);
       setFindings(demoFindings);
 
-      // Total for daily average fallback
-      const total = products.reduce((acc, p) => acc + toNumber(p.amount_usd || p.amount || 0), 0);
-
       // Daily Spend Trend
       const days = Math.max(1, toNumber(costBaseline.period_days) || 30);
-      const endDate = report?.window?.end ? new Date(report.window.end) : new Date();
-      const avg = dailyAverage || (total && days ? total / days : 0);
-      const series = Array.from({ length: days }, (_, i) => {
-        const d = new Date(endDate);
-        d.setDate(d.getDate() - (days - 1 - i));
-        const jitter = avg * 0.06 * Math.sin(i / 2.7) + (avg * 0.03 * (Math.random() - 0.5));
-        const amount = Math.max(0, avg + jitter);
-        return { formatted_date: format(d, "MM/dd"), dateISO: d.toISOString().slice(0,10), cost: amount };
-      });
+      const endDate = report?.window?.end;
+      const series = buildDeterministicSeries({ total: totalCost, days, endDate, phase: 0 }).map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        dateISO: row.dateISO,
+        cost: row.amount,
+      }));
       setCostTrend(series);
 
       // Key Insights
@@ -644,72 +620,36 @@ const Dashboard = () => {
         { date: "-", dateISO: null, amount: 0 }
       );
       const totalWindow = series.reduce((s, pt) => s + pt.cost, 0);
-      const monthBudget = 180000;
+      const monthBudget = toNumber(report?.budgets?.cloud) || 34200;
       setKeyInsights({
         highest_single_day: highest,
-        projected_month_end: totalWindow,
-        mtd_actual: totalWindow * (new Date().getDate() / Math.max(series.length, 1)),
+        projected_month_end: totalCost + toNumber(costBaseline?.trend?.change_amount),
+        mtd_actual: totalWindow,
         monthly_budget: monthBudget,
-        budget_variance: totalWindow - monthBudget
+        budget_variance: totalCost - monthBudget
       });
 
       // AI Spend daily trend synthesis
       const aiSpendRaw = report?.ai_spend || {};
-      const aiDailyAvg = toNumber(aiSpendRaw.daily_average) || 0;
-      if (aiDailyAvg > 0) {
-        const aiSeries = Array.from({ length: days }, (_, i) => {
-          const d = new Date(endDate);
-          d.setDate(d.getDate() - (days - 1 - i));
-          const jitter = aiDailyAvg * 0.08 * Math.sin(i / 3.1) + aiDailyAvg * 0.04 * (Math.random() - 0.5);
-          return { formatted_date: format(d, "MM/dd"), cost: Math.max(0, aiDailyAvg + jitter) };
-        });
+      if (toNumber(aiSpendRaw.total_cost) > 0) {
+        const aiSeries = buildDeterministicSeries({ total: aiSpendRaw.total_cost, days, endDate, phase: 4 }).map((row) => ({
+          formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+          cost: row.amount,
+        }));
         setAiTrend(aiSeries);
       }
 
       // SaaS daily trend synthesis (flat spread with minimal jitter)
       const saasRaw = report?.saas_spend || {};
-      const saasDailyAvg = toNumber(saasRaw.total_cost) / Math.max(days, 1);
-      if (saasDailyAvg > 0) {
-        const saasSeries = Array.from({ length: days }, (_, i) => {
-          const d = new Date(endDate);
-          d.setDate(d.getDate() - (days - 1 - i));
-          const jitter = saasDailyAvg * 0.025 * Math.sin(i / 7.2);
-          return { formatted_date: format(d, "MM/dd"), cost: Math.max(0, saasDailyAvg + jitter) };
-        });
+      if (toNumber(saasRaw.total_cost) > 0) {
+        const saasSeries = buildDeterministicSeries({ total: saasRaw.total_cost, days, endDate, phase: 8 }).map((row) => ({
+          formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+          cost: row.amount,
+        }));
         setSaasBaseTrend(saasSeries);
       }
 
-      // Kubernetes data
-      try {
-        const k8sResp = await axios.get(`${API}/k8s`);
-        setK8sData(k8sResp.data);
-      } catch {
-        // K8s endpoint optional — use synthetic fallback
-        setK8sData({
-          total_cost: 43000,
-          cluster_count: 2,
-          avg_node_utilization_pct: 47,
-          overprovisioning_waste_est: 13760,
-          namespaces: [
-            { namespace: "production",    cost: 18400, cpu_request_pct: 72, mem_request_pct: 68 },
-            { namespace: "data-pipeline", cost:  8900, cpu_request_pct: 61, mem_request_pct: 74 },
-            { namespace: "ml-training",   cost:  6100, cpu_request_pct: 83, mem_request_pct: 79 },
-            { namespace: "staging",       cost:  5200, cpu_request_pct: 38, mem_request_pct: 42 },
-            { namespace: "monitoring",    cost:  2800, cpu_request_pct: 24, mem_request_pct: 31 },
-            { namespace: "dev",           cost:  1600, cpu_request_pct: 12, mem_request_pct: 18 },
-          ],
-          node_pools: [
-            { pool: "general-purpose",   nodes: 12, node_type: "n2-standard-8",  cost: 24800, utilization_pct: 34 },
-            { pool: "compute-optimized", nodes:  4, node_type: "c2-standard-16", cost: 12400, utilization_pct: 71 },
-            { pool: "memory-optimized",  nodes:  3, node_type: "n2-highmem-16",  cost:  8900, utilization_pct: 58 },
-          ],
-          top_wasteful_workloads: [
-            { namespace: "staging",    cost: 5200, cpu_request_pct: 38, mem_request_pct: 42 },
-            { namespace: "monitoring", cost: 2800, cpu_request_pct: 24, mem_request_pct: 31 },
-            { namespace: "dev",        cost: 1600, cpu_request_pct: 12, mem_request_pct: 18 },
-          ],
-        });
-      }
+      setK8sData(report?.kubernetes || null);
 
     } catch (err) {
       console.error("Error loading data:", err);
@@ -724,14 +664,18 @@ const Dashboard = () => {
     setModalOpen(true);
   };
 
-  const exportCSV = async () => {
+  const exportCSV = () => {
     try {
-      const { data } = await axios.get(`${API}/findings?sort=savings&limit=1000`);
-      const arr = Array.isArray(data) ? data : [];
-      const rowsToExport = arr.filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
-      const headers = ["Title", "Type", "Severity", "Monthly Savings", "Resource ID", "Action"];
+      const rowsToExport = (Array.isArray(findings) ? findings : [])
+        .filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
+      const headers = ["Title", "Type", "Severity", "Estimated Monthly Opportunity", "Scope", "Review Plan"];
       const rows = rowsToExport.map((f) => [
-        f.title, f.type, f.severity, f.monthly_savings_usd_est, f.resource_id || "", f.suggested_action
+        f.title,
+        f.type,
+        f.severity,
+        f.monthly_savings_usd_est,
+        f.evidence?.resource_id || f.evidence?.workload || "",
+        f.suggested_action,
       ]);
       const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
@@ -776,7 +720,6 @@ const Dashboard = () => {
   const criticalCount = toNumber(severityCounts.critical);
   const highCount = toNumber(severityCounts.high);
   const mediumCount = toNumber(severityCounts.medium);
-  const dataFreshnessHours = getDataFreshnessHours(report?.generated_at);
 
   // AI Spend render-time constants
   const aiSpend = report?.ai_spend || {};
@@ -810,8 +753,8 @@ const Dashboard = () => {
   ];
   const topAnomaly = Array.isArray(anomalies.recent) && anomalies.recent.length > 0 ? anomalies.recent[0] : null;
   const projCloudNextMonth = (keyInsights?.projected_month_end || cloudTotal);
-  const projAiNextMonth = aiTotal * (1 + toNumber(aiSpend.trend?.change_percentage) / 100);
-  const projSaasNextMonth = saasTotal * (1 + toNumber(saasSpend.trend?.change_percentage) / 100);
+  const projAiNextMonth = aiTotal + toNumber(aiSpend.trend?.change_amount);
+  const projSaasNextMonth = saasTotal + toNumber(saasSpend.trend?.change_amount);
   const projGrandTotal = projCloudNextMonth + projAiNextMonth + projSaasNextMonth;
 
   // Unified trend: merge cloud/ai/saas into one series for the combined chart
@@ -837,22 +780,15 @@ const Dashboard = () => {
               <img src={logo} alt="Cloud & Capital" className="brand-logo" />
               <div className="leading-tight">
                 <h1 className="brand-title">Cloud+ Cost Guard</h1>
-                <p className="text-[15px] text-brand-muted">Multi-cloud cost optimization <span style={{ opacity: 0.5, fontSize: "11px", letterSpacing: "0.04em" }}>· Demo data · sample workload</span></p>
+                <p className="text-[15px] text-brand-muted">Technology spend decision support <span style={{ opacity: 0.62, fontSize: "11px", letterSpacing: "0.04em" }}>· Illustrative demo</span></p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-38 md:w-42 btn-brand-outline rounded-2xl flex items-center justify-start px-4">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Last 30 days" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="btn-brand-outline rounded-2xl flex items-center px-4 h-10 text-sm text-brand-muted">
+                <Calendar className="h-4 w-4 mr-2" />
+                {reportWindowLabel}
+              </div>
 
               <Button variant="outline" onClick={exportCSV} className="btn-brand-outline rounded-2xl">
                 <Download className="h-4 w-4 mr-2" />
@@ -872,10 +808,10 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Data Source banner (compact caption) */}
-        <div className="mb-4 text-xs text-brand-muted flex items-center gap-3">
-          <span><span className="font-medium">Data Source:</span> AWS • Azure • GCP • Kubernetes • AI Providers • SaaS Billing</span>
+        <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3">
+          <span><span className="font-medium">Data:</span> Illustrative AWS, Azure, GCP, Kubernetes, AI and SaaS sample</span>
           <span className="hidden sm:inline">•</span>
-          <span>Last Updated: {new Date().toLocaleDateString()}</span>
+          <span>Demo snapshot: {formatTimestamp(report?.generated_at)}</span>
         </div>
 
         {/* ── Cloud+ Executive Summary ───────────────────── */}
@@ -920,7 +856,6 @@ const Dashboard = () => {
               change={hasCostData ? trendPercent : null}
               icon={DollarSign}
               subtitle="vs last period"
-              dataFreshness={dataFreshnessHours}
             />
             <KPICard
               title="AI / LLM Spend"
@@ -938,7 +873,7 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Tag Coverage + Savings Opportunity */}
+          {/* Tag Coverage + estimated opportunity */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-2">
@@ -958,14 +893,14 @@ const Dashboard = () => {
 
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-brand-muted">Savings Opportunity</CardTitle>
+                <CardTitle className="text-sm font-medium text-brand-muted">Estimated Optimization Opportunity</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-2xl font-bold" style={{ color: "#16803A" }}>
                   {formatCurrency(totalSavingsOpportunity)}
                 </div>
                 <p className="text-xs text-brand-muted mt-1">
-                  total identified monthly savings · across {displayFindings.length} finding{displayFindings.length !== 1 ? "s" : ""}
+                  illustrative monthly estimate across {displayFindings.length} finding{displayFindings.length !== 1 ? "s" : ""} · not verified savings
                 </p>
               </CardContent>
             </Card>
@@ -1138,7 +1073,8 @@ const Dashboard = () => {
               <span className="font-medium">Kubernetes:</span>{" "}
               {formatCurrency(k8sData.total_cost)}/mo ·{" "}
               {k8sData.avg_node_utilization_pct}% avg node util ·{" "}
-              <span className="text-brand-error font-medium">{formatCurrency(k8sData.overprovisioning_waste_est)} over-provisioning waste</span>
+              <span className="text-brand-error font-medium">{formatCurrency(k8sData.overprovisioning_waste_est)} estimated opportunity</span>
+              <span> · allocated within cloud spend</span>
             </span>
           </div>
         )}
@@ -1170,8 +1106,8 @@ const Dashboard = () => {
               <Card className="kpi-card shadow-sm">
                 <CardContent className="text-center py-12">
                   <CheckCircle className="h-12 w-12 text-brand-success mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-brand-ink mb-2">All Optimized!</h3>
-                  <p className="text-brand-muted">No cost optimization opportunities found at this time.</p>
+                  <h3 className="text-lg font-medium text-brand-ink mb-2">No estimated opportunities</h3>
+                  <p className="text-brand-muted">This demo dataset has no supported optimization findings for the selected period.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -1397,7 +1333,7 @@ const Dashboard = () => {
                     title="Total K8s Spend"
                     value={formatCurrency(toNumber(k8sData.total_cost))}
                     icon={Server}
-                    subtitle={`${k8sData.cluster_count} cluster${k8sData.cluster_count !== 1 ? "s" : ""}`}
+                    subtitle={`${k8sData.cluster_count} cluster${k8sData.cluster_count !== 1 ? "s" : ""} · included in cloud total`}
                   />
                   <KPICard
                     title="Avg Node Utilization"
@@ -1409,7 +1345,7 @@ const Dashboard = () => {
                     title="Over-provisioning Waste"
                     value={formatCurrency(toNumber(k8sData.overprovisioning_waste_est))}
                     icon={AlertTriangle}
-                    subtitle="estimated monthly savings"
+                    subtitle="illustrative monthly opportunity"
                   />
                   <KPICard
                     title="Namespaces"
@@ -1503,7 +1439,7 @@ const Dashboard = () => {
                         <AlertTriangle className="h-5 w-5" />Top Wasteful Workloads
                       </CardTitle>
                       <CardDescription className="text-brand-muted">
-                        Namespaces with low CPU or memory request utilization — top savings opportunities
+                        Namespaces with low CPU or memory request utilization and reviewable opportunities
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
@@ -1568,9 +1504,9 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
                   {[
-                    { type: "Critical", count: criticalCount, color: "bg-blue-500" },
-                    { type: "High", count: highCount, color: "bg-yellow-500" },
-                    { type: "Medium", count: mediumCount, color: "bg-red-500" }
+                    { type: "Critical", count: criticalCount, color: "bg-red-700" },
+                    { type: "High", count: highCount, color: "bg-orange-500" },
+                    { type: "Medium", count: mediumCount, color: "bg-yellow-500" }
                   ].map((it, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1590,13 +1526,13 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    {(Array.isArray(recent_findings) ? recent_findings.filter(f => toNumber(f.monthly_savings_usd_est) > 0).slice(0, 5) : []).map((f, i) => (
+                    {(Array.isArray(recent_findings) ? recent_findings.slice(0, 5) : []).map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-brand-bg/50 rounded-lg border border-brand-line">
                         <div className="flex items-center gap-2">
                           {getSeverityIcon(f.severity)}
                           <span className="text-sm text-brand-ink truncate max-w-48">{f.title}</span>
                         </div>
-                        <span className="text-sm font-medium text-brand-success">{formatCurrency(f.monthly_savings_usd_est)}</span>
+                        <span className="text-sm font-medium text-brand-ink">{formatCurrency(f.monthly_cost_usd)}</span>
                       </div>
                     ))}
                   </div>
@@ -1744,7 +1680,7 @@ const Dashboard = () => {
                 <div className="font-medium">{String(modalFinding.confidence || "").replace("_"," ").toUpperCase()}</div>
               </div>
               <div>
-                <div className="text-brand-muted">Monthly Savings</div>
+                <div className="text-brand-muted">Estimated Monthly Opportunity</div>
                 <div className="font-semibold text-brand-success">{formatCurrency(modalFinding.monthly_savings_usd_est)}</div>
               </div>
               <div>
@@ -1762,7 +1698,7 @@ const Dashboard = () => {
 
             {modalFinding.commands && modalFinding.commands.length > 0 && (
               <div>
-                <div className="text-brand-muted mb-1">Recommended Command</div>
+                <div className="text-brand-muted mb-1">Read-only Review Command</div>
                 <pre className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 text-xs overflow-auto">{pickBestCommand(modalFinding)}</pre>
               </div>
             )}
@@ -1803,9 +1739,7 @@ const Home = () => <Dashboard />;
 export default function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes><Route path="/" element={<Home />} /></Routes>
-      </BrowserRouter>
+      <Home />
     </div>
   );
 }

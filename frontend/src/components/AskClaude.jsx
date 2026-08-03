@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { getCloudCapitalReport } from "../lib/report";
 
 const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
 
@@ -39,16 +38,6 @@ const renderMessage = (text) => {
   });
 };
 
-const getSafeReport = (report) => {
-  const safeReport = { ...report };
-  if (safeReport.cost_baseline) {
-    const cb = { ...safeReport.cost_baseline };
-    delete cb.raw;
-    safeReport.cost_baseline = cb;
-  }
-  return safeReport;
-};
-
 const AskClaude = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -57,8 +46,6 @@ const AskClaude = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-
-  const reportData = getSafeReport(getCloudCapitalReport());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -86,16 +73,13 @@ const AskClaude = () => {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          reportData,
           messages: nextMessages.map(m => ({ role: m.role, content: m.content }))
         })
       });
 
       const data = await res.json();
-      console.log(data);
-
       if (!res.ok) {
-        throw new Error(data.error?.message || `API error ${res.status}`);
+        throw new Error(data.error?.message || data.error || `API error ${res.status}`);
       }
 
       const textBlock = Array.isArray(data?.content)
@@ -185,7 +169,7 @@ const AskClaude = () => {
           {messages.length === 0 && !loading && (
             <div className="ask-claude-chips">
               <p style={{ fontSize: 12, color: "#7A6B5D", textAlign: "center", marginBottom: 10 }}>
-                Ask about your cost data
+                Ask about the illustrative cost data
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {SAMPLE_QUESTIONS.map((q, i) => (
@@ -247,7 +231,7 @@ const AskClaude = () => {
 
         {/* Footer */}
         <div className="ask-claude-footer">
-          Powered by Claude · Cloud &amp; Capital
+          Illustrative analysis · Powered by Claude
         </div>
       </div>
     </>

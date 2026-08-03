@@ -1,103 +1,59 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { AlertTriangle, Loader2, CheckCircle, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clipboard, X } from "lucide-react";
+import { getCloudCapitalReport } from "../lib/report";
 
-const fmt = (n) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    .format(Number(n || 0));
+const fmt = (value) => new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+}).format(Number(value || 0));
 
 const when = (iso) => {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleString(undefined, {
-    year: "numeric",
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Unknown time";
+  return date.toLocaleString("en-US", {
     month: "short",
-    day: "2-digit",
-    hour: "2-digit",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
     minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
   });
 };
 
 export default function TriageCard({ defaultExpanded = false, onDismiss }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState(!!defaultExpanded);
-  const [runningIdx, setRunningIdx] = useState(null);
-  const [doneIdx, setDoneIdx] = useState(null);
+  const [expanded, setExpanded] = useState(Boolean(defaultExpanded));
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const report = getCloudCapitalReport();
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setError(null);
-        const r = await fetch("/mock/triage.json", { cache: "no-store" });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
-        if (!cancelled) setData(j);
-      } catch (e) {
-        if (!cancelled) setError("Could not load triage data");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const anomaly = useMemo(() => report?.anomalies?.recent?.[0] || null, [report]);
+  if (!anomaly) return null;
 
-  const spikePct = useMemo(() => {
-    if (!data) return 0;
-    const b = Number(data.baseline_usd || 0);
-    const c = Number(data.current_usd || 0);
-    return b > 0 ? ((c - b) / b) * 100 : 0;
-  }, [data]);
+  const baseline = Number(anomaly.baseline || 0);
+  const current = Number(anomaly.current || 0);
+  const increase = Math.max(0, current - baseline);
+  const spikePct = baseline > 0 ? (increase / baseline) * 100 : 0;
+  const investigationCommand = `aws ce get-cost-and-usage --time-period Start=${String(anomaly.timestamp).slice(0, 10)},End=${String(anomaly.timestamp).slice(0, 10)} --granularity DAILY --metrics BlendedCost --group-by Type=DIMENSION,Key=SERVICE`;
 
-  const copy = async (text) => {
+  const copyCommand = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      alert("Commands copied to clipboard");
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(investigationCommand);
+      setCopyError(false);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      alert("Copy failed. You can select the text manually.");
+      setCopied(false);
+      setCopyError(true);
     }
   };
-
-  const simulateRun = (i) => {
-    setRunningIdx(i);
-    setDoneIdx(null);
-    setTimeout(() => {
-      setRunningIdx(null);
-      setDoneIdx(i);
-    }, 1200);
-  };
-
-  if (loading) {
-    return (
-      <Card className="kpi-card border-amber-200 bg-amber-50/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-amber-800">
-            <Loader2 className="h-5 w-5 animate-spin" /> Auto-Triage: Cost Spike
-          </CardTitle>
-          <CardDescription className="text-amber-700">Loading…</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <Card className="kpi-card border-amber-200 bg-amber-50/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-amber-800">
-            <AlertTriangle className="h-5 w-5" /> Auto-Triage: Cost Spike
-          </CardTitle>
-          <CardDescription className="text-amber-700">{error || "No triage data"}</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
 
   return (
     <Card className="kpi-card border-amber-200 bg-amber-50/60">
@@ -106,109 +62,61 @@ export default function TriageCard({ defaultExpanded = false, onDismiss }) {
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-700" />
             <div>
-              <CardTitle className="text-sm font-semibold text-amber-900">Auto-Triage: Cost Spike</CardTitle>
+              <CardTitle className="text-sm font-semibold text-amber-900">Triage Preview: Cost Spike</CardTitle>
               <CardDescription className="text-amber-800/90">
-                Detected {when(data.detected_at)} • last {data.window || "24h"}
+                Detected {when(anomaly.timestamp)} · illustrative workflow
               </CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!!onDismiss && (
+            {onDismiss && (
               <Button size="sm" variant="outline" className="rounded-lg btn-brand-outline" onClick={onDismiss} title="Dismiss">
                 <X className="h-4 w-4" />
               </Button>
             )}
-            <Button size="sm" className="rounded-lg btn-brand-primary" onClick={() => setExpanded((s) => !s)}>
-              {expanded ? <>Hide details</> : <>Investigate</>}
+            <Button size="sm" className="rounded-lg btn-brand-primary" onClick={() => setExpanded((value) => !value)}>
+              {expanded ? "Hide review plan" : "Review plan"}
             </Button>
           </div>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Badge className="bg-amber-600 text-white rounded-md px-2 py-1">
-            {`Spike +${fmt(Math.max(0, Number(data.current_usd || 0) - Number(data.baseline_usd || 0)))} (last 24h)`}
+            {`Unexplained increase ${fmt(increase)}`}
           </Badge>
           <span className="text-sm text-amber-900">
-            Baseline {fmt(data.baseline_usd)} → Current {fmt(data.current_usd)} ({spikePct >= 0 ? "+" : ""}{spikePct.toFixed(1)}%)
+            Baseline {fmt(baseline)} → Current {fmt(current)} (+{spikePct.toFixed(1)}%)
           </span>
         </div>
       </CardHeader>
 
-      {!expanded ? null : (
+      {expanded && (
         <CardContent className="space-y-4">
           <Separator />
-
-          {/* Top Drivers */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-amber-900">Top Drivers</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {(data.top_drivers || []).slice(0, 6).map((d, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/80 border border-amber-100">
-                  <div className="text-sm text-amber-900">
-                    <div className="font-medium">{d.service || "—"}</div>
-                    <div className="text-xs text-amber-800/80">
-                      {(d.account || "—")} · {(d.region || "—")}{d.tag ? ` · ${d.tag}` : ""}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-amber-800">+{fmt(d.delta_usd || 0)}</div>
-                    {Number.isFinite(d.pct) && <div className="text-xs text-amber-700">{Number(d.pct).toFixed(1)}%</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="rounded-lg border border-amber-100 bg-white/80 p-3">
+            <div className="text-sm font-semibold text-amber-900">What happens before any change</div>
+            <ol className="mt-2 list-decimal pl-5 text-sm text-amber-900 space-y-1">
+              <li>Confirm whether the increase matches a planned workload or deployment.</li>
+              <li>Identify the account, service, owner and usage driver behind the variance.</li>
+              <li>Estimate a savings range only after the cause is confirmed.</li>
+              <li>Route the recommendation to the resource owner for approval.</li>
+              <li>Verify cost and service health after an approved change.</li>
+            </ol>
           </div>
 
-          {/* Suspected causes */}
-          {Array.isArray(data.suspected_causes) && data.suspected_causes.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-amber-900">Suspected Causes</div>
-                <ul className="list-disc pl-5 text-sm text-amber-900">
-                  {data.suspected_causes.map((c, i) => <li key={i}>{c}</li>)}
-                </ul>
-              </div>
-            </>
-          )}
+          <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-900">Read-only investigation command</div>
+            <pre className="text-xs m-0 overflow-auto"><code>{investigationCommand}</code></pre>
+          </div>
 
-          {/* Proposed actions */}
-          {Array.isArray(data.proposed_actions) && data.proposed_actions.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="text-sm font-medium text-amber-900">Proposed Remediations</div>
-                {data.proposed_actions.map((a, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-white/80 border border-amber-100 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold text-amber-900">{a.title}</div>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-amber-100 text-amber-900 rounded-md">{a.risk || "Medium"} risk</Badge>
-                        {a.est_savings_usd ? <Badge className="bg-green-100 text-green-700 rounded-md">Save {fmt(a.est_savings_usd)}/mo</Badge> : null}
-                      </div>
-                    </div>
-
-                    {Array.isArray(a.commands) && a.commands.length > 0 && (
-                      <div className="rounded-md border border-amber-100 bg-amber-50/70 p-2">
-                        <pre className="text-xs m-0 overflow-auto"><code>{a.commands.join("\n")}</code></pre>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" className="btn-brand-primary rounded-lg" onClick={() => simulateRun(i)} disabled={runningIdx === i}>
-                        {runningIdx === i ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Running…</> : doneIdx === i ? <><CheckCircle className="h-4 w-4 mr-1" /> Done</> : <>Simulate Fix</>}
-                      </Button>
-                      {Array.isArray(a.commands) && a.commands.length > 0 && (
-                        <Button size="sm" variant="outline" className="btn-brand-outline rounded-lg" onClick={() => copy(a.commands.join("\n"))}>
-                          Copy Commands
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" className="btn-brand-outline rounded-lg" onClick={copyCommand}>
+              {copied ? <CheckCircle className="h-4 w-4 mr-1" /> : <Clipboard className="h-4 w-4 mr-1" />}
+              {copied ? "Copied" : "Copy investigation command"}
+            </Button>
+            <span className="text-xs text-amber-800">No remediation is executed from this public demo.</span>
+          </div>
+          {copyError && <p className="text-xs text-red-700">Clipboard access is unavailable. Select the command above to copy it manually.</p>}
         </CardContent>
       )}
     </Card>
