@@ -8,6 +8,7 @@ import {
   buildProductComparisons,
   formatProductChange,
   formatUtcTimestamp,
+  formatTopSignalLabel,
   getOpportunity,
   getOpportunityAggregate,
 } from "./lib/reportTrust";
@@ -967,7 +968,7 @@ const Dashboard = () => {
                   <div className="p-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2]">
                     <div className="flex items-center gap-2 mb-3">
                       {getSeverityIcon(topAnomaly.severity)}
-                      <span className="text-sm font-semibold text-brand-ink">{topAnomaly.group} spend anomaly</span>
+                      <span className="text-sm font-semibold text-brand-ink">{formatTopSignalLabel(topAnomaly.group)}</span>
                       <Badge className={`ml-auto ${getSeverityColor(topAnomaly.severity)} text-xs px-2 py-0.5`}>
                         {String(topAnomaly.severity || "").toUpperCase()}
                       </Badge>

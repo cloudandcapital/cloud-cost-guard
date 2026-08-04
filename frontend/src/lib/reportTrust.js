@@ -20,6 +20,10 @@ export function normalizeLumenDisplayText(value) {
     .replace(/\bAmazonEC2\b/g, "Amazon EC2");
 }
 
+export function formatTopSignalLabel(serviceName) {
+  return `${normalizeLumenDisplayTerm(serviceName)} spend anomaly`;
+}
+
 export function buildProductComparisons(services) {
   return (Array.isArray(services) ? services : []).map((service) => {
     const current = Number(service?.total_cost);

@@ -10,6 +10,7 @@ import {
   calculateUnusedLicenseOpportunity,
   normalizeLumenDisplayTerm,
   normalizeLumenDisplayText,
+  formatTopSignalLabel,
 } from "./reportTrust";
 
 const sum = (values) => Number(values.reduce((total, value) => total + value, 0).toFixed(2));
@@ -46,6 +47,12 @@ test("normalizes only approved user-facing Lumen terms", () => {
   expect(normalizeLumenDisplayTerm("aws ce get-cost-and-usage")).toBe("aws ce get-cost-and-usage");
   expect(normalizeLumenDisplayText("AmazonEC2 confidence: very_high; $284.40")).toBe("Amazon EC2 confidence: Very high; $284.40");
   expect(normalizeLumenDisplayText("aws ce get-cost-and-usage --service EC2")).toBe("aws ce get-cost-and-usage --service EC2");
+});
+
+test("top-signal label never exposes the AmazonEC2 internal identifier", () => {
+  const label = formatTopSignalLabel(report.anomalies.recent[0].group);
+  expect(label).toBe("Amazon EC2 spend anomaly");
+  expect(label).not.toContain("AmazonEC2");
 });
 
 test("formats report and analyzed timestamps explicitly in UTC", () => {
