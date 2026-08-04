@@ -3,8 +3,10 @@ GCP Cloud Billing connector.
 
 Required env vars:
   GCP_PROJECT_ID              — GCP project ID (e.g. my-project-123)
-  GCP_BILLING_ACCOUNT_ID      — Billing account ID (e.g. 01AB23-CDEF45-678901)
-  GOOGLE_APPLICATION_CREDENTIALS — Path to service account JSON key file
+  GCP_BILLING_TABLE           — Fully qualified BigQuery export table
+
+Authentication uses Application Default Credentials. Prefer workload identity;
+GOOGLE_APPLICATION_CREDENTIALS is supported for local development.
 
 To activate:
   1. Enable BigQuery billing export in the GCP Console:
@@ -23,27 +25,33 @@ To activate:
          --iam-account=cloud-cost-guard@<PROJECT_ID>.iam.gserviceaccount.com
   3. Export credentials:
        export GCP_PROJECT_ID=my-project-123
-       export GCP_BILLING_ACCOUNT_ID=01AB23-CDEF45-678901
        export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
-       export GCP_BILLING_DATASET=my_project.gcp_billing_export_v1_XXXXXX
+       export GCP_BILLING_TABLE=my-project.billing.gcp_billing_export_v1_XXXXXX
   4. Install the SDK:
        pip install google-cloud-bigquery google-cloud-billing
-  5. The app will use live data automatically; no code changes needed.
+  5. Explicitly wire the adapter into a private backend after completing the
+     required authentication, normalization, pagination, and security review.
 
 Note: GCP billing data is most granular via BigQuery export. The Cloud Billing
 API provides account-level summaries only. This connector uses BigQuery.
 """
 
 import os
-from datetime import datetime, timedelta, timezone
+import re
 from typing import Dict, Any
+
+
+def _validate_table_name(table_name: str) -> str:
+    """Allow only a fully qualified project.dataset.table identifier."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", table_name or ""):
+        raise ValueError("GCP_BILLING_TABLE must be a fully qualified project.dataset.table identifier")
+    return table_name
 
 
 class GCPConnector:
     REQUIRED_ENV = [
         "GCP_PROJECT_ID",
-        "GCP_BILLING_ACCOUNT_ID",
-        "GOOGLE_APPLICATION_CREDENTIALS",
+        "GCP_BILLING_TABLE",
     ]
 
     def is_configured(self) -> bool:
@@ -53,7 +61,7 @@ class GCPConnector:
         """
         Fetch cost data from GCP via BigQuery billing export.
 
-        Requires env var GCP_BILLING_DATASET pointing to the BigQuery export table
+        Requires env var GCP_BILLING_TABLE pointing to the BigQuery export table
         (e.g. my_project.gcp_billing_export_v1_ABCDEF_123456_789ABC).
 
         Returns a dict with keys: cloud, total_cost, top_services, trend.
@@ -62,17 +70,18 @@ class GCPConnector:
         if not self.is_configured():
             raise RuntimeError(
                 "GCP credentials not configured. "
-                "Set GCP_PROJECT_ID, GCP_BILLING_ACCOUNT_ID, "
-                "GOOGLE_APPLICATION_CREDENTIALS."
+                "Set GCP_PROJECT_ID and GCP_BILLING_TABLE, then configure "
+                "Application Default Credentials."
             )
 
-        billing_dataset = os.getenv("GCP_BILLING_DATASET")
-        if not billing_dataset:
+        billing_table = os.getenv("GCP_BILLING_TABLE")
+        if not billing_table:
             raise RuntimeError(
-                "GCP_BILLING_DATASET not set. "
+                "GCP_BILLING_TABLE not set. "
                 "Enable BigQuery billing export and set this to your export table, "
-                "e.g. my_project.gcp_billing_export_v1_ABCDEF_123456_789ABC"
+                "e.g. my-project.billing.gcp_billing_export_v1_ABCDEF_123456_789ABC"
             )
+        billing_table = _validate_table_name(billing_table)
 
         try:
             from google.cloud import bigquery
@@ -85,31 +94,23 @@ class GCPConnector:
         project_id = os.environ["GCP_PROJECT_ID"]
         client = bigquery.Client(project=project_id)
 
-        today = datetime.now(timezone.utc).date()
-
         query = f"""
             SELECT
               service.description AS service_name,
-              SUM(cost) AS total_cost
-            FROM `{billing_dataset}.*`
+              SUM(cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) AS total_cost
+            FROM `{billing_table}`
             WHERE
-              _PARTITIONTIME >= TIMESTAMP_SUB(
-                CURRENT_TIMESTAMP(), INTERVAL {window_days} DAY
-              )
-              AND cost > 0
+              usage_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {window_days} DAY)
             GROUP BY service_name
             ORDER BY total_cost DESC
-            LIMIT 10
         """
 
         prev_query = f"""
-            SELECT SUM(cost) AS total_cost
-            FROM `{billing_dataset}.*`
+            SELECT SUM(cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) AS total_cost
+            FROM `{billing_table}`
             WHERE
-              _PARTITIONTIME BETWEEN
-                TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {window_days * 2} DAY) AND
-                TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {window_days} DAY)
-              AND cost > 0
+              usage_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {window_days * 2} DAY)
+              AND usage_start_time < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {window_days} DAY)
         """
 
         results = client.query(query).result()
@@ -134,7 +135,7 @@ class GCPConnector:
         return {
             "cloud": "gcp",
             "total_cost": round(total_cost, 2),
-            "top_services": services,
+            "top_services": services[:10],
             "trend": {
                 "direction": "up" if change_pct >= 0 else "down",
                 "change_percentage": round(change_pct, 1),

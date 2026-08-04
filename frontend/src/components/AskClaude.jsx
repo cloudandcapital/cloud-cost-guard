@@ -1,17 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
+import { parseLumenMessage } from "../lib/lumenMessage";
 import { getCloudCapitalReport } from "../lib/report";
+import { buildPresetLumenResponse, getLumenFooterLabel, SAMPLE_QUESTIONS } from "../lib/lumenPresets";
+import { normalizeLumenDisplayText } from "../lib/reportTrust";
 
 const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
-
-const SAMPLE_QUESTIONS = [
-  "What's bleeding money right now?",
-  "Where should I cut first?",
-  "Is my AI spend worth it?",
-  "What's my biggest risk this month?",
-  "Any SaaS I should cancel?",
-  "How's my tagging coverage?",
-  "What will I spend next month?"
-];
 
 const SendIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -27,27 +20,41 @@ const CloseIcon = () => (
   </svg>
 );
 
-const renderMessage = (text) => {
-  return text.split("\n").flatMap((line, li, lines) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
-      }
-      return part;
-    });
-    return li < lines.length - 1 ? [...parts, <br key={`br-${li}`} />] : parts;
-  });
-};
+const renderRuns = (runs, keyPrefix) => runs.map((run, index) => (
+  run.bold
+    ? <strong key={`${keyPrefix}-${index}`}>{run.text}</strong>
+    : <React.Fragment key={`${keyPrefix}-${index}`}>{run.text}</React.Fragment>
+));
 
-const getSafeReport = (report) => {
-  const safeReport = { ...report };
-  if (safeReport.cost_baseline) {
-    const cb = { ...safeReport.cost_baseline };
-    delete cb.raw;
-    safeReport.cost_baseline = cb;
+const renderMessage = (text) => parseLumenMessage(normalizeLumenDisplayText(text)).map((block, index) => {
+  if (block.type === "heading") {
+    return <h3 className={`lumen-heading lumen-heading--${block.level}`} key={`heading-${index}`}>{renderRuns(block.runs, `heading-${index}`)}</h3>;
   }
-  return safeReport;
-};
+  if (block.type === "list") {
+    return (
+      <ul className="lumen-list" key={`list-${index}`}>
+        {block.items.map((runs, itemIndex) => <li key={itemIndex}>{renderRuns(runs, `list-${index}-${itemIndex}`)}</li>)}
+      </ul>
+    );
+  }
+  if (block.type === "table") {
+    return (
+      <div className="lumen-table" key={`table-${index}`}>
+        {block.rows.map((fields, rowIndex) => (
+          <div className="lumen-table-row" key={rowIndex}>
+            {fields.map((field, fieldIndex) => (
+              <div className="lumen-table-field" key={fieldIndex}>
+                <span className="lumen-table-label">{renderRuns(field.label, `table-${index}-${rowIndex}-${fieldIndex}-label`)}</span>
+                <span>{renderRuns(field.value, `table-${index}-${rowIndex}-${fieldIndex}-value`)}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <p className="lumen-paragraph" key={`paragraph-${index}`}>{renderRuns(block.runs, `paragraph-${index}`)}</p>;
+});
 
 const AskClaude = () => {
   const [open, setOpen] = useState(false);
@@ -57,8 +64,7 @@ const AskClaude = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-
-  const reportData = getSafeReport(getCloudCapitalReport());
+  const report = getCloudCapitalReport();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,8 +82,15 @@ const AskClaude = () => {
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInput("");
-    setLoading(true);
     setError(null);
+
+    const presetReply = buildPresetLumenResponse(trimmed, report);
+    if (presetReply) {
+      setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/ask-claude", {
@@ -86,23 +99,20 @@ const AskClaude = () => {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          reportData,
           messages: nextMessages.map(m => ({ role: m.role, content: m.content }))
         })
       });
 
       const data = await res.json();
-      console.log(data);
-
       if (!res.ok) {
-        throw new Error(data.error?.message || `API error ${res.status}`);
+        throw new Error(data.error?.message || data.error || `API error ${res.status}`);
       }
 
       const textBlock = Array.isArray(data?.content)
         ? data.content.find((b) => b.type === "text")
         : null;
       const reply = textBlock?.text || "(No response)";
-      setMessages([...nextMessages, { role: "assistant", content: reply }]);
+      setMessages([...nextMessages, { role: "assistant", content: reply, source: "claude" }]);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -185,7 +195,7 @@ const AskClaude = () => {
           {messages.length === 0 && !loading && (
             <div className="ask-claude-chips">
               <p style={{ fontSize: 12, color: "#7A6B5D", textAlign: "center", marginBottom: 10 }}>
-                Ask about your cost data
+                Ask about the illustrative cost data
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {SAMPLE_QUESTIONS.map((q, i) => (
@@ -247,7 +257,7 @@ const AskClaude = () => {
 
         {/* Footer */}
         <div className="ask-claude-footer">
-          Powered by Claude · Cloud &amp; Capital
+          {getLumenFooterLabel(messages)}
         </div>
       </div>
     </>

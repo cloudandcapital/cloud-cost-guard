@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { format } from "date-fns";
 import { getCloudCapitalReport } from "./lib/report";
+import { getIllustrativeSpendScenario, SAAS_NORMALIZATION_NOTE } from "./lib/demoSpendScenario";
+import { buildAwsCostExplorerDailyCommand } from "./lib/awsCostExplorer";
+import { formatCompactCurrencyTick } from "./lib/chartFormat";
+import {
+  buildProductComparisons,
+  formatProductChange,
+  formatUtcTimestamp,
+  getOpportunity,
+  getOpportunityAggregate,
+} from "./lib/reportTrust";
 
 // Local brand icon
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -28,7 +35,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Alert, AlertDescription } from "./components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
 import { Separator } from "./components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 
 // Icons
 import {
@@ -37,9 +43,6 @@ import {
   TrendingUp as TrendingUpIcon, Calendar, CheckCircle, XCircle, X,
   Bot, Layers, Server
 } from "lucide-react";
-
-/** IMPORTANT: same-origin proxy */
-const API = "/api";
 
 /* -------- Utils -------- */
 const toNumber = (v) => {
@@ -59,31 +62,6 @@ const formatPercent = (percent) => {
   const p = Number(percent || 0);
   const sign = p >= 0 ? "+" : "";
   return `${sign}${p.toFixed(1)}%`;
-};
-
-/* US date for "Last Updated" */
-const formatTimestamp = (ts) => {
-  if (!ts) return "-";
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return "-";
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  let h = d.getHours();
-  const ampm = h >= 12 ? "pm" : "am";
-  h = h % 12; if (h === 0) h = 12;
-  const hh = String(h).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  return `${mm}/${dd}/${yyyy} ${hh}:${min} ${ampm}`;
-};
-
-const getDataFreshnessHours = (ts) => {
-  if (!ts) return null;
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return null;
-  const diffMs = Date.now() - d.getTime();
-  if (!Number.isFinite(diffMs) || diffMs < 0) return null;
-  return Math.round(diffMs / 36e5);
 };
 
 const getConfidenceColor = (confidence) => ({
@@ -117,7 +95,7 @@ const getSeverityIcon = (severity) => {
   return <AlertTriangle className={common} />;
 };
 
-/* Choose the most relevant command to display for a finding */
+/* Choose the most relevant read-only investigation command for a finding */
 const pickBestCommand = (f) => {
   const cmds = Array.isArray(f?.commands) ? f.commands : [];
   if (!cmds.length) return null;
@@ -125,8 +103,8 @@ const pickBestCommand = (f) => {
   const lcType  = String(f?.type  || "").toLowerCase();
   const serviceHints = [
     { hint: ["ec2","instance","underutilized","autoscaling"], match: /aws\s+ec2|autoscaling/i },
-    { hint: ["ebs","volume","unattached"],                     match: /aws\s+ec2.*(describe-volumes|delete-volume)/i },
-    { hint: ["eip","elastic ip"],                              match: /aws\s+ec2.*(describe-addresses|release-address)/i },
+    { hint: ["ebs","volume","unattached"],                     match: /aws\s+ec2.*describe-volumes/i },
+    { hint: ["eip","elastic ip"],                              match: /aws\s+ec2.*describe-addresses/i },
     { hint: ["rds","db"],                                      match: /aws\s+rds/i },
     { hint: ["s3","bucket"],                                   match: /aws\s+s3|s3api/i },
     { hint: ["lambda"],                                        match: /aws\s+(logs|lambda)/i },
@@ -229,9 +207,9 @@ const Modal = ({ open, onClose, title, children }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg" role="dialog" aria-modal="true" aria-labelledby="finding-modal-title">
         <div className="flex items-center justify-between border-b border-[#E7DCCF] px-4 py-3">
-          <h3 className="text-sm font-semibold text-brand-ink">{title}</h3>
+          <h3 id="finding-modal-title" className="text-sm font-semibold text-brand-ink">{title}</h3>
           <button
             aria-label="Close"
             onClick={onClose}
@@ -272,7 +250,7 @@ const FindingCard = ({ finding, onViewDetails }) => (
     <CardContent className="pt-0">
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-brand-muted">Monthly Savings</span>
+          <span className="text-sm text-brand-muted">Estimated Monthly Opportunity</span>
           <span className="text-lg font-semibold text-brand-success">{formatCurrency(finding.monthly_savings_usd_est)}</span>
         </div>
 
@@ -291,12 +269,16 @@ const FindingCard = ({ finding, onViewDetails }) => (
 
         {finding.suggested_action && <p className="text-sm text-brand-ink">{finding.suggested_action}</p>}
 
-        {finding.commands && finding.commands.length > 0 && (
+        {finding.review_focus && (
+          <div className="text-xs text-brand-muted"><span className="font-semibold text-brand-ink">Review focus:</span> {finding.review_focus}</div>
+        )}
+
+        {finding.commands && finding.commands.length > 0 && !String(pickBestCommand(finding) || "").startsWith("#") && (
           <div className="p-3 rounded-lg border border-[#E7DCCF] bg-[#F7F1EA]"><code className="text-xs font-mono text-brand-ink">{pickBestCommand(finding)}</code></div>
         )}
 
         <div className="flex items-center justify-between text-xs text-brand-muted">
-          {finding.last_analyzed && <span>Analyzed: {formatTimestamp(finding.last_analyzed)}</span>}
+          {finding.last_analyzed && <span>Analyzed: {formatUtcTimestamp(finding.last_analyzed)}</span>}
         </div>
 
         <Button variant="outline" size="sm" onClick={() => onViewDetails(finding)} className="w-full btn-brand-outline">
@@ -315,13 +297,13 @@ const ProductTable = ({ products }) => (
         <TableRow>
           <TableHead className="text-brand-muted font-semibold">Product</TableHead>
           <TableHead className="text-right text-brand-muted font-semibold">30d Cost</TableHead>
-          <TableHead className="text-right text-brand-muted font-semibold">WoW Change</TableHead>
+          <TableHead className="text-right text-brand-muted font-semibold">Prior-period change</TableHead>
           <TableHead className="text-right text-brand-muted font-semibold">% of Total</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {products.map((p, i) => {
-          const wow = toNumber(p.wow_delta || p.wow_usd || 0);
+          const change = p.change_percentage;
           const label = p.product || p.name || p.service || "—";
           const amount = toNumber(p.amount_usd || p.amount || 0);
           const pct = toNumber(p.percent_of_total || 0);
@@ -330,10 +312,12 @@ const ProductTable = ({ products }) => (
               <TableCell className="font-medium text-brand-ink">{label}</TableCell>
               <TableCell className="text-right text-brand-ink">{formatCurrency(amount)}</TableCell>
               <TableCell className="text-right">
-                <div className={`flex items-center justify-end gap-1 ${wow >= 0 ? "text-brand-error" : "text-brand-success"}`}>
-                  {wow >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {formatCurrency(Math.abs(wow))}
-                </div>
+                {Number.isFinite(change) ? (
+                  <div className={`flex items-center justify-end gap-1 ${change > 0 ? "text-brand-error" : change < 0 ? "text-brand-success" : "text-brand-muted"}`}>
+                    {change > 0 ? <TrendingUp className="h-3 w-3" /> : change < 0 ? <TrendingDown className="h-3 w-3" /> : null}
+                    {formatProductChange(change)}
+                  </div>
+                ) : <span className="text-brand-muted">Not available</span>}
               </TableCell>
               <TableCell className="text-right text-brand-ink">{pct.toFixed(1)}%</TableCell>
             </TableRow>
@@ -498,7 +482,6 @@ const Dashboard = () => {
   const [k8sData, setK8sData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dateRange, setDateRange] = useState("30d");
 
   const report = getCloudCapitalReport();
   const costBaseline = report?.cost_baseline || {};
@@ -517,7 +500,7 @@ const Dashboard = () => {
   useEffect(() => {
     loadAllData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
+  }, []);
 
   const loadAllData = async () => {
     try {
@@ -525,17 +508,10 @@ const Dashboard = () => {
       setError(null);
 
       const totalCost = hasCostData ? toNumber(costBaseline.total_cost) : 0;
-      const dailyAverage = hasCostData ? toNumber(costBaseline.daily_average) : 0;
       const trendPct = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-      const dataFreshnessHours = getDataFreshnessHours(report?.generated_at);
 
       const topServices = Array.isArray(costBaseline.top_services) ? costBaseline.top_services : [];
-      const products = topServices.map((svc) => ({
-        product: svc.service_name || "—",
-        amount_usd: toNumber(svc.total_cost),
-        percent_of_total: toNumber(svc.percentage_of_total),
-        wow_delta: 0
-      }));
+      const products = buildProductComparisons(topServices);
 
       const resilienceWorkloads = Array.isArray(resilience.top_workloads) ? resilience.top_workloads : [];
       const moversSeed = Array.isArray(anomalies.recent) ? anomalies.recent : [];
@@ -545,7 +521,7 @@ const Dashboard = () => {
           finding_id: `resilience-${w.workload || idx}`,
           title: w.workload || "—",
           severity: idx === 0 ? "high" : idx === 1 ? "medium" : "low",
-          monthly_savings_usd_est: toNumber(w.total_monthly_resilience_cost)
+          monthly_cost_usd: toNumber(w.total_monthly_resilience_cost)
         }));
 
       setSummary({
@@ -553,7 +529,6 @@ const Dashboard = () => {
         kpis: {
           total_30d_cost: totalCost,
           wow_percent: trendPct,
-          data_freshness_hours: dataFreshnessHours,
           last_updated: report?.generated_at
         },
         top_products: products,
@@ -568,19 +543,19 @@ const Dashboard = () => {
         const normalizedSeverity = ["critical", "high", "medium", "low"].includes(severity) ? severity : "medium";
         const anomalyDelta = Math.max(0, toNumber(item.delta));
         const monthlySavingsEstimate = Number((anomalyDelta * 6).toFixed(2));
+        const investigationCommand = buildAwsCostExplorerDailyCommand(item.timestamp);
         return {
           finding_id: `anomaly-${idx}-${String(group).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
           title: `${group} spend anomaly above baseline`,
           type: "anomaly",
           severity: normalizedSeverity,
           confidence: normalizedSeverity === "critical" || normalizedSeverity === "high" ? "high" : "medium",
-          monthly_savings_usd_est: monthlySavingsEstimate,
+          monthly_savings_usd_est: 0,
+          estimated_avoidable_run_rate_usd: monthlySavingsEstimate,
           risk_level: normalizedSeverity === "critical" ? "High" : "Medium",
           implementation_time: "1-3 hours",
           suggested_action: `Investigate ${group} usage growth, validate workload changes, and apply scaling or budget guardrails to reduce repeat spikes.`,
-          commands: [
-            `aws ce get-cost-and-usage --time-period Start=${String(item.timestamp || "").slice(0, 10)},End=${String(item.timestamp || "").slice(0, 10)} --granularity DAILY --metrics BlendedCost --group-by Type=DIMENSION,Key=SERVICE`
-          ],
+          commands: investigationCommand ? [investigationCommand] : [],
           last_analyzed: item.timestamp || report?.generated_at,
           evidence: {
             service: group,
@@ -589,53 +564,45 @@ const Dashboard = () => {
             delta_usd: anomalyDelta,
             delta_pct: toNumber(item.delta_pct)
           },
-          methodology: "Derived from report.anomalies.recent to provide demo optimization actions."
+          methodology: "Illustrative anomaly investigation. The avoidable run rate is not counted as verified savings."
         };
       });
 
       const resilienceDerivedFindings = resilienceWorkloads.slice(0, 2).map((workload, idx) => {
         const workloadName = workload.workload || `workload-${idx + 1}`;
         const resilienceCost = toNumber(workload.total_monthly_resilience_cost);
-        const monthlySavingsEstimate = Number((resilienceCost * 0.22).toFixed(2));
+        const opportunity = getOpportunity(report, workload.opportunity_id);
         return {
           finding_id: `resilience-finding-${idx}-${String(workloadName).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
           title: `Optimize resilience policy for ${workloadName}`,
           type: "resilience",
           severity: idx === 0 ? "high" : "medium",
-          confidence: "medium",
-          monthly_savings_usd_est: monthlySavingsEstimate,
+          opportunity_id: opportunity?.id,
+          confidence: opportunity?.confidence || "medium",
+          monthly_savings_usd_est: toNumber(opportunity?.estimated_monthly_amount),
           risk_level: "Medium",
           implementation_time: "2-4 hours",
           suggested_action: `Review retention, backup frequency, and storage tiering for ${workloadName} while preserving required recovery objectives.`,
-          commands: [
-            `# Review backup retention and restore policy for ${workloadName}`
-          ],
+          review_focus: `Backup retention, restore frequency, storage tiering, and required recovery objectives for ${workloadName}.`,
           last_analyzed: report?.generated_at,
           evidence: {
             workload: workloadName,
             monthly_resilience_cost: resilienceCost
           },
-          methodology: "Derived from report.resilience.top_workloads to surface resilience cost opportunities."
+          methodology: opportunity?.source_methodology || "Opportunity methodology unavailable."
         };
       });
 
       const demoFindings = [...anomalyFindings, ...resilienceDerivedFindings].slice(0, 6);
       setFindings(demoFindings);
 
-      // Total for daily average fallback
-      const total = products.reduce((acc, p) => acc + toNumber(p.amount_usd || p.amount || 0), 0);
-
-      // Daily Spend Trend
-      const days = Math.max(1, toNumber(costBaseline.period_days) || 30);
-      const endDate = report?.window?.end ? new Date(report.window.end) : new Date();
-      const avg = dailyAverage || (total && days ? total / days : 0);
-      const series = Array.from({ length: days }, (_, i) => {
-        const d = new Date(endDate);
-        d.setDate(d.getDate() - (days - 1 - i));
-        const jitter = avg * 0.06 * Math.sin(i / 2.7) + (avg * 0.03 * (Math.random() - 0.5));
-        const amount = Math.max(0, avg + jitter);
-        return { formatted_date: format(d, "MM/dd"), dateISO: d.toISOString().slice(0,10), cost: amount };
-      });
+      // One deterministic, reconciled business scenario drives every daily chart.
+      const dailyScenario = getIllustrativeSpendScenario();
+      const series = dailyScenario.map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        dateISO: row.dateISO,
+        cost: row.cloud,
+      }));
       setCostTrend(series);
 
       // Key Insights
@@ -643,73 +610,21 @@ const Dashboard = () => {
         (m, pt) => (pt.cost > m.amount ? { date: pt.formatted_date, dateISO: pt.dateISO || new Date().toISOString().slice(0,10), amount: pt.cost } : m),
         { date: "-", dateISO: null, amount: 0 }
       );
-      const totalWindow = series.reduce((s, pt) => s + pt.cost, 0);
-      const monthBudget = 180000;
       setKeyInsights({
         highest_single_day: highest,
-        projected_month_end: totalWindow,
-        mtd_actual: totalWindow * (new Date().getDate() / Math.max(series.length, 1)),
-        monthly_budget: monthBudget,
-        budget_variance: totalWindow - monthBudget
+        projected_month_end: totalCost + toNumber(costBaseline?.trend?.change_amount),
       });
 
-      // AI Spend daily trend synthesis
-      const aiSpendRaw = report?.ai_spend || {};
-      const aiDailyAvg = toNumber(aiSpendRaw.daily_average) || 0;
-      if (aiDailyAvg > 0) {
-        const aiSeries = Array.from({ length: days }, (_, i) => {
-          const d = new Date(endDate);
-          d.setDate(d.getDate() - (days - 1 - i));
-          const jitter = aiDailyAvg * 0.08 * Math.sin(i / 3.1) + aiDailyAvg * 0.04 * (Math.random() - 0.5);
-          return { formatted_date: format(d, "MM/dd"), cost: Math.max(0, aiDailyAvg + jitter) };
-        });
-        setAiTrend(aiSeries);
-      }
+      setAiTrend(dailyScenario.map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        cost: row.ai,
+      })));
+      setSaasBaseTrend(dailyScenario.map((row) => ({
+        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
+        cost: row.saas,
+      })));
 
-      // SaaS daily trend synthesis (flat spread with minimal jitter)
-      const saasRaw = report?.saas_spend || {};
-      const saasDailyAvg = toNumber(saasRaw.total_cost) / Math.max(days, 1);
-      if (saasDailyAvg > 0) {
-        const saasSeries = Array.from({ length: days }, (_, i) => {
-          const d = new Date(endDate);
-          d.setDate(d.getDate() - (days - 1 - i));
-          const jitter = saasDailyAvg * 0.025 * Math.sin(i / 7.2);
-          return { formatted_date: format(d, "MM/dd"), cost: Math.max(0, saasDailyAvg + jitter) };
-        });
-        setSaasBaseTrend(saasSeries);
-      }
-
-      // Kubernetes data
-      try {
-        const k8sResp = await axios.get(`${API}/k8s`);
-        setK8sData(k8sResp.data);
-      } catch {
-        // K8s endpoint optional — use synthetic fallback
-        setK8sData({
-          total_cost: 43000,
-          cluster_count: 2,
-          avg_node_utilization_pct: 47,
-          overprovisioning_waste_est: 13760,
-          namespaces: [
-            { namespace: "production",    cost: 18400, cpu_request_pct: 72, mem_request_pct: 68 },
-            { namespace: "data-pipeline", cost:  8900, cpu_request_pct: 61, mem_request_pct: 74 },
-            { namespace: "ml-training",   cost:  6100, cpu_request_pct: 83, mem_request_pct: 79 },
-            { namespace: "staging",       cost:  5200, cpu_request_pct: 38, mem_request_pct: 42 },
-            { namespace: "monitoring",    cost:  2800, cpu_request_pct: 24, mem_request_pct: 31 },
-            { namespace: "dev",           cost:  1600, cpu_request_pct: 12, mem_request_pct: 18 },
-          ],
-          node_pools: [
-            { pool: "general-purpose",   nodes: 12, node_type: "n2-standard-8",  cost: 24800, utilization_pct: 34 },
-            { pool: "compute-optimized", nodes:  4, node_type: "c2-standard-16", cost: 12400, utilization_pct: 71 },
-            { pool: "memory-optimized",  nodes:  3, node_type: "n2-highmem-16",  cost:  8900, utilization_pct: 58 },
-          ],
-          top_wasteful_workloads: [
-            { namespace: "staging",    cost: 5200, cpu_request_pct: 38, mem_request_pct: 42 },
-            { namespace: "monitoring", cost: 2800, cpu_request_pct: 24, mem_request_pct: 31 },
-            { namespace: "dev",        cost: 1600, cpu_request_pct: 12, mem_request_pct: 18 },
-          ],
-        });
-      }
+      setK8sData(report?.kubernetes || null);
 
     } catch (err) {
       console.error("Error loading data:", err);
@@ -724,14 +639,18 @@ const Dashboard = () => {
     setModalOpen(true);
   };
 
-  const exportCSV = async () => {
+  const exportCSV = () => {
     try {
-      const { data } = await axios.get(`${API}/findings?sort=savings&limit=1000`);
-      const arr = Array.isArray(data) ? data : [];
-      const rowsToExport = arr.filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
-      const headers = ["Title", "Type", "Severity", "Monthly Savings", "Resource ID", "Action"];
+      const rowsToExport = (Array.isArray(findings) ? findings : [])
+        .filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
+      const headers = ["Title", "Type", "Severity", "Estimated Monthly Opportunity", "Scope", "Review Plan"];
       const rows = rowsToExport.map((f) => [
-        f.title, f.type, f.severity, f.monthly_savings_usd_est, f.resource_id || "", f.suggested_action
+        f.title,
+        f.type,
+        f.severity,
+        f.monthly_savings_usd_est,
+        f.evidence?.resource_id || f.evidence?.workload || "",
+        f.suggested_action,
       ]);
       const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
@@ -771,12 +690,10 @@ const Dashboard = () => {
 
   const { top_products = [], recent_findings = [] } = summary || {};
   const trendPercent = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-  const totalAnomalies = toNumber(anomalies.total_anomalies);
   const severityCounts = anomalies.by_severity || {};
   const criticalCount = toNumber(severityCounts.critical);
   const highCount = toNumber(severityCounts.high);
   const mediumCount = toNumber(severityCounts.medium);
-  const dataFreshnessHours = getDataFreshnessHours(report?.generated_at);
 
   // AI Spend render-time constants
   const aiSpend = report?.ai_spend || {};
@@ -810,57 +727,49 @@ const Dashboard = () => {
   ];
   const topAnomaly = Array.isArray(anomalies.recent) && anomalies.recent.length > 0 ? anomalies.recent[0] : null;
   const projCloudNextMonth = (keyInsights?.projected_month_end || cloudTotal);
-  const projAiNextMonth = aiTotal * (1 + toNumber(aiSpend.trend?.change_percentage) / 100);
-  const projSaasNextMonth = saasTotal * (1 + toNumber(saasSpend.trend?.change_percentage) / 100);
+  const projAiNextMonth = aiTotal + toNumber(aiSpend.trend?.change_amount);
+  const projSaasNextMonth = saasTotal + toNumber(saasSpend.trend?.change_amount);
   const projGrandTotal = projCloudNextMonth + projAiNextMonth + projSaasNextMonth;
 
-  // Unified trend: merge cloud/ai/saas into one series for the combined chart
+  // Daily Tech Spend is the reconciled sum of Cloud + AI + normalized SaaS.
   const unifiedTrend = costTrend.map((pt, i) => ({
     formatted_date: pt.formatted_date,
-    cloud: pt.cost,
-    ai: aiTrend[i]?.cost || 0,
-    saas: saasBaseTrend[i]?.cost || 0
+    total: pt.cost + (aiTrend[i]?.cost || 0) + (saasBaseTrend[i]?.cost || 0),
   }));
 
   // Filter to savings-impact findings and recompute UI-facing metrics
   const positiveFindings = (Array.isArray(findings) ? findings : []).filter(f => toNumber(f.monthly_savings_usd_est) > 0);
   const displayFindings = sortAndPickFindings(positiveFindings, 9);
-  const totalSavingsOpportunity = displayFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0);
+  const resilienceAggregate = getOpportunityAggregate(report, "agg-resilience-modeled");
+  const k8sOpportunity = getOpportunity(report, report?.kubernetes?.opportunity_id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light">
       {/* Header */}
       <div className="nav-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
               <img src={logo} alt="Cloud & Capital" className="brand-logo" />
               <div className="leading-tight">
                 <h1 className="brand-title">Cloud+ Cost Guard</h1>
-                <p className="text-[15px] text-brand-muted">Multi-cloud cost optimization <span style={{ opacity: 0.5, fontSize: "11px", letterSpacing: "0.04em" }}>· Demo data · sample workload</span></p>
+                <p className="text-[15px] text-brand-muted">Technology spend decision support <span style={{ opacity: 0.62, fontSize: "11px", letterSpacing: "0.04em" }}>· Illustrative demo</span></p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-38 md:w-42 btn-brand-outline rounded-2xl flex items-center justify-start px-4">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Last 30 days" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid w-full grid-cols-3 items-center gap-2 sm:flex sm:w-auto">
+              <div className="btn-brand-outline min-w-0 rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs sm:text-sm text-brand-muted">
+                <Calendar className="h-4 w-4 mr-2" />
+                {reportWindowLabel}
+              </div>
 
-              <Button variant="outline" onClick={exportCSV} className="btn-brand-outline rounded-2xl">
-                <Download className="h-4 w-4 mr-2" />
+              <Button variant="outline" onClick={exportCSV} className="btn-brand-outline min-w-0 rounded-2xl px-2 sm:px-4 text-xs sm:text-sm">
+                <Download className="h-4 w-4 mr-1 sm:mr-2" />
                 Export CSV
               </Button>
 
-              <Button onClick={loadAllData} className="btn-brand-primary rounded-2xl">
-                <Activity className="h-4 w-4 mr-2" />
+              <Button onClick={loadAllData} className="btn-brand-primary min-w-0 rounded-2xl px-2 sm:px-4 text-xs sm:text-sm">
+                <Activity className="h-4 w-4 mr-1 sm:mr-2" />
                 Refresh
               </Button>
             </div>
@@ -872,10 +781,10 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Data Source banner (compact caption) */}
-        <div className="mb-4 text-xs text-brand-muted flex items-center gap-3">
-          <span><span className="font-medium">Data Source:</span> AWS • Azure • GCP • Kubernetes • AI Providers • SaaS Billing</span>
+        <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3">
+          <span><span className="font-medium">Data:</span> Illustrative AWS, Azure, GCP, Kubernetes, AI and SaaS sample</span>
           <span className="hidden sm:inline">•</span>
-          <span>Last Updated: {new Date().toLocaleDateString()}</span>
+          <span>Demo snapshot: {formatUtcTimestamp(report?.generated_at)}</span>
         </div>
 
         {/* ── Cloud+ Executive Summary ───────────────────── */}
@@ -920,7 +829,6 @@ const Dashboard = () => {
               change={hasCostData ? trendPercent : null}
               icon={DollarSign}
               subtitle="vs last period"
-              dataFreshness={dataFreshnessHours}
             />
             <KPICard
               title="AI / LLM Spend"
@@ -938,7 +846,7 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Tag Coverage + Savings Opportunity */}
+          {/* Tag Coverage + estimated opportunity */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-2">
@@ -947,7 +855,7 @@ const Dashboard = () => {
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-2xl font-bold text-brand-ink">{coveragePct}%</span>
-                  <span className="text-xs text-brand-muted">{untaggedPct}% untagged</span>
+                  <span className="text-xs text-brand-muted">{untaggedPct}% untagged · {formatCurrency(tagging.untagged_monthly_cost)} unattributed</span>
                 </div>
                 <div style={{ width: "100%", height: 8, background: "#E9E3DE", borderRadius: 999 }}>
                   <div style={{ width: `${coveragePct}%`, height: 8, background: "#6b8f71", borderRadius: 999 }} />
@@ -958,14 +866,14 @@ const Dashboard = () => {
 
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-brand-muted">Savings Opportunity</CardTitle>
+                <CardTitle className="text-sm font-medium text-brand-muted">{resilienceAggregate?.label || "Modeled Resilience Opportunity"}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-2xl font-bold" style={{ color: "#16803A" }}>
-                  {formatCurrency(totalSavingsOpportunity)}
+                  {formatCurrency(resilienceAggregate?.estimated_monthly_amount)}
                 </div>
                 <p className="text-xs text-brand-muted mt-1">
-                  total identified monthly savings · across {displayFindings.length} finding{displayFindings.length !== 1 ? "s" : ""}
+                  illustrative monthly estimate across {resilienceAggregate?.opportunity_ids?.length || 0} resilience findings · not verified savings
                 </p>
               </CardContent>
             </Card>
@@ -974,14 +882,14 @@ const Dashboard = () => {
           {/* Unified trend + scope donut + top anomaly & forecast */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* Unified 3-scope trend chart */}
+            {/* Reconciled total technology-spend trend */}
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink">
-                  <BarChart3 className="h-5 w-5" />Unified Spend Trend
+                  <BarChart3 className="h-5 w-5" />Daily Tech Spend
                 </CardTitle>
                 <CardDescription className="text-brand-muted">
-                  Cloud, AI &amp; SaaS daily spend — {reportWindowLabel}
+                  Cloud + AI + SaaS — {reportWindowLabel}. {SAAS_NORMALIZATION_NOTE}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -990,21 +898,14 @@ const Dashboard = () => {
                     <LineChart data={unifiedTrend} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
                       <XAxis dataKey="formatted_date" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} interval={6} />
-                      <YAxis stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                      <YAxis stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} tickFormatter={formatCompactCurrencyTick} width={48} />
                       <Tooltip
                         contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                        formatter={(value, name) => [formatCurrency(value), name.charAt(0).toUpperCase() + name.slice(1)]}
+                        formatter={(value) => [formatCurrency(value), "Daily Tech Spend"]}
                       />
-                      <Line type="monotone" dataKey="cloud" name="cloud" stroke="#8B6F47" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#8B6F47" }} />
-                      <Line type="monotone" dataKey="ai" name="ai" stroke="#B5905C" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "#B5905C" }} />
-                      <Line type="monotone" dataKey="saas" name="saas" stroke="#A8A7A7" strokeWidth={2} dot={false} strokeDasharray="4 2" activeDot={{ r: 4, fill: "#A8A7A7" }} />
+                      <Line type="monotone" dataKey="total" name="Daily Tech Spend" stroke="#8B6F47" strokeWidth={3} dot={false} activeDot={{ r: 4, fill: "#8B6F47" }} />
                     </LineChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="flex items-center gap-5 mt-3 justify-center text-xs text-brand-muted">
-                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#8B6F47]" /><span>Cloud</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#B5905C]" /><span>AI</span></div>
-                  <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 rounded bg-[#A8A7A7]" /><span>SaaS</span></div>
                 </div>
               </CardContent>
             </Card>
@@ -1138,7 +1039,8 @@ const Dashboard = () => {
               <span className="font-medium">Kubernetes:</span>{" "}
               {formatCurrency(k8sData.total_cost)}/mo ·{" "}
               {k8sData.avg_node_utilization_pct}% avg node util ·{" "}
-              <span className="text-brand-error font-medium">{formatCurrency(k8sData.overprovisioning_waste_est)} over-provisioning waste</span>
+              <span className="text-brand-error font-medium">{formatCurrency(k8sOpportunity?.estimated_monthly_amount)} estimated over-provisioning opportunity</span>
+              <span> · allocated within cloud spend</span>
             </span>
           </div>
         )}
@@ -1162,7 +1064,7 @@ const Dashboard = () => {
                 Cost Optimization Findings
               </h2>
               <Badge className="badge-brand text-brand-success border-brand-success/20">
-                {totalAnomalies} anomalies detected
+                {displayFindings.length} optimization finding{displayFindings.length === 1 ? "" : "s"}
               </Badge>
             </div>
 
@@ -1170,12 +1072,12 @@ const Dashboard = () => {
               <Card className="kpi-card shadow-sm">
                 <CardContent className="text-center py-12">
                   <CheckCircle className="h-12 w-12 text-brand-success mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-brand-ink mb-2">All Optimized!</h3>
-                  <p className="text-brand-muted">No cost optimization opportunities found at this time.</p>
+                  <h3 className="text-lg font-medium text-brand-ink mb-2">No estimated opportunities</h3>
+                  <p className="text-brand-muted">This demo dataset has no supported optimization findings for the selected period.</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {displayFindings.map((f) => (
                   <FindingCard key={f.finding_id || `${f.title}-${f.resource_id || ""}`} finding={f} onViewDetails={openFindingModal} />
                 ))}
@@ -1193,7 +1095,7 @@ const Dashboard = () => {
             <Card className="kpi-card shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink"><BarChart3 className="h-5 w-5" />Top Products by Cost</CardTitle>
-                <CardDescription className="text-brand-muted">Your highest spending cloud products and their week-over-week changes</CardDescription>
+                <CardDescription className="text-brand-muted">Highest cloud product costs and deterministic prior-period changes</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <ProductTable products={Array.isArray(top_products) ? top_products : []} />
@@ -1269,6 +1171,7 @@ const Dashboard = () => {
                   cost: toNumber(s.total_cost),
                 }));
                 const trendPct = toNumber(cloudData.trend?.change_percentage);
+                const cloudOpportunityAggregate = getOpportunityAggregate(report, `agg-${key}-estimated`);
 
                 return (
                   <TabsContent key={key} value={key} className="space-y-6">
@@ -1288,12 +1191,10 @@ const Dashboard = () => {
                         subtitle={reportWindowLabel}
                       />
                       <KPICard
-                        title="Savings Found"
-                        value={formatCurrency(
-                          cloudFindings.reduce((s, f) => s + toNumber(f.monthly_savings_usd_est), 0)
-                        )}
+                        title={cloudOpportunityAggregate?.label || `Estimated ${label} Opportunity`}
+                        value={formatCurrency(cloudOpportunityAggregate?.estimated_monthly_amount)}
                         icon={TrendingDown}
-                        subtitle={`across ${cloudFindings.length} finding${cloudFindings.length !== 1 ? "s" : ""}`}
+                        subtitle={`across ${cloudOpportunityAggregate?.opportunity_ids?.length || 0} findings`}
                       />
                     </div>
 
@@ -1397,7 +1298,7 @@ const Dashboard = () => {
                     title="Total K8s Spend"
                     value={formatCurrency(toNumber(k8sData.total_cost))}
                     icon={Server}
-                    subtitle={`${k8sData.cluster_count} cluster${k8sData.cluster_count !== 1 ? "s" : ""}`}
+                    subtitle={`${k8sData.cluster_count} cluster${k8sData.cluster_count !== 1 ? "s" : ""} · included in cloud total`}
                   />
                   <KPICard
                     title="Avg Node Utilization"
@@ -1406,10 +1307,10 @@ const Dashboard = () => {
                     subtitle="CPU + memory weighted"
                   />
                   <KPICard
-                    title="Over-provisioning Waste"
-                    value={formatCurrency(toNumber(k8sData.overprovisioning_waste_est))}
+                    title={k8sOpportunity?.label || "Estimated Over-provisioning Opportunity"}
+                    value={formatCurrency(k8sOpportunity?.estimated_monthly_amount)}
                     icon={AlertTriangle}
-                    subtitle="estimated monthly savings"
+                    subtitle="illustrative monthly opportunity"
                   />
                   <KPICard
                     title="Namespaces"
@@ -1500,10 +1401,10 @@ const Dashboard = () => {
                   <Card className="kpi-card shadow-sm">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-brand-ink">
-                        <AlertTriangle className="h-5 w-5" />Top Wasteful Workloads
+                        <AlertTriangle className="h-5 w-5" />Potential Optimization Signals
                       </CardTitle>
                       <CardDescription className="text-brand-muted">
-                        Namespaces with low CPU or memory request utilization — top savings opportunities
+                        Namespaces with low CPU or memory request utilization and reviewable opportunities
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
@@ -1568,9 +1469,9 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
                   {[
-                    { type: "Critical", count: criticalCount, color: "bg-blue-500" },
-                    { type: "High", count: highCount, color: "bg-yellow-500" },
-                    { type: "Medium", count: mediumCount, color: "bg-red-500" }
+                    { type: "Critical", count: criticalCount, color: "bg-red-700" },
+                    { type: "High", count: highCount, color: "bg-orange-500" },
+                    { type: "Medium", count: mediumCount, color: "bg-yellow-500" }
                   ].map((it, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1590,13 +1491,13 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    {(Array.isArray(recent_findings) ? recent_findings.filter(f => toNumber(f.monthly_savings_usd_est) > 0).slice(0, 5) : []).map((f, i) => (
+                    {(Array.isArray(recent_findings) ? recent_findings.slice(0, 5) : []).map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-brand-bg/50 rounded-lg border border-brand-line">
                         <div className="flex items-center gap-2">
                           {getSeverityIcon(f.severity)}
                           <span className="text-sm text-brand-ink truncate max-w-48">{f.title}</span>
                         </div>
-                        <span className="text-sm font-medium text-brand-success">{formatCurrency(f.monthly_savings_usd_est)}</span>
+                        <span className="text-sm font-medium text-brand-ink">{formatCurrency(f.monthly_cost_usd)}</span>
                       </div>
                     ))}
                   </div>
@@ -1709,8 +1610,8 @@ const Dashboard = () => {
                 subtitle="across all tools"
               />
               <KPICard
-                title="Estimated Waste"
-                value={formatCurrency(toNumber(saasSpend.estimated_waste))}
+                title={getOpportunity(report, saasSpend.opportunity_id)?.label || "Estimated License Opportunity"}
+                value={formatCurrency(getOpportunity(report, saasSpend.opportunity_id)?.estimated_monthly_amount)}
                 icon={DollarSign}
                 subtitle="unused license cost"
               />
@@ -1744,7 +1645,7 @@ const Dashboard = () => {
                 <div className="font-medium">{String(modalFinding.confidence || "").replace("_"," ").toUpperCase()}</div>
               </div>
               <div>
-                <div className="text-brand-muted">Monthly Savings</div>
+                <div className="text-brand-muted">Estimated Monthly Opportunity</div>
                 <div className="font-semibold text-brand-success">{formatCurrency(modalFinding.monthly_savings_usd_est)}</div>
               </div>
               <div>
@@ -1760,9 +1661,16 @@ const Dashboard = () => {
               </div>
             )}
 
-            {modalFinding.commands && modalFinding.commands.length > 0 && (
+            {modalFinding.review_focus && (
               <div>
-                <div className="text-brand-muted mb-1">Recommended Command</div>
+                <div className="text-brand-muted mb-1">Review Focus</div>
+                <div className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3">{modalFinding.review_focus}</div>
+              </div>
+            )}
+
+            {modalFinding.commands && modalFinding.commands.length > 0 && !String(pickBestCommand(modalFinding) || "").startsWith("#") && (
+              <div>
+                <div className="text-brand-muted mb-1">Read-only Review Command</div>
                 <pre className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 text-xs overflow-auto">{pickBestCommand(modalFinding)}</pre>
               </div>
             )}
@@ -1783,7 +1691,7 @@ const Dashboard = () => {
 
             {modalFinding.last_analyzed && (
               <div className="text-xs text-brand-muted">
-                Last Analyzed: {formatTimestamp(modalFinding.last_analyzed)}
+                Last Analyzed: {formatUtcTimestamp(modalFinding.last_analyzed)}
               </div>
             )}
           </div>
@@ -1803,9 +1711,7 @@ const Home = () => <Dashboard />;
 export default function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes><Route path="/" element={<Home />} /></Routes>
-      </BrowserRouter>
+      <Home />
     </div>
   );
 }

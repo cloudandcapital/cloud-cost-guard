@@ -20,7 +20,8 @@ To activate:
        export AZURE_CLIENT_SECRET=<password>
   3. Install the SDK:
        pip install azure-identity azure-mgmt-costmanagement
-  4. The app will use live data automatically; no code changes needed.
+  4. Explicitly wire the adapter into a private backend after completing the
+     required authentication, normalization, pagination, and security review.
 """
 
 import os

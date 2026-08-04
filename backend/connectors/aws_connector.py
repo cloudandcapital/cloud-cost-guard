@@ -1,22 +1,18 @@
 """
 AWS Cost Explorer connector.
 
-Required env vars:
-  AWS_ACCESS_KEY_ID       — IAM access key
-  AWS_SECRET_ACCESS_KEY   — IAM secret key
+Credential options:
+  Use the standard boto3 credential chain, preferably a short-lived role,
+  AWS_PROFILE, or workload identity. Static access keys are supported by boto3
+  but are not recommended.
+
+Required configuration:
   AWS_DEFAULT_REGION      — e.g. us-east-1
 
 Optional:
   AWS_ACCOUNT_ID          — restrict to a specific account (for Organizations)
 
-To activate:
-  1. Create an IAM user or role with the ReadOnlyAccess + CostExplorerFullAccess policies.
-  2. Export the credentials:
-       export AWS_ACCESS_KEY_ID=AKIA...
-       export AWS_SECRET_ACCESS_KEY=...
-       export AWS_DEFAULT_REGION=us-east-1
-  3. Install the SDK:  pip install boto3
-  4. The app will use live data automatically; no code changes needed.
+Minimum IAM action used by this connector: ce:GetCostAndUsage.
 """
 
 import os
@@ -24,15 +20,20 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 
 
-class AWSConnector:
-    REQUIRED_ENV = [
-        "AWS_ACCESS_KEY_ID",
-        "AWS_SECRET_ACCESS_KEY",
-        "AWS_DEFAULT_REGION",
-    ]
+def _sum_ungrouped_cost(response: Dict[str, Any]) -> float:
+    """Sum Cost Explorer totals from an ungrouped GetCostAndUsage response."""
+    return sum(
+        float(result.get("Total", {}).get("BlendedCost", {}).get("Amount", 0) or 0)
+        for result in response.get("ResultsByTime", [])
+    )
 
+
+class AWSConnector:
     def is_configured(self) -> bool:
-        return all(os.getenv(k) for k in self.REQUIRED_ENV)
+        has_region = bool(os.getenv("AWS_DEFAULT_REGION") or os.getenv("AWS_REGION"))
+        has_static_pair = bool(os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"))
+        has_role_or_profile = bool(os.getenv("AWS_PROFILE") or os.getenv("AWS_WEB_IDENTITY_TOKEN_FILE"))
+        return has_region and (has_static_pair or has_role_or_profile)
 
     def get_cost_data(self, window_days: int = 30) -> Dict[str, Any]:
         """
@@ -43,8 +44,8 @@ class AWSConnector:
         """
         if not self.is_configured():
             raise RuntimeError(
-                "AWS credentials not configured. "
-                "Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION."
+                "AWS credentials not configured. Use an AWS profile, workload identity, "
+                "or credential pair and set AWS_DEFAULT_REGION."
             )
 
         try:
@@ -84,11 +85,7 @@ class AWSConnector:
             Granularity="MONTHLY",
             Metrics=["BlendedCost"],
         )
-        prev_total = sum(
-            float(group["Metrics"]["BlendedCost"]["Amount"])
-            for result in prev_response.get("ResultsByTime", [])
-            for group in result.get("Groups", [])
-        )
+        prev_total = _sum_ungrouped_cost(prev_response)
         change_pct = ((total_cost - prev_total) / prev_total * 100) if prev_total > 0 else 0.0
 
         return {

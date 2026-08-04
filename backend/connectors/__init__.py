@@ -1,8 +1,9 @@
 """
 Cloud connector registry.
 
-Each connector checks its own env vars. If none are set the app falls back
-to synthetic data automatically — no code changes needed.
+Each reference connector checks its own environment configuration. The public
+dashboard does not call this registry; private deployments must wire and secure
+the desired adapters explicitly.
 """
 
 from .aws_connector import AWSConnector
@@ -17,7 +18,7 @@ _connectors = {
 
 
 def get_connector(cloud: str):
-    """Return a configured connector or None (triggers synthetic fallback)."""
+    """Return a configured reference connector or None."""
     c = _connectors.get(cloud)
     return c if (c and c.is_configured()) else None
 

@@ -5,25 +5,25 @@
 [![Kubernetes](https://img.shields.io/badge/K8s-cost%20visibility-326CE5)](https://github.com/cloudandcapital/cloud-cost-guard)
 [![SaaS](https://img.shields.io/badge/SaaS-spend%20tracking-blueviolet)](https://github.com/cloudandcapital/cloud-cost-guard)
 [![AI for FinOps](https://img.shields.io/badge/AI-Lumen%20%2B%20MCP-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
-[![FOCUS 2026](https://img.shields.io/badge/FOCUS-2026-brightgreen)](https://focus.finops.org)
+[![Demo data](https://img.shields.io/badge/data-illustrative%20demo-8B6F47)](https://github.com/cloudandcapital/cloud-cost-guard)
 
-**The unified FinOps dashboard for Cloud · Kubernetes · AI · SaaS — with Lumen AI and MCP server support.**
+**A finance-first decision dashboard for cloud, Kubernetes, AI, and SaaS spend, with Lumen and MCP support.**
 
 [**Live Demo →**](https://guard.cloudandcapital.com) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
 ---
 
-The first open-source dashboard that shows Cloud (AWS/Azure/GCP) + Kubernetes + AI spend + SaaS licenses in a single view — with an AI assistant (Lumen) and an MCP server so it works natively inside Claude Code and Cursor.
+The public application is an illustrative demo. It uses one deterministic sample report so every total, period, chart, and finding can be inspected without connecting a customer billing account.
 
 **Features:**
 - Multi-cloud cost dashboard — AWS, Azure, GCP with per-cloud service breakdowns
-- Kubernetes visibility — namespace spend, node pool efficiency, over-provisioning waste
-- AI spend tracking — per-model costs across OpenAI, Anthropic, and AWS Bedrock
-- SaaS license governance — per-seat costs, unused seats, renewal forecasting
-- Lumen AI assistant — natural language FinOps queries via floating chat or MCP tools
-- MCP server — expose all Lumen tools directly inside Claude Code, Cursor, and other AI assistants
-- Prioritized findings with evidence, CLI remediation commands, confidence levels
-- Real connectors for all three clouds + Kubernetes — wire in credentials to switch from demo to live data
+- Kubernetes visibility with namespace spend, node pool efficiency, and an explicit non-additive cloud allocation treatment
+- AI spend visibility by provider and model
+- SaaS spend and license utilization visibility
+- Lumen analysis grounded in the trusted illustrative report
+- MCP tools for local exploration in compatible AI assistants
+- Reviewable findings with evidence, confidence, risk, read-only investigation commands, and estimated opportunities
+- Reference billing connectors for AWS, Azure, GCP, and Kubernetes development
 
 ---
 
@@ -44,9 +44,9 @@ The first open-source dashboard that shows Cloud (AWS/Azure/GCP) + Kubernetes + 
 ## Quickstart
 
 ```bash
-# Frontend only (no backend required — uses synthetic demo data)
+# Frontend only (no backend required; uses illustrative demo data)
 cd frontend
-npm install
+npm ci
 npm start
 ```
 
@@ -59,7 +59,7 @@ uvicorn app:app --reload --port 8000
 cd frontend && npm start
 ```
 
-The app runs on synthetic demo data by default — no cloud credentials needed.
+The public app runs on illustrative demo data. No cloud credentials are used or required.
 
 ---
 
@@ -107,18 +107,17 @@ python backend/mcp_server.py
 
 ---
 
-## Live Data Connectors
+## Connector Status
 
-By default everything runs on synthetic demo data. To switch a scope to live data:
+The files in `backend/connectors/` are reference billing adapters for development. They are not connected to the public dashboard and should not be treated as a production deployment path without additional authentication, normalization, pagination, data-quality, and security work.
 
 ### AWS
 ```bash
-export AWS_ACCESS_KEY_ID=AKIA...
-export AWS_SECRET_ACCESS_KEY=...
+export AWS_PROFILE=cloud-cost-guard-readonly
 export AWS_DEFAULT_REGION=us-east-1
 pip install boto3
 ```
-IAM required: `ReadOnlyAccess` + `CostExplorerFullAccess`.
+The AWS billing connector currently calls `ce:GetCostAndUsage`. Prefer a short-lived role or workload identity and grant only the actions required by the configured connector.
 
 ### Azure
 ```bash
@@ -132,10 +131,11 @@ pip install azure-identity azure-mgmt-costmanagement
 ### GCP
 ```bash
 export GCP_PROJECT_ID=my-project
-export GCP_BILLING_ACCOUNT_ID=01AB23-...
+export GCP_BILLING_TABLE=my-project.billing.gcp_billing_export_v1_01AB23_CDEF45_678901
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
 pip install google-cloud-bigquery
 ```
+The connector also supports Application Default Credentials without a key file.
 
 ### Kubernetes
 ```bash
@@ -150,14 +150,14 @@ export K8S_CLUSTER_NAME=prod-cluster
 pip install kubernetes
 ```
 
-Connectors live in `backend/connectors/`. Each has `is_configured()` — the app falls back to synthetic data automatically when credentials are absent. Mix and match freely.
+Never place cloud credentials in the public frontend or commit them to the repository.
 
 ---
 
 ## Tech
 
 - React (CRA + craco), Recharts, shadcn/ui, lucide-react, Tailwind CSS
-- FastAPI synthetic data backend (multi-cloud: AWS / Azure / GCP / Kubernetes)
+- FastAPI reference backend and billing connector prototypes
 - MCP server for Claude Code and Cursor integration
 - Vercel for hosting
 
@@ -165,4 +165,4 @@ Connectors live in `backend/connectors/`. Each has `is_configured()` — the app
 
 ## License
 
-MIT © 2025 Diana Molski, Cloud & Capital
+MIT © 2026 Diana Molski, Cloud & Capital

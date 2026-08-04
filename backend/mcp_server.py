@@ -2,8 +2,8 @@
 Cloud Cost Guard MCP Server — expose Lumen's FinOps intelligence directly inside
 Claude Code, Cursor, and any other MCP-compatible AI coding assistant.
 
-This is the first multi-cloud + SaaS + AI spend + Kubernetes MCP server in the
-FinOps space.
+This server exposes illustrative multi-cloud, SaaS, AI spend, and Kubernetes
+data for local FinOps workflow exploration.
 
 Tools exposed:
   get_cloud_summary   — total spend, trends, top services across all clouds
@@ -95,8 +95,8 @@ def _synth_findings() -> List[Dict[str, Any]]:
             "cloud": "aws", "type": "compute",
             "severity": "medium", "confidence": "high",
             "monthly_savings_usd_est": round(120 + rng.uniform(-20, 30), 2),
-            "suggested_action": "Purchase 1-year RI for stable 24/7 workloads — saves ~40%.",
-            "risk_level": "Low",
+            "suggested_action": "Model a 1-year RI against the stable usage floor and break-even period before finance approval.",
+            "risk_level": "Medium",
         },
         {
             "finding_id": "aws-ebs-unattached",
@@ -104,8 +104,8 @@ def _synth_findings() -> List[Dict[str, Any]]:
             "cloud": "aws", "type": "storage",
             "severity": "high", "confidence": "very_high",
             "monthly_savings_usd_est": round(280 + rng.uniform(-30, 50), 2),
-            "suggested_action": "Snapshot and delete unattached EBS volumes.",
-            "risk_level": "Low",
+            "suggested_action": "Confirm ownership and retention requirements, plan recoverable snapshots, and route any deletion for approval.",
+            "risk_level": "Medium",
         },
         {
             "finding_id": "az-vm-rightsizing",
@@ -113,8 +113,8 @@ def _synth_findings() -> List[Dict[str, Any]]:
             "cloud": "azure", "type": "compute",
             "severity": "high", "confidence": "high",
             "monthly_savings_usd_est": round(410 + rng.uniform(-40, 60), 2),
-            "suggested_action": "Downsize Standard_D8s_v3 → Standard_D4s_v3.",
-            "risk_level": "Low",
+            "suggested_action": "Model D8s_v3 to D4s_v3 rightsizing, load test it, and obtain the workload owner's approval.",
+            "risk_level": "Medium",
         },
         {
             "finding_id": "gcp-sql-ha",
@@ -122,8 +122,8 @@ def _synth_findings() -> List[Dict[str, Any]]:
             "cloud": "gcp", "type": "database",
             "severity": "high", "confidence": "very_high",
             "monthly_savings_usd_est": round(290 + rng.uniform(-30, 40), 2),
-            "suggested_action": "Switch dev Cloud SQL to ZONAL availability type.",
-            "risk_level": "Low",
+            "suggested_action": "Confirm recovery objectives and business criticality before proposing any HA change for approval.",
+            "risk_level": "High",
         },
         {
             "finding_id": "k8s-overprovisioned",
@@ -131,7 +131,7 @@ def _synth_findings() -> List[Dict[str, Any]]:
             "cloud": "kubernetes", "type": "compute",
             "severity": "medium", "confidence": "medium",
             "monthly_savings_usd_est": round(520 + rng.uniform(-50, 80), 2),
-            "suggested_action": "Enable cluster autoscaler; reduce min node count from 12 to 6.",
+            "suggested_action": "Model autoscaling and a lower minimum node count, then validate disruption budgets and peak demand before approval.",
             "risk_level": "Medium",
         },
         {
@@ -140,8 +140,8 @@ def _synth_findings() -> List[Dict[str, Any]]:
             "cloud": "saas", "type": "licensing",
             "severity": "medium", "confidence": "high",
             "monthly_savings_usd_est": round(2350 + rng.uniform(-200, 300), 2),
-            "suggested_action": "Downgrade unused seats to free tier or cancel before renewal.",
-            "risk_level": "Low",
+            "suggested_action": "Audit usage and ownership, then route proposed seat changes through application-owner approval before renewal.",
+            "risk_level": "Medium",
         },
     ]
 
@@ -246,32 +246,32 @@ def _synth_k8s_spend() -> Dict[str, Any]:
 
 
 def _lumen_analysis(query: str) -> str:
-    """Synthetic Lumen analysis — wire to live LLM in production."""
+    """Illustrative analysis over synthetic demo data; no remediation is executed."""
     q = query.lower()
     if any(w in q for w in ["kubernetes", "k8s", "cluster", "namespace", "pod"]):
         k8s = _synth_k8s_spend()
         return (
-            f"Lumen analysis — Kubernetes spend: Your cluster is running at "
+            f"Illustrative Lumen analysis — Kubernetes allocation: The demo cluster is running at "
             f"{k8s['avg_node_utilization_pct']}% average node utilization. "
             f"Estimated over-provisioning waste: ${k8s['overprovisioning_waste_est']:,.0f}/month. "
-            f"Top opportunity: enable cluster autoscaler on the general-purpose pool (34% util, "
-            f"12 nodes) and reduce minimum nodes from 12 → 6. "
+            f"Top estimated opportunity: model autoscaling on the general-purpose pool (34% util, "
+            f"12 nodes) and a lower minimum-node scenario. "
             f"Namespace 'staging' and 'dev' are running below 40% CPU request ratio — "
-            f"consider namespace-level resource quotas and request right-sizing."
+            f"review namespace-level resource quotas and request right-sizing with workload owners."
         )
     if any(w in q for w in ["saas", "license", "seat", "notion", "figma", "slack"]):
         saas = _synth_saas_spend()
         return (
-            f"Lumen analysis — SaaS spend: ${saas['total_cost']:,.0f}/month across "
+            f"Illustrative Lumen analysis — SaaS spend: ${saas['total_cost']:,.0f}/month across "
             f"{saas['tool_count']} tools. Estimated waste from unused licenses: "
             f"${saas['estimated_waste']:,.0f}/month ({saas['total_unused_licenses']} unused seats). "
             f"Top opportunity: Salesforce (26 unused), Notion (28 unused), Figma (13 unused). "
-            f"Recommend audit before next renewal cycle."
+            f"These are estimated opportunities, not verified savings; audit ownership and usage before the next renewal cycle."
         )
     if any(w in q for w in ["ai", "llm", "openai", "anthropic", "claude", "gpt", "model"]):
         ai = _synth_ai_spend()
         return (
-            f"Lumen analysis — AI spend: ${ai['total_cost']:,.0f}/month across "
+            f"Illustrative Lumen analysis — AI spend: ${ai['total_cost']:,.0f}/month across "
             f"{len(ai['models'])} models and {len(ai['providers'])} providers. "
             f"Daily average: ${ai['daily_average']:,.0f}. "
             f"Claude Sonnet 4.6 is your top spend at ${ai['models'][0]['cost']:,.0f}. "
@@ -284,15 +284,16 @@ def _lumen_analysis(query: str) -> str:
         total_savings = sum(f["monthly_savings_usd_est"] for f in findings)
         lines = "\n".join(f"  • {f['title']} — ${f['monthly_savings_usd_est']:,.0f}/mo" for f in top)
         return (
-            f"Lumen analysis — Top savings opportunities: ${total_savings:,.0f}/month identified "
+            f"Illustrative Lumen analysis — Estimated optimization opportunities: ${total_savings:,.0f}/month "
             f"across {len(findings)} findings.\n\nHighest impact:\n{lines}\n\n"
-            f"Recommend starting with low-risk, high-confidence items: "
-            f"unattached EBS volumes (immediate, no-risk) and SaaS license cleanup."
+            f"These are not verified savings. Start with evidence review and owner approval for high-confidence items: "
+            f"unattached EBS volumes after ownership, retention, snapshot, and rollback review, "
+            f"plus SaaS license cleanup after application-owner approval."
         )
     # Default: general cost summary
     summary = _synth_cloud_summary()
     return (
-        f"Lumen analysis — Total cloud spend: ${summary['grand_total']:,.0f}/month "
+        f"Illustrative Lumen analysis — Demo cloud spend: ${summary['grand_total']:,.0f}/month "
         f"(AWS ${summary['clouds']['aws']['total_cost']:,.0f}, "
         f"Azure ${summary['clouds']['azure']['total_cost']:,.0f}, "
         f"GCP ${summary['clouds']['gcp']['total_cost']:,.0f}). "
