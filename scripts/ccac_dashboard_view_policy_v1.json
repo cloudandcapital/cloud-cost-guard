@@ -17,14 +17,14 @@
       "One or more producer results are partial; inspect their quality issues before decisions."
     ],
     "finding_ids": [
-      "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
       "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
       "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
-      "finding.resilience-gap.orders-db.restore-evidence",
-      "finding.resilience-gap.orders-db.rpo",
-      "finding.resilience-gap.orders-db.rto",
-      "finding.resilience-gap.orders-db.tested-rpo",
       "finding.resilience-gap.orders-db.tested-rto",
+      "finding.resilience-gap.orders-db.tested-rpo",
+      "finding.resilience-gap.orders-db.rto",
+      "finding.resilience-gap.orders-db.rpo",
+      "finding.resilience-gap.orders-db.restore-evidence",
+      "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
       "finding.saas.design-a77de8a6.activity-evidence",
       "finding.saas.design-a77de8a6.assignment-roster"
     ],

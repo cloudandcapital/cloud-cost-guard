@@ -178,6 +178,15 @@ def _sorted_ids(value: Any, field: str) -> list[str]:
     return sorted(_id_list(value, field))
 
 
+def _contractual_ordered_ids(value: Any, expected: list[str], field: str) -> list[str]:
+    ids = _id_list(value, field)
+    if len(ids) != len(expected) or set(ids) != set(expected):
+        _fail(f"{field} inventory mismatch")
+    if ids != expected:
+        _fail(f"{field} contractual order mismatch")
+    return ids
+
+
 def _validate_projection_policy(
     report: dict[str, Any],
     metrics: dict[str, dict[str, Any]],
@@ -370,12 +379,17 @@ def _validate_projection_policy(
     if not isinstance(display, dict):
         _fail("display policy is invalid")
     expected_display = policy["display"]
-    for field in ("headline_metric_ids", "finding_ids", "opportunity_aggregate_ids"):
+    for field in ("headline_metric_ids", "opportunity_aggregate_ids"):
         if (
             _sorted_ids(display.get(field), f"display.{field}")
             != expected_display[field]
         ):
             _fail("display identity is incompatible with projection policy")
+    _contractual_ordered_ids(
+        display.get("finding_ids"),
+        expected_display["finding_ids"],
+        "display.finding_ids",
+    )
     if display.get("disclosures") != expected_display["disclosures"]:
         _fail("required disclosures are incompatible with projection policy")
 

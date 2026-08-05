@@ -18,7 +18,12 @@ sys.path.insert(0, str(SCRIPTS))
 from build_ccac_dashboard_view import render_view  # noqa: E402
 from build_ccac_dashboard_view import validate_policy_artifacts
 from ccac_dashboard_view import SOURCE_REPORT_SHA256  # noqa: E402
-from ccac_dashboard_view import VIEW_SCHEMA, ProjectionError, project_dashboard_view
+from ccac_dashboard_view import (
+    PROJECTION_POLICY,
+    VIEW_SCHEMA,
+    ProjectionError,
+    project_dashboard_view,
+)
 
 REPORT_PATH = (
     REPOSITORY_ROOT
@@ -225,6 +230,56 @@ class SemanticAdversarialProjectionTests(unittest.TestCase):
     ) -> None:
         with self.assertRaisesRegex(ProjectionError, category):
             project_dashboard_view(self.report if report is None else report)
+
+    def test_canonical_display_order_succeeds_and_is_emitted_exactly(self) -> None:
+        view = project_dashboard_view(self.report)
+        expected = PROJECTION_POLICY["display"]["finding_ids"]
+        self.assertEqual(self.report["display"]["finding_ids"], expected)
+        self.assertEqual([finding["id"] for finding in view["findings"]], expected)
+
+    def test_contractual_display_reversal_swap_and_rotation_are_rejected(self) -> None:
+        mutations = {
+            "reversal": lambda ids: ids.reverse(),
+            "swap": lambda ids: ids.__setitem__(slice(0, 2), [ids[1], ids[0]]),
+            "rotation": lambda ids: ids.__setitem__(slice(None), ids[1:] + ids[:1]),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                changed = deepcopy(self.report)
+                mutate(changed["display"]["finding_ids"])
+                self.assert_projection_error("contractual order mismatch", changed)
+
+    def test_display_finding_inventory_mutations_are_rejected(self) -> None:
+        mutations = {
+            "missing": lambda ids: ids.pop(),
+            "additional": lambda ids: ids.append("finding.saas.unapproved"),
+            "substitution": lambda ids: ids.__setitem__(
+                0, "finding.anomaly.unapproved"
+            ),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                changed = deepcopy(self.report)
+                mutate(changed["display"]["finding_ids"])
+                self.assert_projection_error("inventory mismatch", changed)
+
+    def test_duplicate_display_finding_is_rejected_as_duplicate_identity(self) -> None:
+        ids = self.report["display"]["finding_ids"]
+        ids[-1] = ids[0]
+        self.assert_projection_error("duplicate IDs")
+
+    def test_finding_catalog_reordering_remains_order_independent(self) -> None:
+        expected = project_dashboard_view(self.report)
+        self.report["finding_catalog"].reverse()
+        self.assertEqual(project_dashboard_view(self.report), expected)
+
+    def test_order_failure_does_not_write_partial_output(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "view.json"
+            output.write_text("sentinel", encoding="utf-8")
+            self.report["display"]["finding_ids"].reverse()
+            self.assert_projection_error("contractual order mismatch")
+            self.assertEqual(output.read_text(encoding="utf-8"), "sentinel")
 
     def test_same_count_invented_metric_is_rejected_by_inventory(self) -> None:
         approved = "metric.cloud.service.amazonec2-23d867e0.cost"
