@@ -65,6 +65,15 @@ jobs:
       - name: Validate static CCAC fixture integrity
         run: python scripts/validate_ccac_fixture.py fixtures/ccac/illustrative-v0.2.1/run
 
+      - name: Regenerate deterministic CCAC dashboard view
+        run: python scripts/build_ccac_dashboard_view.py --output "$RUNNER_TEMP/ccac-dashboard-view.generated.json"
+
+      - name: Verify tracked CCAC dashboard view is current
+        run: cmp "$RUNNER_TEMP/ccac-dashboard-view.generated.json" frontend/src/data/ccac-dashboard-view.generated.json
+
+      - name: Run CCAC dashboard projection tests
+        run: python -m unittest tests.test_ccac_dashboard_view -v
+
       - name: Run CCAC fixture adversarial tests
         run: python -m unittest tests.test_ccac_fixture -v
 
