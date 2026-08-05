@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -14,6 +16,7 @@ SCRIPTS = REPOSITORY_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from build_ccac_dashboard_view import render_view  # noqa: E402
+from build_ccac_dashboard_view import validate_policy_artifacts
 from ccac_dashboard_view import SOURCE_REPORT_SHA256  # noqa: E402
 from ccac_dashboard_view import VIEW_SCHEMA, ProjectionError, project_dashboard_view
 
@@ -140,6 +143,11 @@ class CanonicalProjectionTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(first, GENERATED_PATH.read_bytes())
         self.assertTrue(first.endswith(b"\n"))
+        self.assertEqual(len(first), 146_562)
+        self.assertEqual(
+            hashlib.sha256(first).hexdigest(),
+            "0edb04bd37abdbbaf7e3c5f600050ae2a281f63cb23ede59d52407dbfac83f81",
+        )
 
     def test_generator_check_mode_does_not_write(self) -> None:
         before = GENERATED_PATH.read_bytes()
@@ -211,6 +219,137 @@ class SemanticAdversarialProjectionTests(unittest.TestCase):
     def assert_projection_fails(self, report: dict | None = None) -> None:
         with self.assertRaises(ProjectionError):
             project_dashboard_view(self.report if report is None else report)
+
+    def assert_projection_error(
+        self, category: str, report: dict | None = None
+    ) -> None:
+        with self.assertRaisesRegex(ProjectionError, category):
+            project_dashboard_view(self.report if report is None else report)
+
+    def test_same_count_invented_metric_is_rejected_by_inventory(self) -> None:
+        approved = "metric.cloud.service.amazonec2-23d867e0.cost"
+        invented = "metric.cloud.service.unapproved-00000000.cost"
+        find_metric(self.report, approved)["id"] = invented
+        section = self.report["display"]["section_metric_ids"]["finops-lite"]
+        section[section.index(approved)] = invented
+        self.assert_projection_error("metric inventory")
+
+    def test_missing_metric_replaced_by_invented_metric_is_rejected(self) -> None:
+        approved = "metric.cloud.service.amazons3-c600b2aa.cost"
+        invented = "metric.cloud.service.unapproved-00000000.cost"
+        replacement = deepcopy(find_metric(self.report, approved))
+        replacement["id"] = invented
+        self.report["metric_catalog"] = [
+            replacement if item["id"] == approved else item
+            for item in self.report["metric_catalog"]
+        ]
+        section = self.report["display"]["section_metric_ids"]["finops-lite"]
+        section[section.index(approved)] = invented
+        self.assert_projection_error("metric inventory")
+
+    def test_duplicate_metric_substituted_for_another_is_rejected(self) -> None:
+        self.report["metric_catalog"][-1] = deepcopy(self.report["metric_catalog"][0])
+        self.assert_projection_error("duplicate stable ID")
+
+    def test_same_prefix_invented_evidence_is_rejected(self) -> None:
+        find_metric(self.report, "metric.cloud.total")["evidence_ids"] = [
+            "evidence.finops-lite.unapproved"
+        ]
+        self.assert_projection_error("metric relationship graph")
+
+    def test_wrong_real_same_producer_evidence_is_rejected(self) -> None:
+        find_metric(
+            self.report, "metric.resilience.orders-db.tested-restore-duration-hours"
+        )["evidence_ids"] = ["evidence.recovery-economics.scenario-input"]
+        self.assert_projection_error("metric relationship graph")
+
+    def test_missing_and_duplicate_evidence_are_rejected(self) -> None:
+        for evidence_ids, category in (
+            ([], "metric relationship graph"),
+            (
+                [
+                    "evidence.finops-lite.cost-summary",
+                    "evidence.finops-lite.cost-summary",
+                ],
+                "duplicate IDs",
+            ),
+        ):
+            with self.subTest(category=category):
+                changed = deepcopy(self.report)
+                find_metric(changed, "metric.cloud.total")[
+                    "evidence_ids"
+                ] = evidence_ids
+                self.assert_projection_error(category, changed)
+
+    def test_artifact_hash_changed_to_zeroes_is_rejected(self) -> None:
+        self.report["provenance"]["artifact_sha256s"]["finops-lite"] = "0" * 64
+        self.assert_projection_error("artifact provenance")
+
+    def test_artifact_hashes_swapped_between_producers_are_rejected(self) -> None:
+        hashes = self.report["provenance"]["artifact_sha256s"]
+        hashes["finops-lite"], hashes["finops-watchdog"] = (
+            hashes["finops-watchdog"],
+            hashes["finops-lite"],
+        )
+        self.assert_projection_error("artifact provenance")
+
+    def test_missing_and_extra_report_provenance_are_rejected(self) -> None:
+        for mutation in ("missing", "extra"):
+            with self.subTest(mutation=mutation):
+                changed = deepcopy(self.report)
+                hashes = changed["provenance"]["artifact_sha256s"]
+                if mutation == "missing":
+                    hashes.pop("finops-lite")
+                else:
+                    hashes["unapproved-producer"] = "0" * 64
+                self.assert_projection_error("artifact provenance", changed)
+
+    def test_manifest_provenance_rejects_duplicate_filename_and_size_changes(
+        self,
+    ) -> None:
+        mutations = ("duplicate", "filename", "size")
+        for mutation in mutations:
+            with self.subTest(
+                mutation=mutation
+            ), tempfile.TemporaryDirectory() as directory:
+                run = Path(directory) / "run"
+                shutil.copytree(RUN_DIRECTORY, run)
+                manifest_path = run / "manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                if mutation == "duplicate":
+                    manifest["artifacts"].append(deepcopy(manifest["artifacts"][0]))
+                elif mutation == "filename":
+                    manifest["artifacts"][0]["relative_path"] = "finops-watchdog.json"
+                else:
+                    with (run / "finops-lite.json").open("ab") as artifact:
+                        artifact.write(b"\n")
+                manifest_path.write_text(
+                    json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+                )
+                with self.assertRaisesRegex(ProjectionError, "artifact provenance"):
+                    validate_policy_artifacts(run)
+
+    def test_relationship_array_reordering_is_accepted(self) -> None:
+        expected = project_dashboard_view(self.report)
+        reordered = deepcopy(self.report)
+        for metric in reordered["metric_catalog"]:
+            metric["input_metric_ids"].reverse()
+            metric["evidence_ids"].reverse()
+        for finding in reordered["finding_catalog"]:
+            finding["metric_ids"].reverse()
+            finding["evidence_ids"].reverse()
+        for opportunity in reordered["opportunity_catalog"]:
+            opportunity["evidence_ids"].reverse()
+            opportunity["related_finding_ids"].reverse()
+            opportunity["related_opportunity_ids"].reverse()
+        for aggregate in reordered["opportunity_aggregates"]:
+            aggregate["opportunity_ids"].reverse()
+            aggregate["excluded_opportunity_ids"].reverse()
+        for ids in reordered["display"]["section_metric_ids"].values():
+            ids.reverse()
+        projected = project_dashboard_view(reordered)
+        self.assertEqual(projected["identity"], expected["identity"])
+        self.assertEqual(projected["source_metadata"], expected["source_metadata"])
 
     def test_missing_required_stable_id(self) -> None:
         self.report["metric_catalog"].pop()

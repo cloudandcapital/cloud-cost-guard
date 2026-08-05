@@ -3,12 +3,17 @@
 
 from __future__ import annotations
 
+import json
 import unicodedata
 from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 VIEW_SCHEMA = "ccg-dashboard-view/1.0.0"
+POLICY_PATH = Path(__file__).with_name("ccac_dashboard_view_policy_v1.json")
+with POLICY_PATH.open(encoding="utf-8") as policy_file:
+    PROJECTION_POLICY = json.load(policy_file)
 SOURCE_REPORT_SHA256 = (
     "3e56662a5192644dd17d698184267c5e638f24018991f442dfbcf81b4dc8edaa"
 )
@@ -167,6 +172,284 @@ def _unique_catalog(items: Any, field: str) -> dict[str, dict[str, Any]]:
             _fail(f"{field} contains a duplicate stable ID")
         result[item_id] = item
     return result
+
+
+def _sorted_ids(value: Any, field: str) -> list[str]:
+    return sorted(_id_list(value, field))
+
+
+def _validate_projection_policy(
+    report: dict[str, Any],
+    metrics: dict[str, dict[str, Any]],
+    findings: dict[str, dict[str, Any]],
+    opportunities: dict[str, dict[str, Any]],
+    aggregates: dict[str, dict[str, Any]],
+) -> None:
+    """Enforce the fixed, human-reviewed ccg-dashboard-view/1.0.0 policy."""
+    policy = PROJECTION_POLICY
+    if (
+        policy.get("policy_schema") != "ccg-dashboard-projection-policy/1.0.0"
+        or policy.get("view_schema") != VIEW_SCHEMA
+    ):
+        _fail("projection policy identity is incompatible")
+
+    source_policy = policy["source_report"]
+    if source_policy.get("sha256") != SOURCE_REPORT_SHA256:
+        _fail("source report policy digest is incompatible")
+    for field in (
+        "document_type",
+        "contract",
+        "mode",
+        "status",
+        "report_id",
+        "run_id",
+        "producer",
+        "generated_at",
+        "period",
+    ):
+        if report.get(field) != source_policy[field]:
+            _fail("source report identity is incompatible with projection policy")
+
+    expected_versions = {
+        producer: record["version"] for producer, record in policy["producers"].items()
+    }
+    included = report.get("included_producers")
+    if not isinstance(included, list):
+        _fail("producer inventory is incompatible with projection policy")
+    actual_versions: dict[str, Any] = {}
+    for item in included:
+        if not isinstance(item, dict) or item.get("name") in actual_versions:
+            _fail("producer inventory is incompatible with projection policy")
+        actual_versions[item.get("name")] = item.get("version")
+    if actual_versions != expected_versions:
+        _fail("producer inventory is incompatible with projection policy")
+
+    expected_metrics_by_producer = {
+        producer: set(ids) for producer, ids in policy["metric_ids_by_producer"].items()
+    }
+    expected_metric_ids = set().union(*expected_metrics_by_producer.values())
+    if set(metrics) != expected_metric_ids:
+        _fail("metric inventory is incompatible with projection policy")
+
+    sections = report.get("display", {}).get("section_metric_ids")
+    if not isinstance(sections, dict) or set(sections) != set(
+        expected_metrics_by_producer
+    ):
+        _fail("metric producer inventory is incompatible with projection policy")
+    for producer, expected_ids in expected_metrics_by_producer.items():
+        if (
+            set(_id_list(sections[producer], f"metric policy section {producer}"))
+            != expected_ids
+        ):
+            _fail("metric producer association is incompatible with projection policy")
+
+    actual_metric_evidence: dict[str, list[str]] = {}
+    actual_metric_inputs: dict[str, list[str]] = {}
+    metric_owner_by_id: dict[str, str] = {}
+    for metric_id, metric in metrics.items():
+        metric_owner_by_id[metric_id] = next(
+            producer
+            for producer, ids in expected_metrics_by_producer.items()
+            if metric_id in ids
+        )
+        input_metric_ids = _sorted_ids(
+            metric.get("input_metric_ids", []), f"{metric_id}.input_metric_ids"
+        )
+        if input_metric_ids:
+            actual_metric_inputs[metric_id] = input_metric_ids
+        for evidence_id in _sorted_ids(
+            metric.get("evidence_ids"), f"{metric_id}.evidence_ids"
+        ):
+            actual_metric_evidence.setdefault(evidence_id, []).append(metric_id)
+    actual_metric_evidence = {
+        evidence_id: sorted(metric_ids)
+        for evidence_id, metric_ids in actual_metric_evidence.items()
+    }
+    if (
+        actual_metric_inputs != policy["metric_input_relationships"]
+        or actual_metric_evidence != policy["metric_evidence_relationships"]
+    ):
+        _fail("metric relationship graph is incompatible with projection policy")
+
+    expected_findings = policy["finding_relationships"]
+    if set(findings) != set(expected_findings):
+        _fail("finding inventory is incompatible with projection policy")
+    actual_finding_relationships = {
+        finding_id: {
+            "producer": expected_findings[finding_id]["producer"],
+            "metric_ids": _sorted_ids(
+                finding.get("metric_ids"), f"{finding_id}.metric_ids"
+            ),
+            "evidence_ids": _sorted_ids(
+                finding.get("evidence_ids"), f"{finding_id}.evidence_ids"
+            ),
+        }
+        for finding_id, finding in findings.items()
+    }
+    if actual_finding_relationships != expected_findings:
+        _fail(
+            "finding evidence relationship graph is incompatible with projection policy"
+        )
+
+    expected_opportunities = policy["opportunity_relationships"]
+    if set(opportunities) != set(expected_opportunities):
+        _fail("opportunity inventory is incompatible with projection policy")
+    actual_opportunity_relationships = {
+        opportunity_id: {
+            "producer": opportunity.get("producer", {}).get("name"),
+            "evidence_ids": _sorted_ids(
+                opportunity.get("evidence_ids"), f"{opportunity_id}.evidence_ids"
+            ),
+            "related_finding_ids": _sorted_ids(
+                opportunity.get("related_finding_ids", []),
+                f"{opportunity_id}.related_finding_ids",
+            ),
+            "related_opportunity_ids": _sorted_ids(
+                opportunity.get("related_opportunity_ids", []),
+                f"{opportunity_id}.related_opportunity_ids",
+            ),
+        }
+        for opportunity_id, opportunity in opportunities.items()
+    }
+    if actual_opportunity_relationships != expected_opportunities:
+        _fail(
+            "opportunity evidence relationship graph is incompatible with projection policy"
+        )
+
+    expected_aggregates = policy["aggregate_relationships"]
+    if set(aggregates) != set(expected_aggregates):
+        _fail("aggregate inventory is incompatible with projection policy")
+    actual_aggregates = {
+        aggregate_id: {
+            "opportunity_ids": _sorted_ids(
+                aggregate.get("opportunity_ids"), f"{aggregate_id}.opportunity_ids"
+            ),
+            "excluded_opportunity_ids": _sorted_ids(
+                aggregate.get("excluded_opportunity_ids", []),
+                f"{aggregate_id}.excluded_opportunity_ids",
+            ),
+        }
+        for aggregate_id, aggregate in aggregates.items()
+    }
+    if actual_aggregates != expected_aggregates:
+        _fail("aggregate relationship graph is incompatible with projection policy")
+
+    actual_evidence_by_producer = {
+        producer: set() for producer in expected_metrics_by_producer
+    }
+    for evidence_id, metric_ids in actual_metric_evidence.items():
+        producers = {metric_owner_by_id[metric_id] for metric_id in metric_ids}
+        if len(producers) != 1:
+            _fail("metric evidence producer association is incompatible")
+        actual_evidence_by_producer[producers.pop()].add(evidence_id)
+    for relationship in actual_finding_relationships.values():
+        actual_evidence_by_producer[relationship["producer"]].update(
+            relationship["evidence_ids"]
+        )
+    for relationship in actual_opportunity_relationships.values():
+        actual_evidence_by_producer[relationship["producer"]].update(
+            relationship["evidence_ids"]
+        )
+    if {
+        producer: sorted(ids) for producer, ids in actual_evidence_by_producer.items()
+    } != policy["evidence_ids_by_producer"]:
+        _fail("evidence inventory is incompatible with projection policy")
+
+    provenance = report.get("provenance")
+    expected_hashes = {
+        producer: record["artifact"]["sha256"]
+        for producer, record in policy["producers"].items()
+    }
+    if not isinstance(provenance, dict) or provenance != {
+        "manifest_sha256": policy["manifest"]["sha256"],
+        "artifact_sha256s": expected_hashes,
+    }:
+        _fail("artifact provenance is incompatible with projection policy")
+
+    display = report.get("display")
+    if not isinstance(display, dict):
+        _fail("display policy is invalid")
+    expected_display = policy["display"]
+    for field in ("headline_metric_ids", "finding_ids", "opportunity_aggregate_ids"):
+        if (
+            _sorted_ids(display.get(field), f"display.{field}")
+            != expected_display[field]
+        ):
+            _fail("display identity is incompatible with projection policy")
+    if display.get("disclosures") != expected_display["disclosures"]:
+        _fail("required disclosures are incompatible with projection policy")
+
+    quality_items = report.get("producer_quality")
+    if not isinstance(quality_items, list):
+        _fail("quality relationship inventory is incompatible with projection policy")
+    actual_quality: dict[str, dict[str, Any]] = {}
+    for item in quality_items:
+        producer = (
+            item.get("producer", {}).get("name") if isinstance(item, dict) else None
+        )
+        quality = item.get("quality") if isinstance(item, dict) else None
+        if producer in actual_quality or not isinstance(quality, dict):
+            _fail(
+                "quality relationship inventory is incompatible with projection policy"
+            )
+        issues = quality.get("issues")
+        if not isinstance(issues, list):
+            _fail(
+                "quality relationship inventory is incompatible with projection policy"
+            )
+        actual_quality[producer] = {
+            "status": quality.get("status"),
+            "issues": sorted(
+                (
+                    {
+                        "code": issue.get("code"),
+                        "source_id": issue.get("source_id"),
+                        "field": issue.get("field"),
+                    }
+                    for issue in issues
+                    if isinstance(issue, dict)
+                ),
+                key=lambda issue: issue["code"] or "",
+            ),
+        }
+        if len(actual_quality[producer]["issues"]) != len(issues):
+            _fail(
+                "quality relationship inventory is incompatible with projection policy"
+            )
+    expected_quality = {
+        producer: {
+            "status": quality["status"],
+            "issues": sorted(quality["issues"], key=lambda issue: issue["code"]),
+        }
+        for producer, quality in policy["quality_relationships"].items()
+    }
+    if actual_quality != expected_quality:
+        _fail("quality relationship graph is incompatible with projection policy")
+
+    reconciliation = report.get("reconciliation")
+    if not isinstance(reconciliation, list):
+        _fail(
+            "reconciliation relationship inventory is incompatible with projection policy"
+        )
+    actual_reconciliation: dict[str, dict[str, Any]] = {}
+    for item in reconciliation:
+        if not isinstance(item, dict) or item.get("id") in actual_reconciliation:
+            _fail(
+                "reconciliation relationship inventory is incompatible with projection policy"
+            )
+        actual_reconciliation[item.get("id")] = {
+            "input_metric_ids": _sorted_ids(
+                item.get("input_metric_ids"), "reconciliation.input_metric_ids"
+            ),
+            "output_metric_id": item.get("output_metric_id"),
+        }
+    if actual_reconciliation != policy["reconciliation_relationships"]:
+        _fail(
+            "reconciliation relationship graph is incompatible with projection policy"
+        )
+
+    if [concept for concept, _, _ in UNSUPPORTED] != policy["unsupported_concepts"]:
+        _fail("unsupported registry is incompatible with projection policy")
 
 
 def _metric_owner(metric_id: str) -> str:
@@ -666,6 +949,7 @@ def project_dashboard_view(report: Any) -> dict[str, Any]:
     aggregates = _unique_catalog(
         report.get("opportunity_aggregates"), "opportunity_aggregates"
     )
+    _validate_projection_policy(report, metrics, findings, opportunities, aggregates)
     if (
         len(metrics) != 155
         or len(findings) != 10

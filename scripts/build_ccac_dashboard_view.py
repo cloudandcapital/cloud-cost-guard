@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import tempfile
@@ -11,7 +12,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from ccac_dashboard_view import ProjectionError, project_dashboard_view
+from ccac_dashboard_view import (
+    PROJECTION_POLICY,
+    ProjectionError,
+    project_dashboard_view,
+)
 from validate_ccac_fixture import (
     DEFAULT_RUN_DIRECTORY,
     FixtureValidationError,
@@ -37,12 +42,79 @@ def _without_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _load_validated_report(run_directory: Path) -> dict[str, Any]:
-    validate_fixture(run_directory)
-    report_path = run_directory / "report.json"
+def validate_policy_artifacts(run_directory: Path) -> None:
+    """Validate exact approved filenames, sizes, producers, versions, and hashes."""
+    manifest_path = run_directory / PROJECTION_POLICY["manifest"]["filename"]
     try:
+        manifest_bytes = manifest_path.read_bytes()
+        manifest = json.loads(
+            manifest_bytes.decode("utf-8"),
+            object_pairs_hook=_without_duplicates,
+        )
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ProjectionError("artifact provenance manifest cannot be read") from exc
+    manifest_policy = PROJECTION_POLICY["manifest"]
+    if (
+        len(manifest_bytes) != manifest_policy["size_bytes"]
+        or hashlib.sha256(manifest_bytes).hexdigest() != manifest_policy["sha256"]
+    ):
+        raise ProjectionError("artifact provenance manifest differs from policy")
+    artifacts = manifest.get("artifacts") if isinstance(manifest, dict) else None
+    if not isinstance(artifacts, list):
+        raise ProjectionError("artifact provenance inventory is invalid")
+
+    actual: dict[str, dict[str, Any]] = {}
+    for artifact in artifacts:
+        if not isinstance(artifact, dict) or not isinstance(
+            artifact.get("producer"), dict
+        ):
+            raise ProjectionError("artifact provenance entry is invalid")
+        producer = artifact["producer"].get("name")
+        if not isinstance(producer, str) or producer in actual:
+            raise ProjectionError("artifact provenance contains a duplicate producer")
+        relative_path = artifact.get("relative_path")
+        expected = PROJECTION_POLICY["producers"].get(producer)
+        if (
+            expected is None
+            or artifact["producer"].get("version") != expected["version"]
+            or relative_path != expected["artifact"]["filename"]
+        ):
+            raise ProjectionError("artifact provenance identity differs from policy")
+        artifact_path = run_directory / relative_path
+        try:
+            artifact_bytes = artifact_path.read_bytes()
+        except OSError as exc:
+            raise ProjectionError("approved artifact file is unavailable") from exc
+        actual[producer] = {
+            "version": artifact["producer"].get("version"),
+            "artifact": {
+                "filename": relative_path,
+                "size_bytes": len(artifact_bytes),
+                "sha256": hashlib.sha256(artifact_bytes).hexdigest(),
+            },
+        }
+        if artifact.get("content_sha256") != actual[producer]["artifact"]["sha256"]:
+            raise ProjectionError(
+                "artifact provenance declared hash differs from artifact content"
+            )
+    if actual != PROJECTION_POLICY["producers"]:
+        raise ProjectionError("artifact provenance differs from projection policy")
+
+
+def _load_validated_report(run_directory: Path) -> dict[str, Any]:
+    validate_policy_artifacts(run_directory)
+    validate_fixture(run_directory)
+    report_policy = PROJECTION_POLICY["source_report"]
+    report_path = run_directory / report_policy["filename"]
+    try:
+        report_bytes = report_path.read_bytes()
+        if (
+            len(report_bytes) != report_policy["size_bytes"]
+            or hashlib.sha256(report_bytes).hexdigest() != report_policy["sha256"]
+        ):
+            raise ProjectionError("source report differs from projection policy")
         report = json.loads(
-            report_path.read_text(encoding="utf-8"),
+            report_bytes.decode("utf-8"),
             parse_float=Decimal,
             parse_int=int,
             parse_constant=_reject_constant,

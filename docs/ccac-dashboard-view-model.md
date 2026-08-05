@@ -4,6 +4,8 @@
 
 Production generation always validates the complete seven-artifact run with the Phase 1 byte-integrity checker before reading `report.json`. The pure projection function is separately exposed only for semantic tests. A standalone, unvalidated report cannot be projected by the build command.
 
+The projection additionally enforces the checked-in, versioned policy at `scripts/ccac_dashboard_view_policy_v1.json`. That policy is independent of the report being projected and explicitly pins the source-report identity, exact producer versions, complete metric and evidence inventories, producer associations, canonical metric/evidence/finding/opportunity/aggregate/reconciliation/quality relationships, artifact filenames, byte sizes and SHA-256 values, disclosures, and unsupported registry for `ccg-dashboard-view/1.0.0`. Counts, prefixes, well-formed hashes, and a whole-document hash are not accepted as substitutes for these reviewed identities and relationships. Array order is ignored only where order has no semantic meaning.
+
 ## Mapping contract
 
 Every metric record carries `trace.canonical_id`, producer and version, source artifact, basis, quality, currency, unit, its own metric period, additivity, canonical formula, input metric IDs, and evidence IDs. Values are copied without arithmetic and serialized as decimal strings. Catalog arrays are indexed by canonical ID; output order uses stable IDs, dates, or the report's explicit display order.
@@ -37,7 +39,7 @@ Every metric record carries `trace.canonical_id`, producer and version, source a
 | `opportunity.annual_aggregate` | `aggregate.opportunities.annual.usd` plus its sole canonical source opportunity | Command Center 0.2.1 | annual USD low/expected/high | aggregate values are canonical; estimated basis and low confidence are inherited from the sole included source opportunity | No arithmetic and no monthly conversion | Retains overlap-safe aggregate and source opportunity ID |
 | `unsupported[]` | Projection allowlist derived from explicit report absences and disclosures | Cloud Cost Guard | reason-code objects | unsupported | No numeric field | Makes missing concepts explicit without substituting zero |
 
-Metric producer ownership is verified twice: membership in the canonical `display.section_metric_ids` registry and the canonical stable-ID namespace. Finding ownership is allowlisted by stable finding namespace and evidence namespace. Any disagreement fails the whole projection.
+Metric and evidence producer ownership is verified against the exact versioned policy and the canonical `display.section_metric_ids` registry. Finding, opportunity, aggregate, reconciliation, and quality relationships must match the complete pinned graph. Missing, additional, renamed, substituted, duplicated, or cross-associated identities fail the whole projection. Artifact provenance must match the approved producer, version, filename, byte size, and digest; correctly formatted but unapproved hashes fail closed.
 
 ## Numeric and missing-data policy
 
