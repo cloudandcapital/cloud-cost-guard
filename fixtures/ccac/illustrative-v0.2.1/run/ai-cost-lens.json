@@ -1,0 +1,1226 @@
+{
+  "contract": "ccac/1.0.0",
+  "document_type": "tool_result",
+  "evidence": [
+    {
+      "content_sha256": "f475da3293235b993f9a5d2294b92e11a542fe1887683b33a02328aad02677a8",
+      "description": "Strict canonical AI usage rows.",
+      "id": "evidence.ai-cost-lens.usage",
+      "kind": "source_row",
+      "locator": "csv:usage_id",
+      "observed_at": "2026-08-04T12:00:00Z",
+      "source_ids": [
+        "source.ai-cost-lens.usage"
+      ]
+    },
+    {
+      "content_sha256": "d39787e811ea0a1adebc2e1ab1971414ede4dc0ed96492d910dd2212aa3d4f13",
+      "description": "Versioned user-supplied AI token rates.",
+      "id": "evidence.ai-cost-lens.price-book",
+      "kind": "price_book",
+      "locator": "json:prices",
+      "observed_at": "2026-08-04T12:00:00Z",
+      "source_ids": [
+        "source.ai-cost-lens.price-book"
+      ]
+    }
+  ],
+  "extensions": {
+    "ai_cost_lens": {
+      "accounting_boundary": "AI domain cost is non-additive at the technology-spend boundary until Bedrock/cloud billing overlap is reconciled.",
+      "model_cost_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+      ],
+      "pricing_mode": "user_supplied_price_book_and_or_reported_cost",
+      "pricing_provenance": {
+        "effective_at": "2026-07-01",
+        "input_sha256": "d39787e811ea0a1adebc2e1ab1971414ede4dc0ed96492d910dd2212aa3d4f13",
+        "mode": "illustrative",
+        "source": "Synthetic rates for deterministic public demonstration; not provider pricing.",
+        "used_price_keys": [
+          "anthropic/illustrative-model-b",
+          "openai/illustrative-model-a"
+        ],
+        "used_rate_keys": [
+          "cached_input_per_million",
+          "input_per_million",
+          "output_per_million",
+          "reasoning_per_million"
+        ]
+      },
+      "reconciliation": {
+        "difference": 0.0,
+        "metric_token_sum": 3740000,
+        "model_cost_sum": 12.5325,
+        "row_cost_sum": 12.5325,
+        "row_token_sum": 3740000,
+        "status": "passed",
+        "token_difference": 0
+      },
+      "usage_records": 4
+    }
+  },
+  "findings": [
+    {
+      "description": "Ownership is missing. This is unattributed cost, not a savings estimate.",
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "finding_type": "allocation",
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+      ],
+      "severity": "medium",
+      "status": "open",
+      "title": "Unattributed AI cost for openai illustrative-model-a"
+    }
+  ],
+  "generated_at": "2026-08-04T12:00:00Z",
+  "inputs": [
+    {
+      "access": "illustrative_fixture",
+      "adapter_version": "0.2.0",
+      "content_sha256": "f475da3293235b993f9a5d2294b92e11a542fe1887683b33a02328aad02677a8",
+      "data_classification": "public_illustrative",
+      "id": "source.ai-cost-lens.usage",
+      "lossy_mapping": false,
+      "mapping_notes": [
+        "Provider-reported and calculated costs retain distinct canonical bases."
+      ],
+      "source_type": "canonical_ai_usage_csv",
+      "source_version": "ai-cost-lens/2.0"
+    },
+    {
+      "access": "illustrative_fixture",
+      "adapter_version": "0.2.0",
+      "content_sha256": "d39787e811ea0a1adebc2e1ab1971414ede4dc0ed96492d910dd2212aa3d4f13",
+      "data_classification": "public_illustrative",
+      "id": "source.ai-cost-lens.price-book",
+      "lossy_mapping": false,
+      "mapping_notes": [
+        "Rates are user-supplied and date/source provenance is declared in the price book."
+      ],
+      "source_type": "ai_price_book",
+      "source_version": "ai-cost-lens-price-book/1.0"
+    }
+  ],
+  "metrics": [
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "formula": "sum calculated token-category costs",
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "input_metric_ids": [],
+      "name": "anthropic illustrative-model-b AI usage cost",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 2.1375
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Uncached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 600000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Cached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 100000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+      "input_metric_ids": [],
+      "name": "Output tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 200000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens",
+      "input_metric_ids": [],
+      "name": "Reasoning tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 0
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests",
+      "input_metric_ids": [],
+      "name": "AI requests",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "requests",
+      "unknown_reason": null,
+      "value": 80
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens",
+      "input_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens"
+      ],
+      "name": "Cost per million categorized tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_million_tokens",
+      "unknown_reason": null,
+      "value": 2.375
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-b",
+        "project": "research",
+        "provider": "anthropic",
+        "scope": "ai_usage",
+        "task": "summarization",
+        "team": "data"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / requests",
+      "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request",
+      "input_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests"
+      ],
+      "name": "Cost per request",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_request",
+      "unknown_reason": null,
+      "value": 0.026719
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+      "input_metric_ids": [],
+      "name": "bedrock illustrative-model-c AI usage cost",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 4.25
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Uncached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 800000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Cached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 0
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+      "input_metric_ids": [],
+      "name": "Output tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 100000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens",
+      "input_metric_ids": [],
+      "name": "Reasoning tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 0
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests",
+      "input_metric_ids": [],
+      "name": "AI requests",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "requests",
+      "unknown_reason": null,
+      "value": 60
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens",
+      "input_metric_ids": [
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens"
+      ],
+      "name": "Cost per million categorized tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_million_tokens",
+      "unknown_reason": null,
+      "value": 4.722222
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "potential",
+        "cost_basis": "provider_reported",
+        "environment": "production",
+        "model": "illustrative-model-c",
+        "project": "assistant",
+        "provider": "bedrock",
+        "scope": "ai_usage",
+        "task": "batch-classification",
+        "team": "platform"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / requests",
+      "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request",
+      "input_metric_ids": [
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests"
+      ],
+      "name": "Cost per request",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_request",
+      "unknown_reason": null,
+      "value": 0.070833
+    },
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "formula": "sum calculated token-category costs",
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "input_metric_ids": [],
+      "name": "openai illustrative-model-a AI usage cost",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 4.9
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Uncached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 1000000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Cached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 200000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+      "input_metric_ids": [],
+      "name": "Output tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 300000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens",
+      "input_metric_ids": [],
+      "name": "Reasoning tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 50000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests",
+      "input_metric_ids": [],
+      "name": "AI requests",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "requests",
+      "unknown_reason": null,
+      "value": 100
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens",
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens"
+      ],
+      "name": "Cost per million categorized tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_million_tokens",
+      "unknown_reason": null,
+      "value": 3.16129
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "production",
+        "model": "illustrative-model-a",
+        "project": "assistant",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "customer-support",
+        "team": "product"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / requests",
+      "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request",
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests"
+      ],
+      "name": "Cost per request",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_request",
+      "unknown_reason": null,
+      "value": 0.049
+    },
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "formula": "sum calculated token-category costs",
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+      "input_metric_ids": [],
+      "name": "openai illustrative-model-a AI usage cost",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 1.245
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Uncached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 250000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+      "input_metric_ids": [],
+      "name": "Cached input tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 50000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+      "input_metric_ids": [],
+      "name": "Output tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 80000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens",
+      "input_metric_ids": [],
+      "name": "Reasoning tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "tokens",
+      "unknown_reason": null,
+      "value": 10000
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": null,
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests",
+      "input_metric_ids": [],
+      "name": "AI requests",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "requests",
+      "unknown_reason": null,
+      "value": 25
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens",
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens"
+      ],
+      "name": "Cost per million categorized tokens",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_million_tokens",
+      "unknown_reason": null,
+      "value": 3.192308
+    },
+    {
+      "additivity": "ratio",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "none_known",
+        "cost_basis": "calculated",
+        "environment": "development",
+        "model": "illustrative-model-a",
+        "project": "unattributed",
+        "provider": "openai",
+        "scope": "ai_usage",
+        "task": "experimentation",
+        "team": "unattributed"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "formula": "cost / requests",
+      "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request",
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests"
+      ],
+      "name": "Cost per request",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency_per_request",
+      "unknown_reason": null,
+      "value": 0.0498
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "cloud_spend_overlap": "potential_when_provider_is_bedrock",
+        "cost_basis": "mixed_calculated_and_provider_reported",
+        "scope": "ai_usage"
+      },
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "formula": "sum provider-reported and calculated model/allocation cost metrics exactly once; non-additive outside the AI domain",
+      "id": "metric.ai.total-cost",
+      "input_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+      ],
+      "name": "AI usage cost",
+      "period": {
+        "end": "2026-07-03",
+        "start": "2026-07-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 12.5325
+    }
+  ],
+  "mode": "illustrative",
+  "opportunities": [],
+  "period": {
+    "end": "2026-07-03",
+    "start": "2026-07-01",
+    "timezone": "UTC"
+  },
+  "producer": {
+    "name": "ai-cost-lens",
+    "version": "0.2.0"
+  },
+  "quality": {
+    "issues": [],
+    "status": "valid"
+  },
+  "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+}

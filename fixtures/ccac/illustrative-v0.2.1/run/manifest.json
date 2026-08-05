@@ -1,0 +1,80 @@
+{
+  "contract": "ccac/1.0.0",
+  "document_type": "pipeline_manifest",
+  "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "mode": "illustrative",
+  "started_at": "2026-08-04T12:00:00Z",
+  "completed_at": "2026-08-04T12:00:00Z",
+  "status": "complete",
+  "required_producers": [
+    "finops-lite",
+    "finops-watchdog",
+    "recovery-economics",
+    "ai-cost-lens",
+    "saas-cost-analyzer",
+    "tech-spend-command-center"
+  ],
+  "artifacts": [
+    {
+      "producer": {
+        "name": "finops-lite",
+        "version": "0.3.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "finops-lite.json",
+      "content_sha256": "f8529ff5db134a6e81554fd5b2c87e687dc2258009522246d4642ca81501b3a0",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "finops-watchdog",
+        "version": "0.4.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "finops-watchdog.json",
+      "content_sha256": "ec9269ce4e27ecb412108ca46dc4bd1229ad61682f234fee6cf71ca9833fb717",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.2.1"
+      },
+      "document_type": "tool_result",
+      "relative_path": "recovery-economics.json",
+      "content_sha256": "db44438fea1d33f1b76591aa4ce6a3d6560ba8528c575dcb782a6da4ad8f71e4",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "ai-cost-lens",
+        "version": "0.2.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "ai-cost-lens.json",
+      "content_sha256": "b51cf23ea86cdaaea52bdfbba6188f995824f3591fed03ac97e262f23d1333be",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "saas-cost-analyzer",
+        "version": "0.2.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "saas-cost-analyzer.json",
+      "content_sha256": "58f31ae72c17f80c1608d8f292756e741763ca4ef868d3ac0badf7a6df940bc8",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    }
+  ],
+  "errors": []
+}

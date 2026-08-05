@@ -1,0 +1,642 @@
+{
+  "contract": "ccac/1.0.0",
+  "document_type": "tool_result",
+  "evidence": [
+    {
+      "content_sha256": "8f78a3af514e57d8d5ba4da2c8dd67cf8426fecd28bf5dc7e882e6e4e9d8c3a1",
+      "description": "Versioned resilience scenario assumptions and transparent model formulas.",
+      "id": "evidence.recovery-economics.scenario-input",
+      "kind": "formula",
+      "locator": "canonical-json:scenario",
+      "observed_at": "2026-08-04T12:00:00Z",
+      "source_ids": [
+        "source.recovery-economics.scenario"
+      ]
+    },
+    {
+      "content_sha256": "8f78a3af514e57d8d5ba4da2c8dd67cf8426fecd28bf5dc7e882e6e4e9d8c3a1",
+      "description": "Supplied restore-test result: partial.",
+      "id": "evidence.recovery-economics.restore-test",
+      "kind": "restore_test",
+      "locator": "canonical-json:scenario.restore_test",
+      "observed_at": "2026-06-15T12:00:00Z",
+      "source_ids": [
+        "source.recovery-economics.scenario"
+      ]
+    }
+  ],
+  "extensions": {
+    "recovery_economics": {
+      "accounting_boundary": "Modeled scenario values are excluded from observed technology spend totals.",
+      "assumptions": {
+        "expected_events_per_month": 0.0167,
+        "full_copies_retained": 5.0,
+        "monthly_backup_operations": 180.0,
+        "recovery_events_per_year": 0.2,
+        "uncertainty_percent": 25.0
+      },
+      "formulas": {
+        "effective_stored_gb": "((data_gb * ceil(retention_days / full_backup_interval_days)) + (data_gb * daily_change_percent / 100 * max(retention_days - retained_full_copies, 0))) * compression_ratio * deduplication_ratio",
+        "expected_monthly_outage_exposure": "modeled_rto_hours * outage_impact_per_hour * recovery_events_per_year / 12",
+        "modeled_rto_hours": "restore_gb / restore_throughput_gb_per_hour + orchestration_hours + compute_hours",
+        "monthly_design_cost": "effective_stored_gb * storage_rate_per_gb_month + (30 * 24 / frequency_hours) * request_cost_per_backup",
+        "recovery_event_cost": "restore_gb * retrieval_rate_per_gb + compute_hours * compute_rate_per_hour + egress_gb * egress_rate_per_gb + failover_cost + failback_cost"
+      },
+      "restore_test": {
+        "recovered_point_age_hours": 3.8,
+        "restore_duration_hours": 5.2,
+        "result": "partial",
+        "tested_at": "2026-06-15T12:00:00Z"
+      },
+      "restore_test_freshness": {
+        "age_days": 50,
+        "freshness_threshold_days": 90,
+        "status": "fresh"
+      },
+      "rpo_target_met": false,
+      "rto_target_met": false,
+      "sensitivity": {
+        "currency": "USD",
+        "expected": 5723.57,
+        "high": 7154.46,
+        "low": 4292.68
+      }
+    }
+  },
+  "findings": [
+    {
+      "description": "Modeled recovery time is 6.5 hours versus a 2.0 hour target. This is a scenario estimate, not proof of recoverability.",
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "finding_type": "resilience_gap",
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.rto",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rto-hours"
+      ],
+      "severity": "high",
+      "status": "open",
+      "title": "Modeled RTO exceeds target for Illustrative Orders Database"
+    },
+    {
+      "description": "Backup interval is 4.0 hours versus a 1.0 hour target.",
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "finding_type": "resilience_gap",
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.rpo",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rpo-hours"
+      ],
+      "severity": "high",
+      "status": "open",
+      "title": "Modeled RPO exceeds target for Illustrative Orders Database"
+    },
+    {
+      "description": "No fresh passing restore-test evidence was supplied. Modeled RTO/RPO values must not be presented as demonstrated recovery capability.",
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "finding_type": "resilience_gap",
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.restore-evidence",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rto-hours",
+        "metric.resilience.orders-db.modeled-rpo-hours"
+      ],
+      "severity": "high",
+      "status": "open",
+      "title": "Recoverability is not substantiated for Illustrative Orders Database"
+    },
+    {
+      "description": "Observed restore-test duration exceeded the declared RTO target.",
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "finding_type": "resilience_gap",
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.tested-rto",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.tested-restore-duration-hours"
+      ],
+      "severity": "critical",
+      "status": "open",
+      "title": "Restore test missed the RTO target for Illustrative Orders Database"
+    },
+    {
+      "description": "Observed recovered point age exceeded the declared RPO target.",
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "finding_type": "resilience_gap",
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.tested-rpo",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.tested-recovered-point-age-hours"
+      ],
+      "severity": "critical",
+      "status": "open",
+      "title": "Restore test missed the RPO target for Illustrative Orders Database"
+    }
+  ],
+  "generated_at": "2026-08-04T12:00:00Z",
+  "inputs": [
+    {
+      "access": "illustrative_fixture",
+      "adapter_version": "0.2.1",
+      "content_sha256": "8f78a3af514e57d8d5ba4da2c8dd67cf8426fecd28bf5dc7e882e6e4e9d8c3a1",
+      "data_classification": "public_illustrative",
+      "id": "source.recovery-economics.scenario",
+      "lossy_mapping": false,
+      "mapping_notes": [
+        "Scenario assumptions are modeled inputs, not invoice facts."
+      ],
+      "source_type": "resilience_scenario",
+      "source_version": "recovery-economics/2.0"
+    }
+  ],
+  "metrics": [
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": null,
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "((data_gb * ceil(retention_days / full_backup_interval_days)) + (data_gb * daily_change_percent / 100 * max(retention_days - retained_full_copies, 0))) * compression_ratio * deduplication_ratio",
+      "id": "metric.resilience.orders-db.effective-stored-gb",
+      "input_metric_ids": [],
+      "name": "Modeled effective protected storage",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "GB",
+      "unknown_reason": null,
+      "value": 13081.25
+    },
+    {
+      "additivity": "additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "effective_stored_gb * storage_rate_per_gb_month + (30 * 24 / frequency_hours) * request_cost_per_backup",
+      "id": "metric.resilience.orders-db.monthly-design-cost",
+      "input_metric_ids": [],
+      "name": "Modeled monthly resilience design cost",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 302.67
+    },
+    {
+      "additivity": "additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "effective_stored_gb * storage_rate_per_gb_month",
+      "id": "metric.resilience.orders-db.monthly-storage-cost",
+      "input_metric_ids": [],
+      "name": "Modeled monthly protected-storage cost",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 300.87
+    },
+    {
+      "additivity": "additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "monthly_backup_operations * request_cost_per_backup",
+      "id": "metric.resilience.orders-db.monthly-backup-request-cost",
+      "input_metric_ids": [],
+      "name": "Modeled monthly backup request cost",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 1.8
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": null,
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "restore_gb / restore_throughput_gb_per_hour + orchestration_hours + compute_hours",
+      "id": "metric.resilience.orders-db.modeled-rto-hours",
+      "input_metric_ids": [],
+      "name": "Modeled recovery time",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "hours",
+      "unknown_reason": null,
+      "value": 6.5
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": null,
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "backup.frequency_hours",
+      "id": "metric.resilience.orders-db.modeled-rpo-hours",
+      "input_metric_ids": [],
+      "name": "Modeled recovery point interval",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "hours",
+      "unknown_reason": null,
+      "value": 4.0
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "restore_gb * retrieval_rate_per_gb + compute_hours * compute_rate_per_hour + egress_gb * egress_rate_per_gb + failover_cost + failback_cost",
+      "id": "metric.resilience.orders-db.recovery-event-cost",
+      "input_metric_ids": [],
+      "name": "Modeled recovery execution cost per event",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 254.0
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "restore_gb * retrieval_rate_per_gb",
+      "id": "metric.resilience.orders-db.retrieval-cost-per-event",
+      "input_metric_ids": [],
+      "name": "Modeled retrieval cost per recovery event",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 50.0
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "compute_hours * compute_rate_per_hour",
+      "id": "metric.resilience.orders-db.compute-cost-per-event",
+      "input_metric_ids": [],
+      "name": "Modeled compute cost per recovery event",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 4.0
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "egress_gb * egress_rate_per_gb",
+      "id": "metric.resilience.orders-db.egress-cost-per-event",
+      "input_metric_ids": [],
+      "name": "Modeled egress cost per recovery event",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 0.0
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "recovery.failover_cost",
+      "id": "metric.resilience.orders-db.failover-cost-per-event",
+      "input_metric_ids": [],
+      "name": "Modeled failover cost per recovery event",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 100.0
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "recovery.failback_cost",
+      "id": "metric.resilience.orders-db.failback-cost-per-event",
+      "input_metric_ids": [],
+      "name": "Modeled failback cost per recovery event",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 100.0
+    },
+    {
+      "additivity": "additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "recovery_event_cost * recovery_events_per_year / 12",
+      "id": "metric.resilience.orders-db.expected-monthly-recovery-cost",
+      "input_metric_ids": [],
+      "name": "Frequency-weighted monthly recovery execution cost",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 4.23
+    },
+    {
+      "additivity": "additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "modeled_rto_hours * outage_impact_per_hour * recovery_events_per_year / 12",
+      "id": "metric.resilience.orders-db.expected-monthly-outage-exposure",
+      "input_metric_ids": [],
+      "name": "Frequency-weighted monthly outage exposure",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 5416.67
+    },
+    {
+      "additivity": "additive",
+      "basis": "estimated",
+      "currency": "USD",
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "formula": "monthly_design_cost + expected_monthly_recovery_cost + expected_monthly_outage_exposure",
+      "id": "metric.resilience.orders-db.expected-monthly-economic-exposure",
+      "input_metric_ids": [],
+      "name": "Modeled monthly resilience economic exposure",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 5723.57
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "formula": null,
+      "id": "metric.resilience.orders-db.tested-restore-duration-hours",
+      "input_metric_ids": [],
+      "name": "Observed restore-test duration",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "hours",
+      "unknown_reason": null,
+      "value": 5.2
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "observed",
+      "currency": null,
+      "dimensions": {
+        "criticality": "critical",
+        "scenario": "illustrative-orders-db",
+        "scope": "resilience_scenario",
+        "workload": "orders-db"
+      },
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "formula": null,
+      "id": "metric.resilience.orders-db.tested-recovered-point-age-hours",
+      "input_metric_ids": [],
+      "name": "Observed recovered point age in restore test",
+      "period": {
+        "end": "2026-09-01",
+        "start": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "hours",
+      "unknown_reason": null,
+      "value": 3.8
+    }
+  ],
+  "mode": "illustrative",
+  "opportunities": [],
+  "period": {
+    "end": "2026-09-01",
+    "start": "2026-08-01",
+    "timezone": "UTC"
+  },
+  "producer": {
+    "name": "recovery-economics",
+    "version": "0.2.1"
+  },
+  "quality": {
+    "issues": [],
+    "status": "valid"
+  },
+  "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+}
