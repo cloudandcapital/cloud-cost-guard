@@ -61,6 +61,17 @@ cd frontend && npm start
 
 The public app runs on illustrative demo data. No cloud credentials are used or required.
 
+### Local environment configuration
+
+Create local runtime configuration from the sanitized examples when needed:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+The example values are safe development defaults or unmistakable placeholders, not credentials. Runtime `.env` files must never be committed. Every `REACT_APP_*` value is public and may be included in browser-delivered JavaScript, so secrets must never use that prefix. Production secrets belong in the deployment provider's protected environment configuration.
+
 ---
 
 ## MCP Server (Claude Code / Cursor)
