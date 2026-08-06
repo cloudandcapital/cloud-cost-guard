@@ -1,1718 +1,213 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
-import { getCloudCapitalReport } from "./lib/report";
-import { getIllustrativeSpendScenario, SAAS_NORMALIZATION_NOTE } from "./lib/demoSpendScenario";
-import { buildAwsCostExplorerDailyCommand } from "./lib/awsCostExplorer";
-import { formatCompactCurrencyTick } from "./lib/chartFormat";
 import {
-  buildProductComparisons,
-  formatProductChange,
-  formatUtcTimestamp,
-  formatTopSignalLabel,
-  getOpportunity,
-  getOpportunityAggregate,
-} from "./lib/reportTrust";
-
-// Local brand icon
+  CCAC_DASHBOARD_UNAVAILABLE_MESSAGE,
+  CcacDashboardViewUnavailableError,
+  getValidatedCcacDashboardView,
+} from "./lib/ccacDashboardView";
 import logo from "./assets/cloud-and-capital-icon.png";
-
-// AI/automation demo card
-import TriageCard from "./components/TriageCard";
-
-// Ask Claude floating assistant
 import AskClaude from "./components/AskClaude";
-
-// Recharts
-import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, ReferenceLine
-} from "recharts";
-
-// UI
+import TriageCard from "./components/TriageCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
-import { Button } from "./components/ui/button";
 import { Badge } from "./components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Alert, AlertDescription } from "./components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
-import { Separator } from "./components/ui/separator";
+import { AlertTriangle, BarChart3, Bot, Calendar, DollarSign, Layers } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-// Icons
-import {
-  DollarSign, TrendingUp, TrendingDown, AlertTriangle,
-  Eye, Download, BarChart3, Activity, PieChart as PieChartIcon,
-  TrendingUp as TrendingUpIcon, Calendar, CheckCircle, XCircle, X,
-  Bot, Layers, Server
-} from "lucide-react";
+const unavailableText = (reason) => reason ? `Unavailable — ${String(reason).replaceAll("_", " ")}` : "Unavailable";
 
-/* -------- Utils -------- */
-const toNumber = (v) => {
-  if (typeof v === "number") return v;
-  if (typeof v === "string") {
-    const n = Number(v.replace?.(/[^0-9.-]/g, "") ?? v);
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
+// Display-only decimal formatting. The canonical string is never parsed, rounded,
+// aggregated, annualized, or otherwise recalculated.
+export const formatCanonicalDecimal = (value, { currency = false, percent = false } = {}) => {
+  if (value === null || value === undefined) return "Unavailable";
+  const text = String(value);
+  const match = text.match(/^(-?)(\d+)(\.\d+)?$/);
+  if (!match) return text;
+  const grouped = match[2].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${currency ? "$" : ""}${match[1]}${grouped}${match[3] || ""}${percent ? "%" : ""}`;
 };
 
-const formatCurrency = (amount) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    .format(Number(amount || 0));
+const metricText = (metric) => metric?.value === null
+  ? unavailableText(metric?.unknown_reason)
+  : formatCanonicalDecimal(metric?.value, {
+      currency: metric?.trace?.unit === "currency" || metric?.trace?.unit === "currency_per_million_tokens" || metric?.trace?.currency === "USD",
+      percent: metric?.trace?.unit === "percent",
+    });
 
-const formatPercent = (percent) => {
-  const p = Number(percent || 0);
-  const sign = p >= 0 ? "+" : "";
-  return `${sign}${p.toFixed(1)}%`;
-};
+const displayService = (service) => ({ AmazonEC2: "Amazon EC2", AmazonS3: "Amazon S3" }[service] || service);
+const displayFindingTitle = (title) => String(title).replaceAll("AmazonEC2", "Amazon EC2").replaceAll("AmazonS3", "Amazon S3");
+const periodLabel = (period) => period ? `${period.start} – ${period.end} · ${period.timezone}` : "Canonical period unavailable";
 
-const getConfidenceColor = (confidence) => ({
-  very_high: "text-green-700 bg-green-50",
-  high: "text-green-600 bg-green-50",
-  medium: "text-yellow-600 bg-yellow-50",
-  low: "text-red-600 bg-red-50",
-}[String(confidence || "").toLowerCase()] || "text-yellow-600 bg-yellow-50");
+const QualityBadge = ({ quality }) => (
+  <Badge className={quality === "valid" ? "badge-brand" : "bg-yellow-50 text-yellow-700 border border-yellow-200"}>
+    {quality || "unknown"}
+  </Badge>
+);
 
-const getRiskColor = (risk) => ({
-  Low: "text-green-700",
-  Medium: "text-yellow-600",
-  High: "text-red-600",
-}[risk] || "text-yellow-600");
-
-const getSeverityColor = (severity) => ({
-  critical: "severity-critical",
-  high: "severity-high",
-  medium: "severity-medium",
-  low: "severity-low",
-}[String(severity || "").toLowerCase()] || "severity-medium");
-
-// Uniform severity icons (force size/color everywhere)
-const getSeverityIcon = (severity) => {
-  const s = String(severity || "").toLowerCase();
-  const common = "severity-icon";
-  if (s === "critical") return <XCircle className={`${common} severity-icon--critical`} />;
-  if (s === "high") return <AlertTriangle className={`${common} severity-icon--high`} />;
-  if (s === "medium") return <AlertTriangle className={`${common} severity-icon--medium`} />;
-  if (s === "low") return <CheckCircle className={`${common} severity-icon--low`} />;
-  return <AlertTriangle className={common} />;
-};
-
-/* Choose the most relevant read-only investigation command for a finding */
-const pickBestCommand = (f) => {
-  const cmds = Array.isArray(f?.commands) ? f.commands : [];
-  if (!cmds.length) return null;
-  const lcTitle = String(f?.title || "").toLowerCase();
-  const lcType  = String(f?.type  || "").toLowerCase();
-  const serviceHints = [
-    { hint: ["ec2","instance","underutilized","autoscaling"], match: /aws\s+ec2|autoscaling/i },
-    { hint: ["ebs","volume","unattached"],                     match: /aws\s+ec2.*describe-volumes/i },
-    { hint: ["eip","elastic ip"],                              match: /aws\s+ec2.*describe-addresses/i },
-    { hint: ["rds","db"],                                      match: /aws\s+rds/i },
-    { hint: ["s3","bucket"],                                   match: /aws\s+s3|s3api/i },
-    { hint: ["lambda"],                                        match: /aws\s+(logs|lambda)/i },
-    { hint: ["elb","load balancer"],                           match: /aws\s+elbv2/i },
-    { hint: ["cloudwatch","anomaly","ce"],                     match: /aws\s+ce\s+get-cost-and-usage/i },
-    { hint: ["nat"],                                           match: /aws\s+ec2.*nat/i },
-  ];
-  for (const s of serviceHints) {
-    if (s.hint.some(h => lcTitle.includes(h) || lcType.includes(h))) {
-      const found = cmds.find(c => s.match.test(c));
-      if (found) return found;
-    }
-  }
-  const ce = cmds.find(c => /aws\s+ce\s+get-cost-and-usage/i.test(c));
-  if (ce) return ce;
-  return cmds[0];
-};
-
-
-/* -------- Findings sort/pick -------- */
-const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
-const sortAndPickFindings = (arr, limit = 9) => {
-  const safe = Array.isArray(arr) ? arr : [];
-  return [...safe]
-    .sort((a, b) => {
-      const va = toNumber(a.monthly_savings_usd_est);
-      const vb = toNumber(b.monthly_savings_usd_est);
-      if (vb !== va) return vb - va;
-      const sa = SEVERITY_ORDER[String(a.severity || "").toLowerCase()] ?? 99;
-      const sb = SEVERITY_ORDER[String(b.severity || "").toLowerCase()] ?? 99;
-      return sa - sb;
-    })
-    .slice(0, limit);
-};
-
-/* -------- Presentational components -------- */
-const KPICard = ({ title, value, change, icon: Icon, subtitle, dataFreshness }) => (
-  <Card className="kpi-card shadow-sm hover:shadow-brand-md transition-all duration-200">
+const MetricCard = ({ title, metric, icon: Icon = DollarSign, subtitle }) => (
+  <Card className="kpi-card shadow-sm">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-brand-muted">{title}</CardTitle>
-      <div className="flex items-center">
-        <Icon className="h-4 w-4 text-brand-light-muted" />
-        {Number.isFinite(dataFreshness) && dataFreshness < 1 && (
-          <span className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] bg-green-50 text-green-700">LIVE</span>
-        )}
-        {Number.isFinite(dataFreshness) && dataFreshness >= 1 && (
-          <span className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] bg-[#F2EFEA] text-brand-light-muted">{dataFreshness}h</span>
-        )}
-      </div>
+      <Icon className="h-4 w-4 text-brand-light-muted" />
     </CardHeader>
     <CardContent className="py-3">
-      <div className="text-2xl font-bold text-brand-ink">{value}</div>
-      {Number.isFinite(change) ? (
-        <p className="text-xs text-brand-muted flex items-center gap-1 mt-1">
-          {change >= 0 ? <TrendingUp className="h-3 w-3 text-brand-error" /> : <TrendingDown className="h-3 w-3 text-brand-success" />}
-          <span className={change >= 0 ? "text-brand-error" : "text-brand-success"}>{formatPercent(change)}</span>
-          {subtitle}
-        </p>
-      ) : (
-        subtitle && <p className="text-xs text-brand-muted mt-1">{subtitle}</p>
-      )}
+      <div className="text-2xl font-bold text-brand-ink" data-canonical-id={metric?.id}>{metricText(metric)}</div>
+      <p className="text-xs text-brand-muted mt-1">{subtitle || periodLabel(metric?.trace?.period)}</p>
+      {metric?.trace?.quality && <div className="mt-2"><QualityBadge quality={metric.trace.quality} /></div>}
     </CardContent>
   </Card>
 );
 
-const CostTrendChart = ({ data, height = 300, label = "Cost trends over the last 30 days" }) => {
-  const avg = Array.isArray(data) && data.length ? data.reduce((s, d) => s + (Number(d.cost) || 0), 0) / data.length : 0;
-  return (
-    <Card className="kpi-card shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-brand-ink">
-          <BarChart3 className="h-5 w-5" />Daily Spend Trend
-        </CardTitle>
-        <CardDescription className="text-brand-muted">{label}</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div style={{ width: "100%", height }}>
-          <ResponsiveContainer>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
-              <XAxis dataKey="formatted_date" stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }} />
-              <YAxis stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                formatter={(value) => [formatCurrency(value), "Daily Cost"]}
-                labelFormatter={(label) => `Date: ${label}`}
-              />
-              {avg > 0 && <ReferenceLine y={avg} stroke="#AAA" strokeDasharray="4 4" />}
-              <Line type="monotone" dataKey="cost" stroke="#8B6F47" strokeWidth={3} dot={{ fill: "#8B6F47", r: 3 }} activeDot={{ r: 5, fill: "#8B6F47" }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+const UnsupportedCard = ({ title, entry }) => (
+  <Card className="kpi-card shadow-sm">
+    <CardHeader><CardTitle className="text-brand-ink">{title}</CardTitle></CardHeader>
+    <CardContent>
+      <p className="text-sm font-medium text-brand-muted">Unavailable in the validated view</p>
+      <p className="text-xs text-brand-muted mt-2">{entry?.explanation}</p>
+    </CardContent>
+  </Card>
+);
 
-/* -------- Simple Modal (no extra deps) -------- */
-const Modal = ({ open, onClose, title, children }) => {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg" role="dialog" aria-modal="true" aria-labelledby="finding-modal-title">
-        <div className="flex items-center justify-between border-b border-[#E7DCCF] px-4 py-3">
-          <h3 id="finding-modal-title" className="text-sm font-semibold text-brand-ink">{title}</h3>
-          <button
-            aria-label="Close"
-            onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-brand-bg/80"
-          >
-            <X className="h-4 w-4 text-brand-muted" />
-          </button>
-        </div>
-        <div className="px-4 py-4">{children}</div>
-        <div className="flex justify-end gap-2 border-t border-[#E7DCCF] px-4 py-3">
-          <Button variant="outline" onClick={onClose} className="btn-brand-outline">Close</Button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const FindingCard = ({ finding, onViewDetails }) => (
-  <Card className="finding-card shadow-sm">
+const FindingCard = ({ finding, onOpen }) => (
+  <Card className="finding-card shadow-sm hover:shadow-brand-md transition-all duration-200">
     <CardHeader className="pb-3">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          {getSeverityIcon(finding.severity)}
-          <CardTitle className="text-sm font-medium text-brand-ink">{finding.title}</CardTitle>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Badge className={getSeverityColor(finding.severity) + " px-2 py-1 text-xs font-medium rounded-md"}>
-            {String(finding.severity || "").toUpperCase()}
-          </Badge>
-          {finding.confidence && (
-            <Badge className={getConfidenceColor(finding.confidence) + " px-2 py-1 text-xs rounded-md"}>
-              {String(finding.confidence).replace("_", " ").toUpperCase()} CONF
-            </Badge>
-          )}
-        </div>
+      <div className="flex items-start justify-between gap-3">
+        <CardTitle className="text-sm font-medium text-brand-ink">{displayFindingTitle(finding.title)}</CardTitle>
+        <Badge className={`severity-${finding.severity}`}>{String(finding.severity).toUpperCase()}</Badge>
       </div>
+      <CardDescription>{finding.type.replaceAll("_", " ")} · {finding.status}</CardDescription>
     </CardHeader>
-    <CardContent className="pt-0">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-brand-muted">Estimated Monthly Opportunity</span>
-          <span className="text-lg font-semibold text-brand-success">{formatCurrency(finding.monthly_savings_usd_est)}</span>
-        </div>
-
-        {finding.evidence && (finding.evidence.resource_id || finding.evidence.region || finding.evidence.instance_type) && (
-          <div className="evidence-box">
-            {finding.evidence.resource_id && <div className="font-mono text-brand-muted"><span className="evidence-label">Resource:</span> {finding.evidence.resource_id}</div>}
-            {finding.evidence.region && <div className="text-brand-muted"><span className="evidence-label">Region:</span> {finding.evidence.region}</div>}
-            {finding.evidence.instance_type && <div className="text-brand-muted"><span className="evidence-label">Type:</span> {finding.evidence.instance_type}</div>}
-          </div>
-        )}
-
-        <div className="flex justify-between text-xs">
-          <span className="text-brand-muted">Risk: <span className={getRiskColor(finding.risk_level)}>{finding.risk_level}</span></span>
-          {finding.implementation_time && <span className="text-brand-muted">Time: {finding.implementation_time}</span>}
-        </div>
-
-        {finding.suggested_action && <p className="text-sm text-brand-ink">{finding.suggested_action}</p>}
-
-        {finding.review_focus && (
-          <div className="text-xs text-brand-muted"><span className="font-semibold text-brand-ink">Review focus:</span> {finding.review_focus}</div>
-        )}
-
-        {finding.commands && finding.commands.length > 0 && !String(pickBestCommand(finding) || "").startsWith("#") && (
-          <div className="p-3 rounded-lg border border-[#E7DCCF] bg-[#F7F1EA]"><code className="text-xs font-mono text-brand-ink">{pickBestCommand(finding)}</code></div>
-        )}
-
-        <div className="flex items-center justify-between text-xs text-brand-muted">
-          {finding.last_analyzed && <span>Analyzed: {formatUtcTimestamp(finding.last_analyzed)}</span>}
-        </div>
-
-        <Button variant="outline" size="sm" onClick={() => onViewDetails(finding)} className="w-full btn-brand-outline">
-          <Eye className="h-3 w-3 mr-1" />
-          View Details & Methodology
-        </Button>
+    <CardContent>
+      <div className="flex items-center justify-between">
+        <QualityBadge quality={finding.quality} />
+        <button className="text-sm text-brand-accent underline" onClick={() => onOpen(finding)}>View details</button>
       </div>
     </CardContent>
   </Card>
 );
 
-const ProductTable = ({ products }) => (
-  <div className="table-brand rounded-lg">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="text-brand-muted font-semibold">Product</TableHead>
-          <TableHead className="text-right text-brand-muted font-semibold">30d Cost</TableHead>
-          <TableHead className="text-right text-brand-muted font-semibold">Prior-period change</TableHead>
-          <TableHead className="text-right text-brand-muted font-semibold">% of Total</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {products.map((p, i) => {
-          const change = p.change_percentage;
-          const label = p.product || p.name || p.service || "—";
-          const amount = toNumber(p.amount_usd || p.amount || 0);
-          const pct = toNumber(p.percent_of_total || 0);
-          return (
-            <TableRow key={i} className="hover:bg-brand-bg/30">
-              <TableCell className="font-medium text-brand-ink">{label}</TableCell>
-              <TableCell className="text-right text-brand-ink">{formatCurrency(amount)}</TableCell>
-              <TableCell className="text-right">
-                {Number.isFinite(change) ? (
-                  <div className={`flex items-center justify-end gap-1 ${change > 0 ? "text-brand-error" : change < 0 ? "text-brand-success" : "text-brand-muted"}`}>
-                    {change > 0 ? <TrendingUp className="h-3 w-3" /> : change < 0 ? <TrendingDown className="h-3 w-3" /> : null}
-                    {formatProductChange(change)}
-                  </div>
-                ) : <span className="text-brand-muted">Not available</span>}
-              </TableCell>
-              <TableCell className="text-right text-brand-ink">{pct.toFixed(1)}%</TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+const UnavailableDashboard = () => (
+  <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light">
+    <Header period="Validated source unavailable" />
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Alert role="alert" className="max-w-2xl mx-auto alert-brand">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>{CCAC_DASHBOARD_UNAVAILABLE_MESSAGE}</AlertDescription>
+      </Alert>
+    </main>
+    <AskClaude />
   </div>
 );
 
-const AiModelBreakdown = ({ models }) => (
-  <Card className="kpi-card shadow-sm">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-brand-ink">
-        <PieChartIcon className="h-5 w-5" />Cost by Model
-      </CardTitle>
-      <CardDescription className="text-brand-muted">AI model spend breakdown this period</CardDescription>
-    </CardHeader>
-    <CardContent className="pt-0">
-      <div className="flex items-center justify-between">
-        <div style={{ width: "55%", height: 260 }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie data={models} cx="50%" cy="50%" innerRadius={45} outerRadius={105} paddingAngle={2} dataKey="value">
-                {models.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-              </Pie>
-              <Tooltip
-                contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                formatter={(val, _n, props) => [formatCurrency(val), `${props.payload.name} (${props.payload.percentage}%)`]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+const Header = ({ period }) => (
+  <header className="nav-header">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <img src={logo} alt="Cloud & Capital" className="brand-logo" />
+          <div className="leading-tight">
+            <h1 className="brand-title">Cloud+ Cost Guard</h1>
+            <p className="text-[15px] text-brand-muted">Technology spend decision support <span style={{ opacity: 0.62, fontSize: "11px" }}>· Illustrative demo</span></p>
+          </div>
         </div>
-        <div className="w-2/5 space-y-2">
-          {models.map((m, i) => (
-            <div key={i} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.fill }} />
-                <span className="text-brand-ink text-xs truncate" style={{ maxWidth: "7rem" }}>{m.name}</span>
-              </div>
-              <div className="text-right flex-shrink-0 ml-2">
-                <div className="font-semibold text-brand-ink text-xs">{formatCurrency(m.value)}</div>
-                <div className="text-xs text-brand-muted">{m.percentage}%</div>
-              </div>
-            </div>
-          ))}
+        <div className="btn-brand-outline rounded-2xl flex items-center px-4 h-10 text-xs sm:text-sm text-brand-muted">
+          <Calendar className="h-4 w-4 mr-2" />{period}
         </div>
       </div>
-    </CardContent>
-  </Card>
+    </div>
+  </header>
 );
 
-const SaasToolChart = ({ tools }) => {
-  const data = tools.map(t => ({ name: t.tool, cost: toNumber(t.cost) }));
-  return (
-    <Card className="kpi-card shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-brand-ink">
-          <BarChart3 className="h-5 w-5" />Cost by Tool
-        </CardTitle>
-        <CardDescription className="text-brand-muted">Monthly SaaS spend per product</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div style={{ width: "100%", height: 280 }}>
-          <ResponsiveContainer>
-            <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
-              <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
-                tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
-              <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }} width={72} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                formatter={(value) => [formatCurrency(value), "Monthly Cost"]}
-              />
-              <Bar dataKey="cost" fill="#8B6F47" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const SaasMonthlyChart = ({ data }) => (
-  <Card className="kpi-card shadow-sm">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-brand-ink">
-        <TrendingUpIcon className="h-5 w-5" />Month-over-Month Trend
-      </CardTitle>
-      <CardDescription className="text-brand-muted">SaaS spend over the last 4 months</CardDescription>
-    </CardHeader>
-    <CardContent className="pt-0">
-      <div style={{ width: "100%", height: 280 }}>
-        <ResponsiveContainer>
-          <LineChart data={data} margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
-            <XAxis dataKey="month" stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }} />
-            <YAxis stroke="#7A6B5D" fontSize={12} tick={{ fill: "#7A6B5D" }}
-              tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} domain={["auto", "auto"]} />
-            <Tooltip
-              contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-              formatter={(value) => [formatCurrency(value), "Monthly Cost"]}
-            />
-            <Line type="monotone" dataKey="cost" stroke="#8B6F47" strokeWidth={3}
-              dot={{ fill: "#8B6F47", r: 5 }} activeDot={{ r: 7, fill: "#8B6F47" }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const SaasUnusedTable = ({ tools }) => (
-  <Card className="kpi-card shadow-sm">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-brand-ink">
-        <AlertTriangle className="h-5 w-5" />License Utilization
-      </CardTitle>
-      <CardDescription className="text-brand-muted">Seat usage and unused licenses per tool</CardDescription>
-    </CardHeader>
-    <CardContent className="pt-0">
-      <div className="table-brand rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-brand-muted font-semibold">Tool</TableHead>
-              <TableHead className="text-right text-brand-muted font-semibold">Monthly Cost</TableHead>
-              <TableHead className="text-right text-brand-muted font-semibold">Licensed</TableHead>
-              <TableHead className="text-right text-brand-muted font-semibold">Active</TableHead>
-              <TableHead className="text-right text-brand-muted font-semibold">Unused</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tools.map((t, i) => (
-              <TableRow key={i} className="hover:bg-brand-bg/30">
-                <TableCell className="font-medium text-brand-ink">{t.tool}</TableCell>
-                <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(t.cost))}</TableCell>
-                <TableCell className="text-right text-brand-ink">{t.seats_licensed > 0 ? t.seats_licensed : "—"}</TableCell>
-                <TableCell className="text-right text-brand-ink">{t.seats_active > 0 ? t.seats_active : "—"}</TableCell>
-                <TableCell className="text-right">
-                  {t.unused > 0
-                    ? <span className="font-semibold text-brand-error">{t.unused}</span>
-                    : <span className="text-brand-success">—</span>}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-/* -------- Main -------- */
 const Dashboard = () => {
-  const [summary, setSummary] = useState(null);
-  const [findings, setFindings] = useState([]);
-  const [costTrend, setCostTrend] = useState([]);
-  const [keyInsights, setKeyInsights] = useState({});
-  const [aiTrend, setAiTrend] = useState([]);
-  const [saasBaseTrend, setSaasBaseTrend] = useState([]);
-  const [k8sData, setK8sData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const report = getCloudCapitalReport();
-  const costBaseline = report?.cost_baseline || {};
-  const anomalies = report?.anomalies || {};
-  const resilience = report?.resilience || {};
-  const reportWindowLabel = report?.window?.label || "Last 30 days";
-  const tagging = report?.tagging || {};
-  const coveragePct = tagging.coverage_pct ?? 73;
-  const untaggedPct = tagging.untagged_pct ?? 27;
-  const hasCostData = costBaseline?.cost_status?.has_data !== false;
-
-  // Modal
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalFinding, setModalFinding] = useState(null);
-
-  useEffect(() => {
-    loadAllData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadAllData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const totalCost = hasCostData ? toNumber(costBaseline.total_cost) : 0;
-      const trendPct = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-
-      const topServices = Array.isArray(costBaseline.top_services) ? costBaseline.top_services : [];
-      const products = buildProductComparisons(topServices);
-
-      const resilienceWorkloads = Array.isArray(resilience.top_workloads) ? resilience.top_workloads : [];
-      const moversSeed = Array.isArray(anomalies.recent) ? anomalies.recent : [];
-      const recentFindings = [...resilienceWorkloads]
-        .sort((a, b) => toNumber(b.total_monthly_resilience_cost) - toNumber(a.total_monthly_resilience_cost))
-        .map((w, idx) => ({
-          finding_id: `resilience-${w.workload || idx}`,
-          title: w.workload || "—",
-          severity: idx === 0 ? "high" : idx === 1 ? "medium" : "low",
-          monthly_cost_usd: toNumber(w.total_monthly_resilience_cost)
-        }));
-
-      setSummary({
-        generated_at: report?.generated_at,
-        kpis: {
-          total_30d_cost: totalCost,
-          wow_percent: trendPct,
-          last_updated: report?.generated_at
-        },
-        top_products: products,
-        recent_findings: recentFindings
-      });
-
-      // Demo findings are derived directly from unified report sections:
-      // anomalies.recent + resilience.top_workloads.
-      const anomalyFindings = moversSeed.map((item, idx) => {
-        const group = item.group || "Cloud Service";
-        const severity = String(item.severity || "medium").toLowerCase();
-        const normalizedSeverity = ["critical", "high", "medium", "low"].includes(severity) ? severity : "medium";
-        const anomalyDelta = Math.max(0, toNumber(item.delta));
-        const monthlySavingsEstimate = Number((anomalyDelta * 6).toFixed(2));
-        const investigationCommand = buildAwsCostExplorerDailyCommand(item.timestamp);
-        return {
-          finding_id: `anomaly-${idx}-${String(group).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-          title: `${group} spend anomaly above baseline`,
-          type: "anomaly",
-          severity: normalizedSeverity,
-          confidence: normalizedSeverity === "critical" || normalizedSeverity === "high" ? "high" : "medium",
-          monthly_savings_usd_est: 0,
-          estimated_avoidable_run_rate_usd: monthlySavingsEstimate,
-          risk_level: normalizedSeverity === "critical" ? "High" : "Medium",
-          implementation_time: "1-3 hours",
-          suggested_action: `Investigate ${group} usage growth, validate workload changes, and apply scaling or budget guardrails to reduce repeat spikes.`,
-          commands: investigationCommand ? [investigationCommand] : [],
-          last_analyzed: item.timestamp || report?.generated_at,
-          evidence: {
-            service: group,
-            baseline: toNumber(item.baseline),
-            current: toNumber(item.current),
-            delta_usd: anomalyDelta,
-            delta_pct: toNumber(item.delta_pct)
-          },
-          methodology: "Illustrative anomaly investigation. The avoidable run rate is not counted as verified savings."
-        };
-      });
-
-      const resilienceDerivedFindings = resilienceWorkloads.slice(0, 2).map((workload, idx) => {
-        const workloadName = workload.workload || `workload-${idx + 1}`;
-        const resilienceCost = toNumber(workload.total_monthly_resilience_cost);
-        const opportunity = getOpportunity(report, workload.opportunity_id);
-        return {
-          finding_id: `resilience-finding-${idx}-${String(workloadName).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-          title: `Optimize resilience policy for ${workloadName}`,
-          type: "resilience",
-          severity: idx === 0 ? "high" : "medium",
-          opportunity_id: opportunity?.id,
-          confidence: opportunity?.confidence || "medium",
-          monthly_savings_usd_est: toNumber(opportunity?.estimated_monthly_amount),
-          risk_level: "Medium",
-          implementation_time: "2-4 hours",
-          suggested_action: `Review retention, backup frequency, and storage tiering for ${workloadName} while preserving required recovery objectives.`,
-          review_focus: `Backup retention, restore frequency, storage tiering, and required recovery objectives for ${workloadName}.`,
-          last_analyzed: report?.generated_at,
-          evidence: {
-            workload: workloadName,
-            monthly_resilience_cost: resilienceCost
-          },
-          methodology: opportunity?.source_methodology || "Opportunity methodology unavailable."
-        };
-      });
-
-      const demoFindings = [...anomalyFindings, ...resilienceDerivedFindings].slice(0, 6);
-      setFindings(demoFindings);
-
-      // One deterministic, reconciled business scenario drives every daily chart.
-      const dailyScenario = getIllustrativeSpendScenario();
-      const series = dailyScenario.map((row) => ({
-        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
-        dateISO: row.dateISO,
-        cost: row.cloud,
-      }));
-      setCostTrend(series);
-
-      // Key Insights
-      const highest = series.reduce(
-        (m, pt) => (pt.cost > m.amount ? { date: pt.formatted_date, dateISO: pt.dateISO || new Date().toISOString().slice(0,10), amount: pt.cost } : m),
-        { date: "-", dateISO: null, amount: 0 }
-      );
-      setKeyInsights({
-        highest_single_day: highest,
-        projected_month_end: totalCost + toNumber(costBaseline?.trend?.change_amount),
-      });
-
-      setAiTrend(dailyScenario.map((row) => ({
-        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
-        cost: row.ai,
-      })));
-      setSaasBaseTrend(dailyScenario.map((row) => ({
-        formatted_date: `${row.dateISO.slice(5, 7)}/${row.dateISO.slice(8, 10)}`,
-        cost: row.saas,
-      })));
-
-      setK8sData(report?.kubernetes || null);
-
-    } catch (err) {
-      console.error("Error loading data:", err);
-      setError("Failed to load cost data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openFindingModal = (finding) => {
-    setModalFinding(finding);
-    setModalOpen(true);
-  };
-
-  const exportCSV = () => {
-    try {
-      const rowsToExport = (Array.isArray(findings) ? findings : [])
-        .filter((f) => toNumber(f.monthly_savings_usd_est) > 0);
-      const headers = ["Title", "Type", "Severity", "Estimated Monthly Opportunity", "Scope", "Review Plan"];
-      const rows = rowsToExport.map((f) => [
-        f.title,
-        f.type,
-        f.severity,
-        f.monthly_savings_usd_est,
-        f.evidence?.resource_id || f.evidence?.workload || "",
-        f.suggested_action,
-      ]);
-      const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "cost-findings.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export failed:", err);
-      alert("Export failed. Please try again.");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-brand-muted">Loading cost analysis...</p>
-        </div>
-      </div>
-    );
+  const [selectedFinding, setSelectedFinding] = useState(null);
+  let view;
+  try {
+    view = getValidatedCcacDashboardView();
+  } catch (error) {
+    if (error instanceof CcacDashboardViewUnavailableError) return <UnavailableDashboard />;
+    throw error;
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light flex items-center justify-center">
-        <Alert className="max-w-md alert-brand">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const metricById = new Map();
+  const add = (metrics) => metrics.forEach((metric) => metricById.set(metric.id, metric));
+  add([view.cloud.total, ...view.cloud.comparison, ...view.cloud.services, ...view.cloud.daily, view.ai.total, ...view.ai.metrics,
+    ...view.saas.invoice_metrics, ...view.resilience.modeled_metrics, ...view.resilience.observed_restore_metrics]);
+  view.anomalies.forEach((item) => add([item.observed, item.expected, item.impact, item.percentage_change, item.score]));
 
-  const { top_products = [], recent_findings = [] } = summary || {};
-  const trendPercent = hasCostData ? toNumber(costBaseline?.trend?.change_percentage) : null;
-  const severityCounts = anomalies.by_severity || {};
-  const criticalCount = toNumber(severityCounts.critical);
-  const highCount = toNumber(severityCounts.high);
-  const mediumCount = toNumber(severityCounts.medium);
-
-  // AI Spend render-time constants
-  const aiSpend = report?.ai_spend || {};
-  const aiPalette = ["#8B6F47", "#B5905C", "#D8C3A5", "#A8A7A7", "#E98074"];
-  const aiModelTotal = (aiSpend.models || []).reduce((s, m) => s + toNumber(m.cost), 0);
-  const aiModelChartData = (aiSpend.models || []).map((m, i) => ({
-    name: m.model,
-    value: toNumber(m.cost),
-    percentage: aiModelTotal ? Number(((toNumber(m.cost) / aiModelTotal) * 100).toFixed(1)) : 0,
-    fill: aiPalette[i % aiPalette.length]
-  }));
-
-  // SaaS Spend render-time constants
-  const saasSpend = report?.saas_spend || {};
-
-  // Cloud+ Summary render-time constants
-  const cloudTotal = toNumber(costBaseline.total_cost);
-  const aiTotal = toNumber(aiSpend.total_cost);
-  const saasTotal = toNumber(saasSpend.total_cost);
-  const grandTotal = cloudTotal + aiTotal + saasTotal;
-  const cloudPrev = toNumber(costBaseline?.trend?.previous_period_cost) || 0;
-  const aiPrev = aiTotal - toNumber(aiSpend.trend?.change_amount);
-  const saasPrev = saasTotal - toNumber(saasSpend.trend?.change_amount);
-  const grandPrev = cloudPrev + aiPrev + saasPrev;
-  const grandDeltaAmt = grandTotal - grandPrev;
-  const grandDeltaPct = grandPrev > 0 ? (grandDeltaAmt / grandPrev) * 100 : 0;
-  const scopeDonutData = [
-    { name: "Cloud Infrastructure", value: cloudTotal, fill: "#6b8f71" },
-    { name: "AI / LLM",             value: aiTotal,    fill: "#c4956a" },
-    { name: "SaaS Tools",           value: saasTotal,  fill: "#8b9dc3" }
-  ];
-  const topAnomaly = Array.isArray(anomalies.recent) && anomalies.recent.length > 0 ? anomalies.recent[0] : null;
-  const projCloudNextMonth = (keyInsights?.projected_month_end || cloudTotal);
-  const projAiNextMonth = aiTotal + toNumber(aiSpend.trend?.change_amount);
-  const projSaasNextMonth = saasTotal + toNumber(saasSpend.trend?.change_amount);
-  const projGrandTotal = projCloudNextMonth + projAiNextMonth + projSaasNextMonth;
-
-  // Daily Tech Spend is the reconciled sum of Cloud + AI + normalized SaaS.
-  const unifiedTrend = costTrend.map((pt, i) => ({
-    formatted_date: pt.formatted_date,
-    total: pt.cost + (aiTrend[i]?.cost || 0) + (saasBaseTrend[i]?.cost || 0),
-  }));
-
-  // Filter to savings-impact findings and recompute UI-facing metrics
-  const positiveFindings = (Array.isArray(findings) ? findings : []).filter(f => toNumber(f.monthly_savings_usd_est) > 0);
-  const displayFindings = sortAndPickFindings(positiveFindings, 9);
-  const resilienceAggregate = getOpportunityAggregate(report, "agg-resilience-modeled");
-  const k8sOpportunity = getOpportunity(report, report?.kubernetes?.opportunity_id);
+  const unsupported = Object.fromEntries(view.unsupported.map((item) => [item.concept, item]));
+  const cloudChange = view.cloud.comparison.find((metric) => metric.id === "metric.cloud.change-percentage");
+  const aiCostMetrics = view.ai.metrics.filter((metric) => metric.trace.unit === "currency" && metric.dimensions?.model);
+  const aiRequestMetrics = view.ai.metrics.filter((metric) => metric.trace.unit === "requests");
+  const saasOpportunity = view.opportunity.annual_aggregate;
+  const period = periodLabel(view.cloud.total.trace.period);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light">
-      {/* Header */}
-      <div className="nav-header">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <img src={logo} alt="Cloud & Capital" className="brand-logo" />
-              <div className="leading-tight">
-                <h1 className="brand-title">Cloud+ Cost Guard</h1>
-                <p className="text-[15px] text-brand-muted">Technology spend decision support <span style={{ opacity: 0.62, fontSize: "11px", letterSpacing: "0.04em" }}>· Illustrative demo</span></p>
-              </div>
-            </div>
-
-            <div className="grid w-full grid-cols-3 items-center gap-2 sm:flex sm:w-auto">
-              <div className="btn-brand-outline min-w-0 rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs sm:text-sm text-brand-muted">
-                <Calendar className="h-4 w-4 mr-2" />
-                {reportWindowLabel}
-              </div>
-
-              <Button variant="outline" onClick={exportCSV} className="btn-brand-outline min-w-0 rounded-2xl px-2 sm:px-4 text-xs sm:text-sm">
-                <Download className="h-4 w-4 mr-1 sm:mr-2" />
-                Export CSV
-              </Button>
-
-              <Button onClick={loadAllData} className="btn-brand-primary min-w-0 rounded-2xl px-2 sm:px-4 text-xs sm:text-sm">
-                <Activity className="h-4 w-4 mr-1 sm:mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        {/* Data Source banner (compact caption) */}
+      <Header period={period} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3">
-          <span><span className="font-medium">Data:</span> Illustrative AWS, Azure, GCP, Kubernetes, AI and SaaS sample</span>
-          <span className="hidden sm:inline">•</span>
-          <span>Demo snapshot: {formatUtcTimestamp(report?.generated_at)}</span>
+          <span><span className="font-medium">Data:</span> Validated CCAC illustrative dashboard view</span><span>•</span>
+          <span>Snapshot: {view.identity.generated_at}</span>
         </div>
 
-        {/* ── Cloud+ Executive Summary ───────────────────── */}
         <div className="space-y-6 mb-8">
-
-          {/* Hero banner: grand total + period delta + projected */}
           <Card className="kpi-card shadow-sm">
             <CardContent className="py-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">
-                    Total Tech Spend — Cloud · AI · SaaS
-                  </div>
-                  <div className="text-4xl font-bold text-brand-ink">{formatCurrency(grandTotal)}</div>
-                  <div className="flex items-center gap-1.5 mt-2 text-sm">
-                    {grandDeltaAmt >= 0
-                      ? <TrendingUp className="h-4 w-4 text-brand-error" />
-                      : <TrendingDown className="h-4 w-4 text-brand-success" />}
-                    <span className={grandDeltaAmt >= 0 ? "font-semibold text-brand-error" : "font-semibold text-brand-success"}>
-                      {grandDeltaAmt >= 0 ? "+" : ""}{formatCurrency(grandDeltaAmt)}
-                    </span>
-                    <span className={grandDeltaAmt >= 0 ? "text-brand-error" : "text-brand-success"}>
-                      ({formatPercent(grandDeltaPct)})
-                    </span>
-                    <span className="text-brand-muted ml-1">vs prior period · {reportWindowLabel}</span>
-                  </div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">Cloud infrastructure spend</div>
+                  <div className="text-4xl font-bold text-brand-ink" data-canonical-id={view.cloud.total.id}>{metricText(view.cloud.total)}</div>
+                  <div className="text-sm text-brand-muted mt-2" data-canonical-id={cloudChange?.id}>{metricText(cloudChange)} vs previous equal-length period</div>
                 </div>
-                <div className="md:text-right">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-brand-muted mb-1">Projected Next Month</div>
-                  <div className="text-2xl font-bold text-brand-ink">{formatCurrency(projGrandTotal)}</div>
-                  <div className="text-xs text-brand-muted mt-0.5">based on current period trends</div>
-                </div>
+                <div className="md:text-right"><div className="text-xs font-semibold uppercase tracking-wider text-brand-muted">Combined technology spend</div><div className="text-lg font-semibold text-brand-muted mt-1">Unavailable</div><div className="text-xs text-brand-muted">{unsupported.combined_technology_spend.explanation}</div></div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Three scope cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <KPICard
-              title="Cloud Infrastructure"
-              value={formatCurrency(cloudTotal)}
-              change={hasCostData ? trendPercent : null}
-              icon={DollarSign}
-              subtitle="vs last period"
-            />
-            <KPICard
-              title="AI / LLM Spend"
-              value={formatCurrency(aiTotal)}
-              change={toNumber(aiSpend.trend?.change_percentage)}
-              icon={Bot}
-              subtitle="vs last period"
-            />
-            <KPICard
-              title="SaaS Tools"
-              value={formatCurrency(saasTotal)}
-              change={toNumber(saasSpend.trend?.change_percentage)}
-              icon={Layers}
-              subtitle="vs last period"
-            />
+            <MetricCard title="Cloud Infrastructure" metric={view.cloud.total} />
+            <MetricCard title="AI / LLM Spend" metric={view.ai.total} icon={Bot} subtitle="Non-additive outside the AI domain" />
+            <MetricCard title="SaaS Tools" metric={view.saas.invoice_metrics[0]} icon={Layers} subtitle="Partial-quality invoice metric; no combined SaaS total" />
           </div>
 
-          {/* Tag Coverage + estimated opportunity */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-brand-muted">Tag Coverage</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl font-bold text-brand-ink">{coveragePct}%</span>
-                  <span className="text-xs text-brand-muted">{untaggedPct}% untagged · {formatCurrency(tagging.untagged_monthly_cost)} unattributed</span>
-                </div>
-                <div style={{ width: "100%", height: 8, background: "#E9E3DE", borderRadius: 999 }}>
-                  <div style={{ width: `${coveragePct}%`, height: 8, background: "#6b8f71", borderRadius: 999 }} />
-                </div>
-                <p className="text-xs text-brand-muted mt-2">of resources properly tagged</p>
-              </CardContent>
-            </Card>
-
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-brand-muted">{resilienceAggregate?.label || "Modeled Resilience Opportunity"}</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold" style={{ color: "#16803A" }}>
-                  {formatCurrency(resilienceAggregate?.estimated_monthly_amount)}
-                </div>
-                <p className="text-xs text-brand-muted mt-1">
-                  illustrative monthly estimate across {resilienceAggregate?.opportunity_ids?.length || 0} resilience findings · not verified savings
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="kpi-card shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" />Daily Cloud Spend</CardTitle><CardDescription>Canonical order · {period}</CardDescription></CardHeader><CardContent><div style={{width:"100%",height:280}}><ResponsiveContainer><LineChart data={view.cloud.daily}><CartesianGrid strokeDasharray="3 3" stroke="#EEE"/><XAxis dataKey="dimensions.date" fontSize={11}/><YAxis fontSize={11}/><Tooltip formatter={(value) => [formatCanonicalDecimal(value,{currency:true}),"Cloud spend"]}/><Line type="monotone" dataKey="value" stroke="#8B6F47" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></div></CardContent></Card>
+            <Card className="kpi-card shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" />Cloud Services</CardTitle><CardDescription>Canonical service order</CardDescription></CardHeader><CardContent><div style={{width:"100%",height:280}}><ResponsiveContainer><BarChart data={view.cloud.services.map((metric)=>({...metric,label:displayService(metric.dimensions.service)}))}><CartesianGrid strokeDasharray="3 3" stroke="#EEE"/><XAxis dataKey="label"/><YAxis/><Tooltip formatter={(value)=>[formatCanonicalDecimal(value,{currency:true}),"Cost"]}/><Bar dataKey="value" fill="#6b8f71"/></BarChart></ResponsiveContainer></div></CardContent></Card>
           </div>
-
-          {/* Unified trend + scope donut + top anomaly & forecast */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Reconciled total technology-spend trend */}
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-brand-ink">
-                  <BarChart3 className="h-5 w-5" />Daily Tech Spend
-                </CardTitle>
-                <CardDescription className="text-brand-muted">
-                  Cloud + AI + SaaS — {reportWindowLabel}. {SAAS_NORMALIZATION_NOTE}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div style={{ width: "100%", height: 260 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={unifiedTrend} margin={{ left: 4, right: 8, top: 4, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#EEE" />
-                      <XAxis dataKey="formatted_date" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} interval={6} />
-                      <YAxis stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }} tickFormatter={formatCompactCurrencyTick} width={48} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                        formatter={(value) => [formatCurrency(value), "Daily Tech Spend"]}
-                      />
-                      <Line type="monotone" dataKey="total" name="Daily Tech Spend" stroke="#8B6F47" strokeWidth={3} dot={false} activeDot={{ r: 4, fill: "#8B6F47" }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tech Spend by Scope donut */}
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-brand-ink">
-                  <PieChartIcon className="h-5 w-5" />Tech Spend by Scope
-                </CardTitle>
-                <CardDescription className="text-brand-muted">Cloud vs AI vs SaaS share of total</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div style={{ width: "100%", height: 200 }}>
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={scopeDonutData} cx="50%" cy="50%" innerRadius={50} outerRadius={88} paddingAngle={3} dataKey="value">
-                        {scopeDonutData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                        formatter={(val, _n, props) => [
-                          formatCurrency(val),
-                          `${props.payload.name} (${grandTotal ? ((val / grandTotal) * 100).toFixed(1) : 0}%)`
-                        ]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-2.5 mt-3">
-                  {scopeDonutData.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
-                        <span className="text-brand-muted text-xs">{s.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-brand-ink text-xs">{formatCurrency(s.value)}</span>
-                        <span className="text-xs text-brand-muted w-9 text-right">
-                          {grandTotal ? ((s.value / grandTotal) * 100).toFixed(1) : 0}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top anomaly + next-month forecast */}
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-brand-ink">
-                  <AlertTriangle className="h-5 w-5" />Top Signal &amp; Forecast
-                </CardTitle>
-                <CardDescription className="text-brand-muted">Highest-impact anomaly and next-month projection</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-5">
-                {topAnomaly ? (
-                  <div className="p-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2]">
-                    <div className="flex items-center gap-2 mb-3">
-                      {getSeverityIcon(topAnomaly.severity)}
-                      <span className="text-sm font-semibold text-brand-ink">{formatTopSignalLabel(topAnomaly.group)}</span>
-                      <Badge className={`ml-auto ${getSeverityColor(topAnomaly.severity)} text-xs px-2 py-0.5`}>
-                        {String(topAnomaly.severity || "").toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 text-xs">
-                      <div>
-                        <div className="text-brand-muted mb-0.5">Baseline</div>
-                        <div className="font-semibold text-brand-ink">{formatCurrency(toNumber(topAnomaly.baseline))}</div>
-                      </div>
-                      <div>
-                        <div className="text-brand-muted mb-0.5">Current</div>
-                        <div className="font-semibold text-brand-error">{formatCurrency(toNumber(topAnomaly.current))}</div>
-                      </div>
-                      <div>
-                        <div className="text-brand-muted mb-0.5">Delta</div>
-                        <div className="font-semibold text-brand-error">+{toNumber(topAnomaly.delta_pct).toFixed(1)}%</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl border border-brand-line bg-brand-bg/30 text-sm text-brand-muted flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-brand-success" />No anomalies detected.
-                  </div>
-                )}
-
-                <Separator />
-
-                <div>
-                  <div className="text-sm font-medium text-brand-ink mb-3">Next Month Forecast</div>
-                  <div className="space-y-2.5">
-                    {[
-                      { label: "Cloud", value: projCloudNextMonth, pct: grandTotal ? ((cloudTotal / grandTotal) * 100).toFixed(1) : "0", fill: "#8B6F47" },
-                      { label: "AI",    value: projAiNextMonth,    pct: grandTotal ? ((aiTotal    / grandTotal) * 100).toFixed(1) : "0", fill: "#B5905C" },
-                      { label: "SaaS",  value: projSaasNextMonth,  pct: grandTotal ? ((saasTotal  / grandTotal) * 100).toFixed(1) : "0", fill: "#D8C3A5" },
-                    ].map((s, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
-                          <span className="text-brand-muted">{s.label}</span>
-                          <span className="text-xs text-brand-muted">({s.pct}%)</span>
-                        </div>
-                        <span className="font-medium text-brand-ink">{formatCurrency(s.value)}</span>
-                      </div>
-                    ))}
-                    <Separator />
-                    <div className="flex items-center justify-between text-sm font-semibold pt-0.5">
-                      <span className="text-brand-ink">Total</span>
-                      <span className="text-brand-ink">{formatCurrency(projGrandTotal)}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-        </div>
-        {/* ── End Cloud+ Executive Summary ────────────────── */}
-
-        {/* Compact AI triage */}
-        <div className="mb-6">
-          <TriageCard defaultExpanded={false} />
         </div>
 
-        {/* K8s spend summary in the unified header area */}
-        {k8sData && (
-          <div className="mb-4 text-xs text-brand-muted flex items-center gap-3">
-            <Server className="h-3 w-3" />
-            <span>
-              <span className="font-medium">Kubernetes:</span>{" "}
-              {formatCurrency(k8sData.total_cost)}/mo ·{" "}
-              {k8sData.avg_node_utilization_pct}% avg node util ·{" "}
-              <span className="text-brand-error font-medium">{formatCurrency(k8sOpportunity?.estimated_monthly_amount)} estimated over-provisioning opportunity</span>
-              <span> · allocated within cloud spend</span>
-            </span>
-          </div>
-        )}
+        <div className="mb-6"><TriageCard findings={view.findings} generatedAt={view.identity.generated_at} /></div>
 
-        {/* Tabs — drill-down by scope */}
         <Tabs defaultValue="findings" className="space-y-6">
           <TabsList className="ccg-tabs">
-            <TabsTrigger value="findings" className="ccg-tab">Findings</TabsTrigger>
-            <TabsTrigger value="products" className="ccg-tab">Products</TabsTrigger>
-            <TabsTrigger value="clouds" className="ccg-tab">Clouds</TabsTrigger>
-            <TabsTrigger value="kubernetes" className="ccg-tab">Kubernetes</TabsTrigger>
-            <TabsTrigger value="overview" className="ccg-tab">Overview</TabsTrigger>
-            <TabsTrigger value="ai-spend" className="ccg-tab">AI Spend</TabsTrigger>
-            <TabsTrigger value="saas" className="ccg-tab">SaaS</TabsTrigger>
+            <TabsTrigger value="findings" className="ccg-tab">Findings</TabsTrigger><TabsTrigger value="products" className="ccg-tab">Products</TabsTrigger><TabsTrigger value="clouds" className="ccg-tab">Clouds</TabsTrigger><TabsTrigger value="kubernetes" className="ccg-tab">Kubernetes</TabsTrigger><TabsTrigger value="overview" className="ccg-tab">Overview</TabsTrigger><TabsTrigger value="ai-spend" className="ccg-tab">AI Spend</TabsTrigger><TabsTrigger value="saas" className="ccg-tab">SaaS</TabsTrigger>
           </TabsList>
 
-          {/* Findings */}
           <TabsContent value="findings" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">
-                Cost Optimization Findings
-              </h2>
-              <Badge className="badge-brand text-brand-success border-brand-success/20">
-                {displayFindings.length} optimization finding{displayFindings.length === 1 ? "" : "s"}
-              </Badge>
-            </div>
-
-            {displayFindings.length === 0 ? (
-              <Card className="kpi-card shadow-sm">
-                <CardContent className="text-center py-12">
-                  <CheckCircle className="h-12 w-12 text-brand-success mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-brand-ink mb-2">No estimated opportunities</h3>
-                  <p className="text-brand-muted">This demo dataset has no supported optimization findings for the selected period.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {displayFindings.map((f) => (
-                  <FindingCard key={f.finding_id || `${f.title}-${f.resource_id || ""}`} finding={f} onViewDetails={openFindingModal} />
-                ))}
-              </div>
-            )}
+            <div className="flex items-center justify-between"><h2 className="font-brand-serif text-[20px] font-semibold">Cost Optimization Findings</h2><Badge className="badge-brand">{view.findings.length} findings</Badge></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{view.findings.map((finding)=><FindingCard key={finding.id} finding={finding} onOpen={setSelectedFinding}/>)}</div>
+            {selectedFinding && <Card className="kpi-card shadow-sm" role="dialog" aria-label="Finding details"><CardHeader><CardTitle>{displayFindingTitle(selectedFinding.title)}</CardTitle><CardDescription>{selectedFinding.context}</CardDescription></CardHeader><CardContent className="space-y-2"><p className="text-sm text-brand-muted">Canonical metrics</p>{selectedFinding.metric_ids.map((id)=><div key={id} className="text-sm" data-canonical-id={id}>{metricById.has(id) ? metricText(metricById.get(id)) : "Referenced canonical metric is not projected for display"}</div>)}</CardContent></Card>}
           </TabsContent>
 
-          {/* Products */}
-          <TabsContent value="products" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">Product Cost Breakdown</h2>
-              <Badge className="badge-brand">{reportWindowLabel}</Badge>
-            </div>
+          <TabsContent value="products" className="space-y-6"><h2 className="font-brand-serif text-[20px] font-semibold">Product Cost Breakdown</h2><Card className="kpi-card"><CardContent className="pt-6"><Table><TableHeader><TableRow><TableHead>Service</TableHead><TableHead className="text-right">Cost</TableHead><TableHead>Quality</TableHead></TableRow></TableHeader><TableBody>{view.cloud.services.map((metric)=><TableRow key={metric.id}><TableCell>{displayService(metric.dimensions.service)}</TableCell><TableCell className="text-right" data-canonical-id={metric.id}>{metricText(metric)}</TableCell><TableCell><QualityBadge quality={metric.trace.quality}/></TableCell></TableRow>)}</TableBody></Table></CardContent></Card></TabsContent>
 
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-brand-ink"><BarChart3 className="h-5 w-5" />Top Products by Cost</CardTitle>
-                <CardDescription className="text-brand-muted">Highest cloud product costs and deterministic prior-period changes</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ProductTable products={Array.isArray(top_products) ? top_products : []} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="clouds" className="space-y-6"><h2 className="font-brand-serif text-[20px] font-semibold">Cloud Cost Management</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><MetricCard title="AWS cloud cost" metric={view.cloud.total}/><UnsupportedCard title="Azure and GCP breakdown" entry={{explanation:"The validated view projects AWS cloud metrics only; no other provider value is available."}}/></div></TabsContent>
+          <TabsContent value="kubernetes" className="space-y-6"><h2 className="font-brand-serif text-[20px] font-semibold">Kubernetes Cost Visibility</h2><UnsupportedCard title="Kubernetes cost and utilization" entry={unsupported.kubernetes_cost_or_utilization}/></TabsContent>
 
-          {/* Clouds */}
-          <TabsContent value="clouds" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">
-                Cloud Infrastructure by Provider
-              </h2>
-              <Badge className="badge-brand">{reportWindowLabel}</Badge>
-            </div>
+          <TabsContent value="overview" className="space-y-6"><h2 className="font-brand-serif text-[20px] font-semibold">Cost Overview</h2><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><Card className="kpi-card"><CardHeader><CardTitle>Anomaly Signals</CardTitle><CardDescription>Impact is not a savings estimate</CardDescription></CardHeader><CardContent className="space-y-3">{view.anomalies.map((item)=><div key={item.finding.id} className="p-3 border rounded-lg"><div className="font-medium">{displayFindingTitle(item.finding.title)}</div><div className="text-sm text-brand-muted mt-1">Observed <span data-canonical-id={item.observed.id}>{metricText(item.observed)}</span> · Expected <span data-canonical-id={item.expected.id}>{metricText(item.expected)}</span> · Impact <span data-canonical-id={item.impact.id}>{metricText(item.impact)}</span></div></div>)}</CardContent></Card><Card className="kpi-card"><CardHeader><CardTitle>Annual Estimated Opportunity</CardTitle><CardDescription>{saasOpportunity.label}</CardDescription></CardHeader><CardContent><div className="text-2xl font-bold" data-canonical-id={saasOpportunity.id}>{formatCanonicalDecimal(saasOpportunity.low,{currency:true})} – {formatCanonicalDecimal(saasOpportunity.high,{currency:true})}</div><p className="text-xs text-brand-muted mt-2">Annual · estimated · low confidence · not verified savings</p></CardContent></Card></div><Card className="kpi-card"><CardHeader><CardTitle>Resilience economics</CardTitle><CardDescription>Canonical modeled metrics in contractual order; modeled values do not demonstrate recoverability</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Metric</TableHead><TableHead className="text-right">Canonical value</TableHead><TableHead>Quality</TableHead></TableRow></TableHeader><TableBody>{view.resilience.modeled_metrics.map((metric)=><TableRow key={metric.id}><TableCell>{metric.name}</TableCell><TableCell className="text-right" data-canonical-id={metric.id}>{metricText(metric)}</TableCell><TableCell><QualityBadge quality={metric.trace.quality}/></TableCell></TableRow>)}</TableBody></Table></CardContent></Card></TabsContent>
 
-            {/* Three-cloud KPI summary row */}
-            {(() => {
-              const clouds = report?.clouds || {};
-              const cloudDefs = [
-                { key: "aws",   label: "Amazon Web Services", color: "#E8870A", bg: "#FFF8F0" },
-                { key: "azure", label: "Microsoft Azure",      color: "#0078D4", bg: "#EFF6FF" },
-                { key: "gcp",   label: "Google Cloud",         color: "#1A73E8", bg: "#EEF4FF" },
-              ];
-              const allTotal = cloudDefs.reduce((s, d) => s + toNumber((clouds[d.key] || {}).total_cost), 0);
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {cloudDefs.map(({ key, label, color }) => {
-                    const c = clouds[key] || {};
-                    const trend = toNumber(c.trend?.change_percentage);
-                    const share = allTotal > 0 ? ((toNumber(c.total_cost) / allTotal) * 100).toFixed(1) : "0";
-                    return (
-                      <Card key={key} className="kpi-card shadow-sm" style={{ borderTop: `3px solid ${color}` }}>
-                        <CardContent className="py-4">
-                          <div className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color }}>{label}</div>
-                          <div className="text-2xl font-bold text-brand-ink">{formatCurrency(toNumber(c.total_cost))}</div>
-                          <div className="flex items-center gap-1 mt-1 text-xs">
-                            {trend >= 0
-                              ? <TrendingUp className="h-3 w-3 text-brand-error" />
-                              : <TrendingDown className="h-3 w-3 text-brand-success" />}
-                            <span className={trend >= 0 ? "text-brand-error" : "text-brand-success"}>{formatPercent(trend)}</span>
-                            <span className="text-brand-muted ml-1">vs prior period · {share}% of cloud total</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              );
-            })()}
+          <TabsContent value="ai-spend" className="space-y-6"><h2 className="font-brand-serif text-[20px] font-semibold">AI Spend</h2><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><MetricCard title="Total AI Spend" metric={view.ai.total} icon={Bot}/><MetricCard title="Requests (first canonical allocation)" metric={aiRequestMetrics[0]} icon={Layers}/><UnsupportedCard title="AI forecast" entry={unsupported.next_month_forecast}/></div><Card className="kpi-card"><CardHeader><CardTitle>AI model costs</CardTitle><CardDescription>Canonical allocation order; values are not recomputed into shares</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Model</TableHead><TableHead>Provider</TableHead><TableHead className="text-right">Cost</TableHead></TableRow></TableHeader><TableBody>{aiCostMetrics.map((metric)=><TableRow key={metric.id}><TableCell>{metric.dimensions.model}</TableCell><TableCell>{metric.dimensions.provider}</TableCell><TableCell className="text-right" data-canonical-id={metric.id}>{metricText(metric)}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card></TabsContent>
 
-            {/* Per-cloud drill-down */}
-            <Tabs defaultValue="aws" className="space-y-4">
-              <TabsList className="ccg-tabs">
-                <TabsTrigger value="aws" className="ccg-tab">AWS</TabsTrigger>
-                <TabsTrigger value="azure" className="ccg-tab">Azure</TabsTrigger>
-                <TabsTrigger value="gcp" className="ccg-tab">GCP</TabsTrigger>
-              </TabsList>
-
-              {[
-                { key: "aws",   label: "Amazon Web Services", color: "#E8870A" },
-                { key: "azure", label: "Microsoft Azure",      color: "#0078D4" },
-                { key: "gcp",   label: "Google Cloud",         color: "#1A73E8" },
-              ].map(({ key, label, color }) => {
-                const cloudData = report?.clouds?.[key] || {};
-                const services = Array.isArray(cloudData.top_services) ? cloudData.top_services : [];
-                const cloudFindings = sortAndPickFindings(
-                  Array.isArray(cloudData.findings) ? cloudData.findings : [],
-                  3
-                );
-                const serviceChartData = services.map(s => ({
-                  name: s.service_name,
-                  cost: toNumber(s.total_cost),
-                }));
-                const trendPct = toNumber(cloudData.trend?.change_percentage);
-                const cloudOpportunityAggregate = getOpportunityAggregate(report, `agg-${key}-estimated`);
-
-                return (
-                  <TabsContent key={key} value={key} className="space-y-6">
-                    {/* Cloud summary row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <KPICard
-                        title={`${label} Total`}
-                        value={formatCurrency(toNumber(cloudData.total_cost))}
-                        change={trendPct}
-                        icon={DollarSign}
-                        subtitle="vs prior period"
-                      />
-                      <KPICard
-                        title="Daily Average"
-                        value={formatCurrency(toNumber(cloudData.daily_average))}
-                        icon={BarChart3}
-                        subtitle={reportWindowLabel}
-                      />
-                      <KPICard
-                        title={cloudOpportunityAggregate?.label || `Estimated ${label} Opportunity`}
-                        value={formatCurrency(cloudOpportunityAggregate?.estimated_monthly_amount)}
-                        icon={TrendingDown}
-                        subtitle={`across ${cloudOpportunityAggregate?.opportunity_ids?.length || 0} findings`}
-                      />
-                    </div>
-
-                    {/* Service breakdown */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <Card className="kpi-card shadow-sm">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="flex items-center gap-2 text-brand-ink">
-                            <BarChart3 className="h-5 w-5" />
-                            <span style={{ color }}>{label}</span> — Service Breakdown
-                          </CardTitle>
-                          <CardDescription className="text-brand-muted">
-                            {reportWindowLabel} · {formatCurrency(toNumber(cloudData.total_cost))} total
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div style={{ width: "100%", height: 260 }}>
-                            <ResponsiveContainer>
-                              <BarChart data={serviceChartData} layout="vertical" margin={{ left: 8, right: 48, top: 4, bottom: 4 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
-                                <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
-                                  tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
-                                <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={11}
-                                  tick={{ fill: "#7A6B5D" }} width={116} />
-                                <Tooltip
-                                  contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                                  formatter={(value) => [formatCurrency(value), "Cost"]}
-                                />
-                                <Bar dataKey="cost" fill={color} radius={[0, 4, 4, 0]} />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="kpi-card shadow-sm">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-brand-ink">Top Services</CardTitle>
-                          <CardDescription className="text-brand-muted">
-                            Cost share by service — {reportWindowLabel}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="table-brand rounded-lg">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="text-brand-muted font-semibold">Service</TableHead>
-                                  <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
-                                  <TableHead className="text-right text-brand-muted font-semibold">% of Total</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {services.map((s, i) => (
-                                  <TableRow key={i} className="hover:bg-brand-bg/30">
-                                    <TableCell className="font-medium text-brand-ink">{s.service_name}</TableCell>
-                                    <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(s.total_cost))}</TableCell>
-                                    <TableCell className="text-right text-brand-ink">{toNumber(s.percentage_of_total).toFixed(1)}%</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Cloud-specific findings */}
-                    {cloudFindings.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-brand-ink mb-4">
-                          {label} Optimization Findings
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {cloudFindings.map((f) => (
-                            <FindingCard key={f.finding_id} finding={f} onViewDetails={openFindingModal} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          </TabsContent>
-
-          {/* Kubernetes */}
-          <TabsContent value="kubernetes" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">
-                Kubernetes Cost Visibility
-              </h2>
-              <Badge className="badge-brand">{reportWindowLabel}</Badge>
-            </div>
-
-            {k8sData ? (
-              <>
-                {/* K8s KPI row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <KPICard
-                    title="Total K8s Spend"
-                    value={formatCurrency(toNumber(k8sData.total_cost))}
-                    icon={Server}
-                    subtitle={`${k8sData.cluster_count} cluster${k8sData.cluster_count !== 1 ? "s" : ""} · included in cloud total`}
-                  />
-                  <KPICard
-                    title="Avg Node Utilization"
-                    value={`${toNumber(k8sData.avg_node_utilization_pct).toFixed(1)}%`}
-                    icon={Activity}
-                    subtitle="CPU + memory weighted"
-                  />
-                  <KPICard
-                    title={k8sOpportunity?.label || "Estimated Over-provisioning Opportunity"}
-                    value={formatCurrency(k8sOpportunity?.estimated_monthly_amount)}
-                    icon={AlertTriangle}
-                    subtitle="illustrative monthly opportunity"
-                  />
-                  <KPICard
-                    title="Namespaces"
-                    value={(k8sData.namespaces || []).length}
-                    icon={Layers}
-                    subtitle="tracked workload scopes"
-                  />
-                </div>
-
-                {/* Namespace breakdown + node pools */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Namespace bar chart */}
-                  <Card className="kpi-card shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-brand-ink">
-                        <BarChart3 className="h-5 w-5" />Namespace Cost Breakdown
-                      </CardTitle>
-                      <CardDescription className="text-brand-muted">Monthly spend per Kubernetes namespace</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div style={{ width: "100%", height: 280 }}>
-                        <ResponsiveContainer>
-                          <BarChart
-                            data={(k8sData.namespaces || []).map(n => ({ name: n.namespace, cost: toNumber(n.cost) }))}
-                            layout="vertical"
-                            margin={{ left: 8, right: 48, top: 4, bottom: 4 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#EEE" horizontal={false} />
-                            <XAxis type="number" stroke="#7A6B5D" fontSize={11} tick={{ fill: "#7A6B5D" }}
-                              tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + "k" : v}`} />
-                            <YAxis type="category" dataKey="name" stroke="#7A6B5D" fontSize={12}
-                              tick={{ fill: "#7A6B5D" }} width={96} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: "#FFF", border: "1px solid #E9E3DE", borderRadius: 8, color: "#0A0A0A" }}
-                              formatter={(value) => [formatCurrency(value), "Monthly Cost"]}
-                            />
-                            <Bar dataKey="cost" fill="#6b8f71" radius={[0, 4, 4, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Node pool efficiency */}
-                  <Card className="kpi-card shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-brand-ink">
-                        <Server className="h-5 w-5" />Node Pool Efficiency
-                      </CardTitle>
-                      <CardDescription className="text-brand-muted">Utilization and cost per node pool</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="table-brand rounded-lg">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-brand-muted font-semibold">Pool</TableHead>
-                              <TableHead className="text-right text-brand-muted font-semibold">Nodes</TableHead>
-                              <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
-                              <TableHead className="text-right text-brand-muted font-semibold">Util %</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {(k8sData.node_pools || []).map((p, i) => (
-                              <TableRow key={i} className="hover:bg-brand-bg/30">
-                                <TableCell className="font-medium text-brand-ink">
-                                  <div>{p.pool}</div>
-                                  <div className="text-xs text-brand-muted">{p.node_type}</div>
-                                </TableCell>
-                                <TableCell className="text-right text-brand-ink">{p.nodes}</TableCell>
-                                <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(p.cost))}</TableCell>
-                                <TableCell className="text-right">
-                                  <span className={toNumber(p.utilization_pct) < 50 ? "text-brand-error font-semibold" : "text-brand-success font-semibold"}>
-                                    {toNumber(p.utilization_pct).toFixed(1)}%
-                                  </span>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Wasteful workloads */}
-                {(k8sData.top_wasteful_workloads || []).length > 0 && (
-                  <Card className="kpi-card shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-brand-ink">
-                        <AlertTriangle className="h-5 w-5" />Potential Optimization Signals
-                      </CardTitle>
-                      <CardDescription className="text-brand-muted">
-                        Namespaces with low CPU or memory request utilization and reviewable opportunities
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="table-brand rounded-lg">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-brand-muted font-semibold">Namespace</TableHead>
-                              <TableHead className="text-right text-brand-muted font-semibold">Monthly Cost</TableHead>
-                              <TableHead className="text-right text-brand-muted font-semibold">CPU Request %</TableHead>
-                              <TableHead className="text-right text-brand-muted font-semibold">Memory Request %</TableHead>
-                              <TableHead className="text-brand-muted font-semibold">Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {(k8sData.top_wasteful_workloads || []).map((w, i) => (
-                              <TableRow key={i} className="hover:bg-brand-bg/30">
-                                <TableCell className="font-medium text-brand-ink">{w.namespace}</TableCell>
-                                <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(w.cost))}</TableCell>
-                                <TableCell className="text-right">
-                                  <span className={toNumber(w.cpu_request_pct) < 40 ? "text-brand-error font-semibold" : "text-brand-ink"}>
-                                    {toNumber(w.cpu_request_pct).toFixed(0)}%
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <span className={toNumber(w.mem_request_pct) < 40 ? "text-brand-error font-semibold" : "text-brand-ink"}>
-                                    {toNumber(w.mem_request_pct).toFixed(0)}%
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-brand-muted text-xs">
-                                  {toNumber(w.cpu_request_pct) < 30
-                                    ? "Right-size requests; consider namespace resource quotas"
-                                    : "Review pod resource requests vs actual usage"}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            ) : (
-              <Card className="kpi-card shadow-sm">
-                <CardContent className="text-center py-12">
-                  <Server className="h-12 w-12 text-brand-muted mx-auto mb-4" />
-                  <p className="text-brand-muted">Loading Kubernetes data…</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Overview */}
-          <TabsContent value="overview" className="space-y-6">
-            <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">Cost Overview</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="kpi-card shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-brand-ink">Anomaly Severity</CardTitle>
-                  <CardDescription className="text-brand-muted">Recent anomaly counts by severity</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-4">
-                  {[
-                    { type: "Critical", count: criticalCount, color: "bg-red-700" },
-                    { type: "High", count: highCount, color: "bg-orange-500" },
-                    { type: "Medium", count: mediumCount, color: "bg-yellow-500" }
-                  ].map((it, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${it.color}`} />
-                        <span className="text-sm text-brand-ink">{it.type}</span>
-                      </div>
-                      <span className="text-sm font-medium text-brand-ink">{it.count}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="kpi-card shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-brand-ink">Resilience Workloads</CardTitle>
-                  <CardDescription className="text-brand-muted">Top workloads by monthly resilience cost</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {(Array.isArray(recent_findings) ? recent_findings.slice(0, 5) : []).map((f, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-brand-bg/50 rounded-lg border border-brand-line">
-                        <div className="flex items-center gap-2">
-                          {getSeverityIcon(f.severity)}
-                          <span className="text-sm text-brand-ink truncate max-w-48">{f.title}</span>
-                        </div>
-                        <span className="text-sm font-medium text-brand-ink">{formatCurrency(f.monthly_cost_usd)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* AI Spend */}
-          <TabsContent value="ai-spend" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">AI Spend</h2>
-              <Badge className="badge-brand">{reportWindowLabel}</Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <KPICard
-                title="Total AI Spend"
-                value={formatCurrency(toNumber(aiSpend.total_cost))}
-                change={toNumber(aiSpend.trend?.change_percentage)}
-                icon={Bot}
-                subtitle="vs last period"
-              />
-              <KPICard
-                title="Daily Average"
-                value={formatCurrency(toNumber(aiSpend.daily_average))}
-                icon={TrendingUp}
-                subtitle={reportWindowLabel}
-              />
-              <KPICard
-                title="Period Change"
-                value={formatCurrency(toNumber(aiSpend.trend?.change_amount))}
-                icon={TrendingUp}
-                subtitle={`${formatPercent(toNumber(aiSpend.trend?.change_percentage))} vs prior period`}
-              />
-              <KPICard
-                title="Models in Use"
-                value={(aiSpend.models || []).length}
-                icon={Layers}
-                subtitle="across all providers"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <CostTrendChart data={aiTrend} label="AI spend over the last 30 days" />
-              <AiModelBreakdown models={aiModelChartData} />
-            </div>
-
-            <Card className="kpi-card shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-brand-ink">
-                  <Bot className="h-5 w-5" />Top Models by Cost
-                </CardTitle>
-                <CardDescription className="text-brand-muted">AI model spend ranked by cost this period</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="table-brand rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-brand-muted font-semibold">Model</TableHead>
-                        <TableHead className="text-brand-muted font-semibold">Provider</TableHead>
-                        <TableHead className="text-right text-brand-muted font-semibold">Cost</TableHead>
-                        <TableHead className="text-right text-brand-muted font-semibold">% of AI Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(aiSpend.models || []).map((m, i) => (
-                        <TableRow key={i} className="hover:bg-brand-bg/30">
-                          <TableCell className="font-medium text-brand-ink">{m.model}</TableCell>
-                          <TableCell className="text-brand-muted capitalize">{m.provider}</TableCell>
-                          <TableCell className="text-right text-brand-ink">{formatCurrency(toNumber(m.cost))}</TableCell>
-                          <TableCell className="text-right text-brand-ink">
-                            {aiModelTotal ? Number(((toNumber(m.cost) / aiModelTotal) * 100).toFixed(1)) : 0}%
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* SaaS */}
-          <TabsContent value="saas" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-brand-serif text-[18px] md:text-[20px] leading-tight font-semibold text-brand-ink tracking-tight">SaaS Spend</h2>
-              <Badge className="badge-brand">{reportWindowLabel}</Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <KPICard
-                title="Total SaaS Spend"
-                value={formatCurrency(toNumber(saasSpend.total_cost))}
-                change={toNumber(saasSpend.trend?.change_percentage)}
-                icon={Layers}
-                subtitle="vs last period"
-              />
-              <KPICard
-                title="Period Change"
-                value={formatCurrency(toNumber(saasSpend.trend?.change_amount))}
-                icon={TrendingUp}
-                subtitle={`${formatPercent(toNumber(saasSpend.trend?.change_percentage))} vs prior period`}
-              />
-              <KPICard
-                title="Unused Licenses"
-                value={toNumber(saasSpend.total_unused_licenses)}
-                icon={AlertTriangle}
-                subtitle="across all tools"
-              />
-              <KPICard
-                title={getOpportunity(report, saasSpend.opportunity_id)?.label || "Estimated License Opportunity"}
-                value={formatCurrency(getOpportunity(report, saasSpend.opportunity_id)?.estimated_monthly_amount)}
-                icon={DollarSign}
-                subtitle="unused license cost"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SaasToolChart tools={saasSpend.tools || []} />
-              <SaasMonthlyChart data={saasSpend.monthly_trend || []} />
-            </div>
-
-            <SaasUnusedTable tools={saasSpend.tools || []} />
-          </TabsContent>
+          <TabsContent value="saas" className="space-y-6"><h2 className="font-brand-serif text-[20px] font-semibold">SaaS Spend</h2><Alert className="alert-brand"><AlertTriangle className="h-4 w-4"/><AlertDescription>SaaS producer quality is partial. Unknown activity and incomplete assignment data are not treated as zero or unused.</AlertDescription></Alert><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">{view.saas.invoice_metrics.map((metric)=><MetricCard key={metric.id} title={metric.name} metric={metric} icon={Layers}/>)}</div><Card className="kpi-card"><CardHeader><CardTitle>{view.opportunity.source.title}</CardTitle><CardDescription>Annual estimate · {view.opportunity.source.confidence} confidence · review required</CardDescription></CardHeader><CardContent><div className="text-2xl font-bold" data-canonical-id={view.opportunity.source.id}>{formatCanonicalDecimal(view.opportunity.source.estimate.low,{currency:true})} – {formatCanonicalDecimal(view.opportunity.source.estimate.high,{currency:true})}</div><p className="text-xs text-brand-muted mt-2">{view.opportunity.source.estimate.formula}</p></CardContent></Card></TabsContent>
         </Tabs>
-      </div>
 
-      {/* Finding details modal */}
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={modalFinding?.title || "Finding Details"}
-      >
-        {modalFinding ? (
-          <div className="space-y-4 text-sm">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="text-brand-muted">Severity</div>
-                <div className="font-medium">{String(modalFinding.severity || "").toUpperCase()}</div>
-              </div>
-              <div>
-                <div className="text-brand-muted">Confidence</div>
-                <div className="font-medium">{String(modalFinding.confidence || "").replace("_"," ").toUpperCase()}</div>
-              </div>
-              <div>
-                <div className="text-brand-muted">Estimated Monthly Opportunity</div>
-                <div className="font-semibold text-brand-success">{formatCurrency(modalFinding.monthly_savings_usd_est)}</div>
-              </div>
-              <div>
-                <div className="text-brand-muted">Risk / Time</div>
-                <div className="font-medium">{modalFinding.risk_level} {modalFinding.implementation_time ? `• ${modalFinding.implementation_time}` : ""}</div>
-              </div>
-            </div>
-
-            {modalFinding.suggested_action && (
-              <div>
-                <div className="text-brand-muted mb-1">Suggested Action</div>
-                <div className="rounded-lg border border-[#E7DCCF] bg-[#F7F1EA] p-3">{modalFinding.suggested_action}</div>
-              </div>
-            )}
-
-            {modalFinding.review_focus && (
-              <div>
-                <div className="text-brand-muted mb-1">Review Focus</div>
-                <div className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3">{modalFinding.review_focus}</div>
-              </div>
-            )}
-
-            {modalFinding.commands && modalFinding.commands.length > 0 && !String(pickBestCommand(modalFinding) || "").startsWith("#") && (
-              <div>
-                <div className="text-brand-muted mb-1">Read-only Review Command</div>
-                <pre className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 text-xs overflow-auto">{pickBestCommand(modalFinding)}</pre>
-              </div>
-            )}
-
-            {modalFinding.evidence && (
-              <div>
-                <div className="text-brand-muted mb-1">Evidence</div>
-                <pre className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 text-xs overflow-auto">{JSON.stringify(modalFinding.evidence, null, 2)}</pre>
-              </div>
-            )}
-
-            {modalFinding.methodology && (
-              <div>
-                <div className="text-brand-muted mb-1">Methodology</div>
-                <div className="rounded-lg border border-[#E7DCCF] bg-[#FFF] p-3 whitespace-pre-wrap">{modalFinding.methodology}</div>
-              </div>
-            )}
-
-            {modalFinding.last_analyzed && (
-              <div className="text-xs text-brand-muted">
-                Last Analyzed: {formatUtcTimestamp(modalFinding.last_analyzed)}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div>No finding selected.</div>
-        )}
-      </Modal>
-
-      {/* Ask Claude floating assistant */}
+        <section className="mt-8"><Card className="kpi-card"><CardHeader><CardTitle>Methodology & disclosures</CardTitle></CardHeader><CardContent><ul className="space-y-2 text-sm text-brand-muted">{view.identity.disclosures.map((text)=><li key={text}>• {text}</li>)}</ul></CardContent></Card></section>
+      </main>
       <AskClaude />
     </div>
   );
 };
 
-const Home = () => <Dashboard />;
-
-export default function App() {
-  return (
-    <div className="App">
-      <Home />
-    </div>
-  );
-}
+export default function App() { return <div className="App"><Dashboard /></div>; }
