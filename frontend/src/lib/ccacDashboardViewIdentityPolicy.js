@@ -1,0 +1,1534 @@
+// Fixed identities and relationships independently derived from the checksum-validated
+// Phase 1 fixture, projection policy, and deterministic generated view. This policy
+// intentionally contains no financial values or calculations.
+const freezePolicy = (value) => {
+  if (value !== null && typeof value === "object") {
+    Object.values(value).forEach(freezePolicy);
+    Object.freeze(value);
+  }
+  return value;
+};
+
+const sourcePolicy = {
+  "aggregate_relationships": {
+    "aggregate.opportunities.annual.usd": {
+      "excluded_opportunity_ids": [],
+      "opportunity_ids": [
+        "opportunity.saas.crm-9261ceef.renewal-seat-review"
+      ]
+    }
+  },
+  "display": {
+    "disclosures": [
+      "All data in this report is illustrative and does not describe a real customer environment.",
+      "Every displayed number references a canonical producer metric; the Command Center does not invent savings, anomalies, or forecasts.",
+      "Metrics with different periods or accounting boundaries are not added into a single technology-spend total.",
+      "Opportunity ranges are estimates, not verified savings; potential, nested, and exclusive overlaps are excluded from aggregates.",
+      "AI costs with potential cloud-billing overlap and modeled resilience exposure remain non-additive at the executive boundary.",
+      "One or more producer results are partial; inspect their quality issues before decisions."
+    ],
+    "finding_ids": [
+      "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+      "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
+      "finding.resilience-gap.orders-db.tested-rto",
+      "finding.resilience-gap.orders-db.tested-rpo",
+      "finding.resilience-gap.orders-db.rto",
+      "finding.resilience-gap.orders-db.rpo",
+      "finding.resilience-gap.orders-db.restore-evidence",
+      "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
+      "finding.saas.design-a77de8a6.activity-evidence",
+      "finding.saas.design-a77de8a6.assignment-roster"
+    ],
+    "headline_metric_ids": [
+      "metric.ai.total-cost",
+      "metric.cloud.total",
+      "metric.saas.crm-9261ceef.invoice-cost",
+      "metric.saas.design-a77de8a6.invoice-cost"
+    ],
+    "opportunity_aggregate_ids": [
+      "aggregate.opportunities.annual.usd"
+    ]
+  },
+  "evidence_ids_by_producer": {
+    "ai-cost-lens": [
+      "evidence.ai-cost-lens.price-book",
+      "evidence.ai-cost-lens.usage"
+    ],
+    "finops-lite": [
+      "evidence.finops-lite.cost-summary"
+    ],
+    "finops-watchdog": [
+      "evidence.finops-watchdog.input-result"
+    ],
+    "recovery-economics": [
+      "evidence.recovery-economics.restore-test",
+      "evidence.recovery-economics.scenario-input"
+    ],
+    "saas-cost-analyzer": [
+      "evidence.saas-governance.bundle"
+    ]
+  },
+  "finding_relationships": {
+    "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+      ],
+      "producer": "ai-cost-lens"
+    },
+    "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score"
+      ],
+      "producer": "finops-watchdog"
+    },
+    "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+      ],
+      "producer": "finops-watchdog"
+    },
+    "finding.resilience-gap.orders-db.restore-evidence": {
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rpo-hours",
+        "metric.resilience.orders-db.modeled-rto-hours"
+      ],
+      "producer": "recovery-economics"
+    },
+    "finding.resilience-gap.orders-db.rpo": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rpo-hours"
+      ],
+      "producer": "recovery-economics"
+    },
+    "finding.resilience-gap.orders-db.rto": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rto-hours"
+      ],
+      "producer": "recovery-economics"
+    },
+    "finding.resilience-gap.orders-db.tested-rpo": {
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "metric_ids": [
+        "metric.resilience.orders-db.tested-recovered-point-age-hours"
+      ],
+      "producer": "recovery-economics"
+    },
+    "finding.resilience-gap.orders-db.tested-rto": {
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "metric_ids": [
+        "metric.resilience.orders-db.tested-restore-duration-hours"
+      ],
+      "producer": "recovery-economics"
+    },
+    "finding.saas.design-a77de8a6.activity-evidence": {
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "metric_ids": [
+        "metric.saas.design-a77de8a6.unknown-activity-seats"
+      ],
+      "producer": "saas-cost-analyzer"
+    },
+    "finding.saas.design-a77de8a6.assignment-roster": {
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "metric_ids": [
+        "metric.saas.design-a77de8a6.unassigned-seats"
+      ],
+      "producer": "saas-cost-analyzer"
+    }
+  },
+  "manifest": {
+    "filename": "manifest.json",
+    "sha256": "16c4ce49800f0909cfa281739fb983e0d3c8c39d661f6eec7e3b4f08f2f378a6",
+    "size_bytes": 2312
+  },
+  "metric_evidence_relationships": {
+    "evidence.ai-cost-lens.price-book": [
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+      "metric.ai.total-cost"
+    ],
+    "evidence.ai-cost-lens.usage": [
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+      "metric.ai.total-cost"
+    ],
+    "evidence.finops-lite.cost-summary": [
+      "metric.cloud.change-amount",
+      "metric.cloud.change-percentage",
+      "metric.cloud.day.2026-07-01.cost",
+      "metric.cloud.day.2026-07-02.cost",
+      "metric.cloud.day.2026-07-03.cost",
+      "metric.cloud.day.2026-07-04.cost",
+      "metric.cloud.day.2026-07-05.cost",
+      "metric.cloud.day.2026-07-06.cost",
+      "metric.cloud.day.2026-07-07.cost",
+      "metric.cloud.day.2026-07-08.cost",
+      "metric.cloud.day.2026-07-09.cost",
+      "metric.cloud.day.2026-07-10.cost",
+      "metric.cloud.day.2026-07-11.cost",
+      "metric.cloud.day.2026-07-12.cost",
+      "metric.cloud.day.2026-07-13.cost",
+      "metric.cloud.day.2026-07-14.cost",
+      "metric.cloud.day.2026-07-15.cost",
+      "metric.cloud.day.2026-07-16.cost",
+      "metric.cloud.day.2026-07-17.cost",
+      "metric.cloud.day.2026-07-18.cost",
+      "metric.cloud.day.2026-07-19.cost",
+      "metric.cloud.day.2026-07-20.cost",
+      "metric.cloud.day.2026-07-21.cost",
+      "metric.cloud.previous-total",
+      "metric.cloud.service.amazonec2-23d867e0.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-01.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-02.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-03.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-04.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-05.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-06.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-07.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-08.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-09.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-10.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-11.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-12.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-13.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-14.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-15.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-16.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-17.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-18.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-19.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-20.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-21.cost",
+      "metric.cloud.service.amazons3-c600b2aa.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-01.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-02.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-03.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-04.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-05.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-06.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-07.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-08.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-09.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-10.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-11.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-12.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-13.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-14.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-15.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-16.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-17.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-18.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-19.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-20.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-21.cost",
+      "metric.cloud.total"
+    ],
+    "evidence.finops-watchdog.input-result": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+    ],
+    "evidence.recovery-economics.restore-test": [
+      "metric.resilience.orders-db.tested-recovered-point-age-hours",
+      "metric.resilience.orders-db.tested-restore-duration-hours"
+    ],
+    "evidence.recovery-economics.scenario-input": [
+      "metric.resilience.orders-db.compute-cost-per-event",
+      "metric.resilience.orders-db.effective-stored-gb",
+      "metric.resilience.orders-db.egress-cost-per-event",
+      "metric.resilience.orders-db.expected-monthly-economic-exposure",
+      "metric.resilience.orders-db.expected-monthly-outage-exposure",
+      "metric.resilience.orders-db.expected-monthly-recovery-cost",
+      "metric.resilience.orders-db.failback-cost-per-event",
+      "metric.resilience.orders-db.failover-cost-per-event",
+      "metric.resilience.orders-db.modeled-rpo-hours",
+      "metric.resilience.orders-db.modeled-rto-hours",
+      "metric.resilience.orders-db.monthly-backup-request-cost",
+      "metric.resilience.orders-db.monthly-design-cost",
+      "metric.resilience.orders-db.monthly-storage-cost",
+      "metric.resilience.orders-db.recovery-event-cost",
+      "metric.resilience.orders-db.retrieval-cost-per-event"
+    ],
+    "evidence.saas-governance.bundle": [
+      "metric.saas.crm-9261ceef.active-seats",
+      "metric.saas.crm-9261ceef.annual-reduction-capacity",
+      "metric.saas.crm-9261ceef.annualized-commitment",
+      "metric.saas.crm-9261ceef.assigned-seats",
+      "metric.saas.crm-9261ceef.commitment",
+      "metric.saas.crm-9261ceef.inactive-seats",
+      "metric.saas.crm-9261ceef.invoice-cost",
+      "metric.saas.crm-9261ceef.monthly-commitment",
+      "metric.saas.crm-9261ceef.purchased-seats",
+      "metric.saas.crm-9261ceef.unassigned-seats",
+      "metric.saas.crm-9261ceef.unit-price",
+      "metric.saas.crm-9261ceef.unknown-activity-seats",
+      "metric.saas.crm-9261ceef.utilization-percentage",
+      "metric.saas.design-a77de8a6.active-seats",
+      "metric.saas.design-a77de8a6.annual-reduction-capacity",
+      "metric.saas.design-a77de8a6.annualized-commitment",
+      "metric.saas.design-a77de8a6.assigned-seats",
+      "metric.saas.design-a77de8a6.commitment",
+      "metric.saas.design-a77de8a6.inactive-seats",
+      "metric.saas.design-a77de8a6.invoice-cost",
+      "metric.saas.design-a77de8a6.monthly-commitment",
+      "metric.saas.design-a77de8a6.purchased-seats",
+      "metric.saas.design-a77de8a6.unassigned-seats",
+      "metric.saas.design-a77de8a6.unit-price",
+      "metric.saas.design-a77de8a6.unknown-activity-seats",
+      "metric.saas.design-a77de8a6.utilization-percentage"
+    ]
+  },
+  "metric_ids_by_producer": {
+    "ai-cost-lens": [
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+      "metric.ai.total-cost"
+    ],
+    "finops-lite": [
+      "metric.cloud.change-amount",
+      "metric.cloud.change-percentage",
+      "metric.cloud.day.2026-07-01.cost",
+      "metric.cloud.day.2026-07-02.cost",
+      "metric.cloud.day.2026-07-03.cost",
+      "metric.cloud.day.2026-07-04.cost",
+      "metric.cloud.day.2026-07-05.cost",
+      "metric.cloud.day.2026-07-06.cost",
+      "metric.cloud.day.2026-07-07.cost",
+      "metric.cloud.day.2026-07-08.cost",
+      "metric.cloud.day.2026-07-09.cost",
+      "metric.cloud.day.2026-07-10.cost",
+      "metric.cloud.day.2026-07-11.cost",
+      "metric.cloud.day.2026-07-12.cost",
+      "metric.cloud.day.2026-07-13.cost",
+      "metric.cloud.day.2026-07-14.cost",
+      "metric.cloud.day.2026-07-15.cost",
+      "metric.cloud.day.2026-07-16.cost",
+      "metric.cloud.day.2026-07-17.cost",
+      "metric.cloud.day.2026-07-18.cost",
+      "metric.cloud.day.2026-07-19.cost",
+      "metric.cloud.day.2026-07-20.cost",
+      "metric.cloud.day.2026-07-21.cost",
+      "metric.cloud.previous-total",
+      "metric.cloud.service.amazonec2-23d867e0.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-01.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-02.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-03.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-04.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-05.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-06.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-07.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-08.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-09.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-10.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-11.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-12.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-13.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-14.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-15.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-16.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-17.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-18.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-19.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-20.cost",
+      "metric.cloud.service.amazonec2-23d867e0.day.2026-07-21.cost",
+      "metric.cloud.service.amazons3-c600b2aa.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-01.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-02.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-03.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-04.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-05.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-06.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-07.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-08.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-09.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-10.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-11.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-12.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-13.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-14.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-15.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-16.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-17.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-18.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-19.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-20.cost",
+      "metric.cloud.service.amazons3-c600b2aa.day.2026-07-21.cost",
+      "metric.cloud.total"
+    ],
+    "finops-watchdog": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+    ],
+    "recovery-economics": [
+      "metric.resilience.orders-db.compute-cost-per-event",
+      "metric.resilience.orders-db.effective-stored-gb",
+      "metric.resilience.orders-db.egress-cost-per-event",
+      "metric.resilience.orders-db.expected-monthly-economic-exposure",
+      "metric.resilience.orders-db.expected-monthly-outage-exposure",
+      "metric.resilience.orders-db.expected-monthly-recovery-cost",
+      "metric.resilience.orders-db.failback-cost-per-event",
+      "metric.resilience.orders-db.failover-cost-per-event",
+      "metric.resilience.orders-db.modeled-rpo-hours",
+      "metric.resilience.orders-db.modeled-rto-hours",
+      "metric.resilience.orders-db.monthly-backup-request-cost",
+      "metric.resilience.orders-db.monthly-design-cost",
+      "metric.resilience.orders-db.monthly-storage-cost",
+      "metric.resilience.orders-db.recovery-event-cost",
+      "metric.resilience.orders-db.retrieval-cost-per-event",
+      "metric.resilience.orders-db.tested-recovered-point-age-hours",
+      "metric.resilience.orders-db.tested-restore-duration-hours"
+    ],
+    "saas-cost-analyzer": [
+      "metric.saas.crm-9261ceef.active-seats",
+      "metric.saas.crm-9261ceef.annual-reduction-capacity",
+      "metric.saas.crm-9261ceef.annualized-commitment",
+      "metric.saas.crm-9261ceef.assigned-seats",
+      "metric.saas.crm-9261ceef.commitment",
+      "metric.saas.crm-9261ceef.inactive-seats",
+      "metric.saas.crm-9261ceef.invoice-cost",
+      "metric.saas.crm-9261ceef.monthly-commitment",
+      "metric.saas.crm-9261ceef.purchased-seats",
+      "metric.saas.crm-9261ceef.unassigned-seats",
+      "metric.saas.crm-9261ceef.unit-price",
+      "metric.saas.crm-9261ceef.unknown-activity-seats",
+      "metric.saas.crm-9261ceef.utilization-percentage",
+      "metric.saas.design-a77de8a6.active-seats",
+      "metric.saas.design-a77de8a6.annual-reduction-capacity",
+      "metric.saas.design-a77de8a6.annualized-commitment",
+      "metric.saas.design-a77de8a6.assigned-seats",
+      "metric.saas.design-a77de8a6.commitment",
+      "metric.saas.design-a77de8a6.inactive-seats",
+      "metric.saas.design-a77de8a6.invoice-cost",
+      "metric.saas.design-a77de8a6.monthly-commitment",
+      "metric.saas.design-a77de8a6.purchased-seats",
+      "metric.saas.design-a77de8a6.unassigned-seats",
+      "metric.saas.design-a77de8a6.unit-price",
+      "metric.saas.design-a77de8a6.unknown-activity-seats",
+      "metric.saas.design-a77de8a6.utilization-percentage"
+    ]
+  },
+  "metric_input_relationships": {
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens": [
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens"
+    ],
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request": [
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests"
+    ],
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens": [
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens"
+    ],
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request": [
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests"
+    ],
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens": [
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens"
+    ],
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request": [
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests"
+    ],
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens": [
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens"
+    ],
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request": [
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests"
+    ],
+    "metric.ai.total-cost": [
+      "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+      "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+      "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+      "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+    ],
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed"
+    ],
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed"
+    ],
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed"
+    ],
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed"
+    ],
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed"
+    ],
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score": [
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+      "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed"
+    ],
+    "metric.cloud.change-amount": [
+      "metric.cloud.previous-total",
+      "metric.cloud.total"
+    ],
+    "metric.cloud.change-percentage": [
+      "metric.cloud.previous-total",
+      "metric.cloud.total"
+    ]
+  },
+  "opportunity_relationships": {
+    "opportunity.saas.crm-9261ceef.renewal-seat-review": {
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "producer": "saas-cost-analyzer",
+      "related_finding_ids": [],
+      "related_opportunity_ids": []
+    }
+  },
+  "policy_schema": "ccg-dashboard-projection-policy/1.0.0",
+  "producers": {
+    "ai-cost-lens": {
+      "artifact": {
+        "filename": "ai-cost-lens.json",
+        "sha256": "b51cf23ea86cdaaea52bdfbba6188f995824f3591fed03ac97e262f23d1333be",
+        "size_bytes": 38593
+      },
+      "version": "0.2.0"
+    },
+    "finops-lite": {
+      "artifact": {
+        "filename": "finops-lite.json",
+        "sha256": "f8529ff5db134a6e81554fd5b2c87e687dc2258009522246d4642ca81501b3a0",
+        "size_bytes": 52821
+      },
+      "version": "0.3.0"
+    },
+    "finops-watchdog": {
+      "artifact": {
+        "filename": "finops-watchdog.json",
+        "sha256": "ec9269ce4e27ecb412108ca46dc4bd1229ad61682f234fee6cf71ca9833fb717",
+        "size_bytes": 13308
+      },
+      "version": "0.4.0"
+    },
+    "recovery-economics": {
+      "artifact": {
+        "filename": "recovery-economics.json",
+        "sha256": "db44438fea1d33f1b76591aa4ce6a3d6560ba8528c575dcb782a6da4ad8f71e4",
+        "size_bytes": 20879
+      },
+      "version": "0.2.1"
+    },
+    "saas-cost-analyzer": {
+      "artifact": {
+        "filename": "saas-cost-analyzer.json",
+        "sha256": "58f31ae72c17f80c1608d8f292756e741763ca4ef868d3ac0badf7a6df940bc8",
+        "size_bytes": 33057
+      },
+      "version": "0.2.0"
+    }
+  },
+  "quality_relationships": {
+    "ai-cost-lens": {
+      "issues": [],
+      "status": "valid"
+    },
+    "finops-lite": {
+      "issues": [],
+      "status": "valid"
+    },
+    "finops-watchdog": {
+      "issues": [],
+      "status": "valid"
+    },
+    "recovery-economics": {
+      "issues": [],
+      "status": "valid"
+    },
+    "saas-cost-analyzer": {
+      "issues": [
+        {
+          "code": "quality.saas.design-a77de8a6.activity",
+          "field": "applications.assignments.last_activity_at",
+          "source_id": "source.saas-governance.bundle"
+        },
+        {
+          "code": "quality.saas.design-a77de8a6.roster",
+          "field": "applications.assignment_roster_complete",
+          "source_id": "source.saas-governance.bundle"
+        }
+      ],
+      "status": "partial"
+    }
+  },
+  "reconciliation_relationships": {
+    "reconciliation.report.cloud-services": {
+      "input_metric_ids": [
+        "metric.cloud.service.amazonec2-23d867e0.cost",
+        "metric.cloud.service.amazons3-c600b2aa.cost"
+      ],
+      "output_metric_id": "metric.cloud.total"
+    }
+  },
+  "source_report": {
+    "contract": "ccac/1.0.0",
+    "document_type": "trusted_report",
+    "filename": "report.json",
+    "generated_at": "2026-08-04T12:00:00Z",
+    "mode": "illustrative",
+    "period": {
+      "end": "2027-01-01",
+      "start": "2026-01-01",
+      "timezone": "UTC"
+    },
+    "producer": {
+      "name": "tech-spend-command-center",
+      "version": "0.2.1"
+    },
+    "report_id": "report.tech-spend.trusted",
+    "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "sha256": "3e56662a5192644dd17d698184267c5e638f24018991f442dfbcf81b4dc8edaa",
+    "size_bytes": 154193,
+    "status": "complete"
+  },
+  "unsupported_concepts": [
+    "combined_technology_spend",
+    "cloud_ai_saas_total",
+    "combined_scope_donut",
+    "combined_daily_technology_spend",
+    "next_month_forecast",
+    "avoidable_run_rate",
+    "monthly_opportunity_scalar",
+    "tagging_coverage",
+    "kubernetes_cost_or_utilization",
+    "verified_savings",
+    "realized_savings",
+    "demonstrated_recoverability",
+    "unknown_as_zero"
+  ],
+  "view_schema": "ccg-dashboard-view/1.0.0"
+};
+const projectedViewPolicy = {
+  "evidence_ids": [
+    "evidence.ai-cost-lens.price-book",
+    "evidence.ai-cost-lens.usage",
+    "evidence.finops-lite.cost-summary",
+    "evidence.finops-watchdog.input-result",
+    "evidence.recovery-economics.restore-test",
+    "evidence.recovery-economics.scenario-input",
+    "evidence.saas-governance.bundle"
+  ],
+  "metric_relationships": {
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "input_metric_ids": [],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.ai.total-cost": {
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage",
+        "evidence.ai-cost-lens.price-book"
+      ],
+      "input_metric_ids": [
+        "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+      ],
+      "producer": "ai-cost-lens",
+      "source_artifact": "ai-cost-lens.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+      ],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+      ],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+      ],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+      ],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+      ],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score": {
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+      ],
+      "producer": "finops-watchdog",
+      "source_artifact": "finops-watchdog.json"
+    },
+    "metric.cloud.change-amount": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [
+        "metric.cloud.total",
+        "metric.cloud.previous-total"
+      ],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.change-percentage": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [
+        "metric.cloud.total",
+        "metric.cloud.previous-total"
+      ],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-01.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-02.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-03.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-04.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-05.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-06.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-07.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-08.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-09.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-10.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-11.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-12.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-13.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-14.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-15.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-16.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-17.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-18.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-19.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-20.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.day.2026-07-21.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.previous-total": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.service.amazonec2-23d867e0.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.service.amazons3-c600b2aa.cost": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.cloud.total": {
+      "evidence_ids": [
+        "evidence.finops-lite.cost-summary"
+      ],
+      "input_metric_ids": [],
+      "producer": "finops-lite",
+      "source_artifact": "finops-lite.json"
+    },
+    "metric.resilience.orders-db.compute-cost-per-event": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.effective-stored-gb": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.egress-cost-per-event": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.expected-monthly-economic-exposure": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.expected-monthly-outage-exposure": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.expected-monthly-recovery-cost": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.failback-cost-per-event": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.failover-cost-per-event": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.modeled-rpo-hours": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.modeled-rto-hours": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.monthly-backup-request-cost": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.monthly-design-cost": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.monthly-storage-cost": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.recovery-event-cost": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.retrieval-cost-per-event": {
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.tested-recovered-point-age-hours": {
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.resilience.orders-db.tested-restore-duration-hours": {
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "input_metric_ids": [],
+      "producer": "recovery-economics",
+      "source_artifact": "recovery-economics.json"
+    },
+    "metric.saas.crm-9261ceef.invoice-cost": {
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "input_metric_ids": [],
+      "producer": "saas-cost-analyzer",
+      "source_artifact": "saas-cost-analyzer.json"
+    },
+    "metric.saas.design-a77de8a6.invoice-cost": {
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "input_metric_ids": [],
+      "producer": "saas-cost-analyzer",
+      "source_artifact": "saas-cost-analyzer.json"
+    }
+  }
+};
+
+export default freezePolicy({
+  source_policy: sourcePolicy,
+  projected_view: projectedViewPolicy,
+});

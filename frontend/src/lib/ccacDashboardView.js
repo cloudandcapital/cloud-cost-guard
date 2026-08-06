@@ -1,31 +1,20 @@
 import generatedDashboardView from "../data/ccac-dashboard-view.generated.json";
+import identityPolicy from "./ccacDashboardViewIdentityPolicy";
 
 export const CCAC_DASHBOARD_UNAVAILABLE_MESSAGE =
   "Validated illustrative dashboard data is unavailable.";
 
-const EXPECTED_PRODUCERS = {
-  "ai-cost-lens": { version: "0.2.0", artifact: "ai-cost-lens.json", sha256: "b51cf23ea86cdaaea52bdfbba6188f995824f3591fed03ac97e262f23d1333be" },
-  "finops-lite": { version: "0.3.0", artifact: "finops-lite.json", sha256: "f8529ff5db134a6e81554fd5b2c87e687dc2258009522246d4642ca81501b3a0" },
-  "finops-watchdog": { version: "0.4.0", artifact: "finops-watchdog.json", sha256: "ec9269ce4e27ecb412108ca46dc4bd1229ad61682f234fee6cf71ca9833fb717" },
-  "recovery-economics": { version: "0.2.1", artifact: "recovery-economics.json", sha256: "db44438fea1d33f1b76591aa4ce6a3d6560ba8528c575dcb782a6da4ad8f71e4" },
-  "saas-cost-analyzer": { version: "0.2.0", artifact: "saas-cost-analyzer.json", sha256: "58f31ae72c17f80c1608d8f292756e741763ca4ef868d3ac0badf7a6df940bc8" },
-};
+const SOURCE_POLICY = identityPolicy.source_policy;
+const PROJECTED_POLICY = identityPolicy.projected_view;
+const EXPECTED_PRODUCERS = Object.fromEntries(
+  Object.entries(SOURCE_POLICY.producers).map(([name, producer]) => [name, {
+    version: producer.version,
+    artifact: producer.artifact.filename,
+    sha256: producer.artifact.sha256,
+  }]),
+);
 
-const REQUIRED_UNSUPPORTED_CONCEPTS = new Set([
-  "combined_technology_spend",
-  "cloud_ai_saas_total",
-  "combined_scope_donut",
-  "combined_daily_technology_spend",
-  "next_month_forecast",
-  "avoidable_run_rate",
-  "monthly_opportunity_scalar",
-  "tagging_coverage",
-  "kubernetes_cost_or_utilization",
-  "verified_savings",
-  "realized_savings",
-  "demonstrated_recoverability",
-  "unknown_as_zero",
-]);
+const REQUIRED_UNSUPPORTED_CONCEPTS = new Set(SOURCE_POLICY.unsupported_concepts);
 
 // These canonical metrics remain referenced by audit-visible SaaS findings but are
 // intentionally not projected as displayable metric records in view version 1.
@@ -34,14 +23,7 @@ const NONPROJECTED_CANONICAL_METRIC_REFERENCES = new Set([
   "metric.saas.design-a77de8a6.unassigned-seats",
 ]);
 
-const REQUIRED_DISCLOSURES = [
-  "All data in this report is illustrative and does not describe a real customer environment.",
-  "Every displayed number references a canonical producer metric; the Command Center does not invent savings, anomalies, or forecasts.",
-  "Metrics with different periods or accounting boundaries are not added into a single technology-spend total.",
-  "Opportunity ranges are estimates, not verified savings; potential, nested, and exclusive overlaps are excluded from aggregates.",
-  "AI costs with potential cloud-billing overlap and modeled resilience exposure remain non-additive at the executive boundary.",
-  "One or more producer results are partial; inspect their quality issues before decisions.",
-];
+const REQUIRED_DISCLOSURES = SOURCE_POLICY.display.disclosures;
 
 export class CcacDashboardViewUnavailableError extends Error {
   constructor() {
@@ -56,6 +38,60 @@ const unavailable = () => {
 
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const isText = (value) => typeof value === "string" && value.length > 0;
+
+function validatePlainJsonData(value, ancestors = new WeakSet()) {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) unavailable();
+    return;
+  }
+  if (typeof value !== "object") unavailable();
+  if (ancestors.has(value)) unavailable();
+  ancestors.add(value);
+  if (Array.isArray(value)) {
+    const keys = Object.keys(value);
+    if (keys.length !== value.length || keys.some((key, index) => key !== String(index))) unavailable();
+    value.forEach((child) => validatePlainJsonData(child, ancestors));
+  } else {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) unavailable();
+    Reflect.ownKeys(value).forEach((key) => {
+      if (typeof key !== "string") unavailable();
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (!descriptor.enumerable || !("value" in descriptor)) unavailable();
+      validatePlainJsonData(descriptor.value, ancestors);
+    });
+  }
+  ancestors.delete(value);
+}
+
+function requireUniqueTextArray(value) {
+  const array = requireArray(value);
+  const seen = new Set();
+  array.forEach((entry) => {
+    requireText(entry);
+    if (seen.has(entry)) unavailable();
+    seen.add(entry);
+  });
+  return array;
+}
+
+function requireExactSet(actual, expected) {
+  const values = requireUniqueTextArray(actual);
+  if (values.length !== expected.length) unavailable();
+  const allowed = new Set(expected);
+  values.forEach((value) => {
+    if (!allowed.has(value)) unavailable();
+  });
+}
+
+function requireExactSequence(actual, expected) {
+  const values = requireUniqueTextArray(actual);
+  if (values.length !== expected.length) unavailable();
+  values.forEach((value, index) => {
+    if (value !== expected[index]) unavailable();
+  });
+}
 
 function requireObject(value) {
   if (!isObject(value)) unavailable();
@@ -72,15 +108,6 @@ function requireText(value) {
   return value;
 }
 
-function rejectNonfiniteNumbers(value) {
-  if (typeof value === "number" && !Number.isFinite(value)) unavailable();
-  if (Array.isArray(value)) {
-    value.forEach(rejectNonfiniteNumbers);
-  } else if (isObject(value)) {
-    Object.values(value).forEach(rejectNonfiniteNumbers);
-  }
-}
-
 function validateProducer(producer) {
   const record = requireObject(producer);
   const expected = EXPECTED_PRODUCERS[requireText(record.name)];
@@ -94,31 +121,37 @@ function validatePeriod(period) {
   requireText(record.timezone);
 }
 
-function validateTrace(trace, id) {
+function validateTrace(trace, id, relationship) {
   const record = requireObject(trace);
   if (record.canonical_id !== id) unavailable();
   validateProducer(record.producer);
   const expected = EXPECTED_PRODUCERS[record.producer.name];
-  if (record.source_artifact !== expected.artifact) unavailable();
+  if (
+    record.source_artifact !== expected.artifact
+    || record.producer.name !== relationship.producer
+    || record.source_artifact !== relationship.source_artifact
+  ) unavailable();
   requireText(record.unit);
   if (record.currency !== null && !isText(record.currency)) unavailable();
   validatePeriod(record.period);
   requireText(record.basis);
   requireText(record.quality);
-  requireArray(record.evidence_ids).forEach(requireText);
-  requireArray(record.input_metric_ids).forEach(requireText);
+  requireExactSet(record.evidence_ids, relationship.evidence_ids);
+  requireExactSet(record.input_metric_ids, relationship.input_metric_ids);
   if (record.formula !== null && !isText(record.formula)) unavailable();
 }
 
 function validateMetric(metric) {
   const record = requireObject(metric);
   const id = requireText(record.id);
+  const relationship = PROJECTED_POLICY.metric_relationships[id];
+  if (!relationship) unavailable();
   requireText(record.name);
   if (record.value !== null && typeof record.value !== "string") unavailable();
   if (record.value === null) requireText(record.unknown_reason);
   if (record.value !== null && record.unknown_reason !== null) unavailable();
   requireObject(record.dimensions);
-  validateTrace(record.trace, id);
+  validateTrace(record.trace, id, relationship);
   return id;
 }
 
@@ -135,26 +168,31 @@ function addMetricInventory(inventory, metrics) {
 function validateFinding(finding, metricIds) {
   const record = requireObject(finding);
   const id = requireText(record.id);
+  const relationship = SOURCE_POLICY.finding_relationships[id];
+  if (!relationship) unavailable();
   validateProducer(record.producer);
+  if (record.producer.name !== relationship.producer) unavailable();
   requireText(record.title);
   requireText(record.type);
   requireText(record.status);
   requireText(record.severity);
   requireText(record.quality);
-  const references = requireArray(record.metric_ids);
+  const references = requireUniqueTextArray(record.metric_ids);
+  requireExactSet(references, relationship.metric_ids);
   references.forEach((metricId) => {
     requireText(metricId);
     if (!metricIds.has(metricId) && !NONPROJECTED_CANONICAL_METRIC_REFERENCES.has(metricId)) unavailable();
   });
-  requireArray(record.evidence_ids).forEach(requireText);
+  requireExactSet(record.evidence_ids, relationship.evidence_ids);
   const trace = requireObject(record.trace);
   if (trace.canonical_id !== id || trace.source_artifact !== EXPECTED_PRODUCERS[record.producer.name].artifact) unavailable();
   validateProducer(trace.producer);
-  requireArray(trace.metric_ids).forEach((metricId) => {
+  requireExactSet(trace.metric_ids, relationship.metric_ids);
+  trace.metric_ids.forEach((metricId) => {
     requireText(metricId);
     if (!metricIds.has(metricId) && !NONPROJECTED_CANONICAL_METRIC_REFERENCES.has(metricId)) unavailable();
   });
-  requireArray(trace.evidence_ids).forEach(requireText);
+  requireExactSet(trace.evidence_ids, relationship.evidence_ids);
   return id;
 }
 
@@ -172,12 +210,19 @@ function validateProducerInventory(view) {
       || source.artifact_sha256 !== EXPECTED_PRODUCERS[producer.name].sha256
     ) unavailable();
     const quality = requireObject(producer.quality);
-    requireArray(quality.issues);
-    if (producer.name === "saas-cost-analyzer") {
-      if (quality.status !== "partial" || quality.issues.length === 0) unavailable();
-    } else if (quality.status !== "valid") {
-      unavailable();
-    }
+    const expectedQuality = SOURCE_POLICY.quality_relationships[producer.name];
+    if (quality.status !== expectedQuality.status) unavailable();
+    const issues = requireArray(quality.issues);
+    if (issues.length !== expectedQuality.issues.length) unavailable();
+    issues.forEach((issue, index) => {
+      const record = requireObject(issue);
+      const expectedIssue = expectedQuality.issues[index];
+      if (
+        record.code !== expectedIssue.code
+        || record.field !== expectedIssue.field
+        || record.source_id !== expectedIssue.source_id
+      ) unavailable();
+    });
   });
   if (names.size !== Object.keys(EXPECTED_PRODUCERS).length) unavailable();
 }
@@ -191,7 +236,7 @@ function validateSourceMetadata(view) {
     const producer = view.producers.find((entry) => entry.name === name);
     if (hashes[name] !== producer.source.artifact_sha256) unavailable();
   });
-  if (metadata.manifest_sha256 !== "16c4ce49800f0909cfa281739fb983e0d3c8c39d661f6eec7e3b4f08f2f378a6") unavailable();
+  if (metadata.manifest_sha256 !== SOURCE_POLICY.manifest.sha256) unavailable();
   const counts = requireObject(metadata.catalog_counts);
   if (
     counts.metrics !== 155
@@ -229,23 +274,27 @@ function cloneValue(value) {
 
 // This is a defensive browser-side identity and structural boundary. It supplements,
 // but does not reproduce or replace, the Python fixture, projection, and policy gates.
-export function validateCcacDashboardView(candidate) {
+function validateCandidate(candidate) {
+  validatePlainJsonData(candidate);
   const view = requireObject(candidate);
-  rejectNonfiniteNumbers(view);
-  if (view.schema !== "ccg-dashboard-view/1.0.0") unavailable();
+  if (view.schema !== SOURCE_POLICY.view_schema) unavailable();
 
   const identity = requireObject(view.identity);
   if (
-    identity.mode !== "illustrative"
-    || identity.contract !== "ccac/1.0.0"
-    || identity.status !== "complete"
-    || identity.command_center_version !== "0.2.1"
-    || identity.source_report_sha256 !== "3e56662a5192644dd17d698184267c5e638f24018991f442dfbcf81b4dc8edaa"
+    identity.mode !== SOURCE_POLICY.source_report.mode
+    || identity.contract !== SOURCE_POLICY.source_report.contract
+    || identity.status !== SOURCE_POLICY.source_report.status
+    || identity.command_center_version !== SOURCE_POLICY.source_report.producer.version
+    || identity.source_report_sha256 !== SOURCE_POLICY.source_report.sha256
+    || identity.report_id !== SOURCE_POLICY.source_report.report_id
+    || identity.run_id !== SOURCE_POLICY.source_report.run_id
+    || identity.generated_at !== SOURCE_POLICY.source_report.generated_at
   ) unavailable();
   requireText(identity.report_id);
   requireText(identity.run_id);
   requireText(identity.generated_at);
   validatePeriod(identity.report_period);
+  if (JSON.stringify(identity.report_period) !== JSON.stringify(SOURCE_POLICY.source_report.period)) unavailable();
   if (JSON.stringify(identity.disclosures) !== JSON.stringify(REQUIRED_DISCLOSURES)) unavailable();
 
   ["cloud", "ai", "saas", "resilience", "opportunity", "source_metadata"].forEach((section) => {
@@ -278,6 +327,8 @@ export function validateCcacDashboardView(candidate) {
     if (record.impact_classification !== "anomaly_impact_not_savings") unavailable();
   });
 
+  requireExactSet([...metricInventory.keys()], Object.keys(PROJECTED_POLICY.metric_relationships));
+
   metricInventory.forEach((metric) => {
     metric.trace.input_metric_ids.forEach((id) => {
       if (!metricInventory.has(id)) unavailable();
@@ -290,6 +341,7 @@ export function validateCcacDashboardView(candidate) {
     if (findingIds.has(id)) unavailable();
     findingIds.add(id);
   });
+  requireExactSequence([...findingIds], SOURCE_POLICY.display.finding_ids);
   view.anomalies.forEach((anomaly) => {
     const finding = requireObject(anomaly.finding);
     if (!findingIds.has(finding.id)) unavailable();
@@ -311,24 +363,30 @@ export function validateCcacDashboardView(candidate) {
 
   const sourceOpportunity = requireObject(view.opportunity.source);
   const opportunityId = requireText(sourceOpportunity.id);
+  const opportunityRelationship = SOURCE_POLICY.opportunity_relationships[opportunityId];
+  if (!opportunityRelationship || Object.keys(SOURCE_POLICY.opportunity_relationships).length !== 1) unavailable();
   validateProducer(sourceOpportunity.producer);
+  if (sourceOpportunity.producer.name !== opportunityRelationship.producer) unavailable();
   const estimate = requireObject(sourceOpportunity.estimate);
   ["low", "expected", "high"].forEach((field) => {
     if (estimate[field] !== null && typeof estimate[field] !== "string") unavailable();
   });
-  requireArray(sourceOpportunity.evidence_ids).forEach(requireText);
+  requireExactSet(sourceOpportunity.evidence_ids, opportunityRelationship.evidence_ids);
   const opportunityTrace = requireObject(sourceOpportunity.trace);
   if (opportunityTrace.canonical_id !== opportunityId || opportunityTrace.source_artifact !== "saas-cost-analyzer.json") unavailable();
   validateProducer(opportunityTrace.producer);
-  requireArray(opportunityTrace.evidence_ids).forEach(requireText);
+  requireExactSet(opportunityTrace.evidence_ids, opportunityRelationship.evidence_ids);
 
   const aggregate = requireObject(view.opportunity.annual_aggregate);
-  requireText(aggregate.id);
+  const aggregateId = requireText(aggregate.id);
+  const aggregateRelationship = SOURCE_POLICY.aggregate_relationships[aggregateId];
+  if (!aggregateRelationship || Object.keys(SOURCE_POLICY.aggregate_relationships).length !== 1) unavailable();
   ["low", "expected", "high"].forEach((field) => {
     if (aggregate[field] !== null && typeof aggregate[field] !== "string") unavailable();
   });
   const aggregateOpportunityIds = requireArray(aggregate.opportunity_ids);
-  if (aggregateOpportunityIds.length !== 1 || aggregateOpportunityIds[0] !== opportunityId) unavailable();
+  requireExactSet(aggregateOpportunityIds, aggregateRelationship.opportunity_ids);
+  if (aggregateOpportunityIds[0] !== opportunityId) unavailable();
   const aggregateTrace = requireObject(aggregate.trace);
   if (aggregateTrace.canonical_id !== aggregate.id || aggregateTrace.source_artifact !== "report.json") unavailable();
   if (
@@ -336,11 +394,18 @@ export function validateCcacDashboardView(candidate) {
     || aggregateTrace.producer.name !== "tech-spend-command-center"
     || aggregateTrace.producer.version !== "0.2.1"
   ) unavailable();
-  requireArray(aggregateTrace.source_opportunity_ids).forEach((id) => {
-    if (id !== opportunityId) unavailable();
-  });
+  requireExactSet(aggregateTrace.source_opportunity_ids, aggregateRelationship.opportunity_ids);
 
-  return candidate;
+  return cloneValue(candidate);
+}
+
+export function validateCcacDashboardView(candidate) {
+  try {
+    return validateCandidate(candidate);
+  } catch (error) {
+    if (error instanceof CcacDashboardViewUnavailableError) throw error;
+    return unavailable();
+  }
 }
 
 const validatedGeneratedDashboardView = validateCcacDashboardView(generatedDashboardView);

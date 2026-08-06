@@ -14,10 +14,27 @@ const reject = (value) => {
   expect(() => validateCcacDashboardView(value)).toThrow(CCAC_DASHBOARD_UNAVAILABLE_MESSAGE);
 };
 
+const replaceString = (value, original, replacement) => {
+  if (Array.isArray(value)) return value.map((child) => replaceString(child, original, replacement));
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [key, replaceString(child, original, replacement)]),
+    );
+  }
+  return value === original ? replacement : value;
+};
+
+const swapStrings = (value, first, second) => {
+  const marker = "__ccac_identity_swap_marker__";
+  return replaceString(replaceString(replaceString(value, first, marker), second, first), marker, second);
+};
+
 test("accepts the canonical generated view without mutation", () => {
   const candidate = clone();
   const before = JSON.stringify(candidate);
-  expect(validateCcacDashboardView(candidate)).toBe(candidate);
+  const validated = validateCcacDashboardView(candidate);
+  expect(validated).toStrictEqual(candidate);
+  expect(validated).not.toBe(candidate);
   expect(JSON.stringify(candidate)).toBe(before);
 });
 
@@ -88,7 +105,7 @@ test("preserves decimal strings, nulls, unknown reasons, integers, and canonical
   candidate.cloud.services.reverse();
   candidate.cloud.total.value = null;
   candidate.cloud.total.unknown_reason = "Illustrative value intentionally unavailable";
-  expect(validateCcacDashboardView(candidate)).toBe(candidate);
+  expect(validateCcacDashboardView(candidate)).toStrictEqual(candidate);
   expect(candidate.cloud.services.map((metric) => metric.id)).toEqual(
     [...canonicalView.cloud.services].reverse().map((metric) => metric.id),
   );
@@ -149,6 +166,182 @@ test("rejected input cannot produce partial data and accessor has no legacy fall
   expect(second.cloud.total.value).toBe(canonicalView.cloud.total.value);
   expect(second).not.toHaveProperty("cost_baseline");
   expect(JSON.stringify(second)).not.toContain("35951.85");
+});
+
+test("rejects same-count canonical metric, finding, and evidence substitutions", () => {
+  reject(replaceString(
+    clone(),
+    "metric.cloud.service.amazonec2-23d867e0.cost",
+    "metric.cloud.service.amazonec2-23d867e0.invented",
+  ));
+  reject(replaceString(
+    clone(),
+    "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+    "finding.anomaly.provider-aws-scope-cloud-service-amazone-invented",
+  ));
+  reject(replaceString(
+    clone(),
+    "evidence.finops-lite.cost-summary",
+    "evidence.finops-lite.invented-summary",
+  ));
+});
+
+test("rejects swapped real same-producer evidence relationships", () => {
+  reject(swapStrings(
+    clone(),
+    "evidence.recovery-economics.restore-test",
+    "evidence.recovery-economics.scenario-input",
+  ));
+});
+
+test("rejects missing, additional, and duplicate metric identities", () => {
+  const missing = clone();
+  missing.cloud.services.pop();
+  reject(missing);
+
+  const additional = clone();
+  const invented = clone(additional.cloud.services[0]);
+  invented.id = "metric.cloud.service.invented-00000000.cost";
+  invented.trace.canonical_id = invented.id;
+  additional.cloud.services.push(invented);
+  reject(additional);
+
+  const duplicate = clone();
+  duplicate.cloud.services.push(clone(duplicate.cloud.services[0]));
+  reject(duplicate);
+});
+
+test("rejects missing, additional, and duplicate finding identities", () => {
+  const missing = clone();
+  missing.findings.pop();
+  reject(missing);
+
+  const additional = clone();
+  const invented = clone(additional.findings[0]);
+  invented.id = "finding.anomaly.invented-00000000";
+  invented.trace.canonical_id = invented.id;
+  additional.findings.push(invented);
+  reject(additional);
+
+  const duplicate = clone();
+  duplicate.findings.push(clone(duplicate.findings[0]));
+  reject(duplicate);
+});
+
+test("rejects missing, additional, and duplicate evidence identities", () => {
+  const missing = clone();
+  missing.cloud.total.trace.evidence_ids.pop();
+  reject(missing);
+
+  const additional = clone();
+  additional.cloud.total.trace.evidence_ids.push("evidence.ai-cost-lens.usage");
+  reject(additional);
+
+  const duplicate = clone();
+  duplicate.cloud.total.trace.evidence_ids.push(duplicate.cloud.total.trace.evidence_ids[0]);
+  reject(duplicate);
+});
+
+test("rejects correct metric identity assigned to the wrong producer", () => {
+  const candidate = clone();
+  candidate.cloud.total.trace.producer = { name: "ai-cost-lens", version: "0.2.0" };
+  candidate.cloud.total.trace.source_artifact = "ai-cost-lens.json";
+  reject(candidate);
+});
+
+test("rejects reversed, swapped, and rotated contractual finding order", () => {
+  const reversed = clone();
+  reversed.findings.reverse();
+  reject(reversed);
+
+  const swapped = clone();
+  [swapped.findings[0], swapped.findings[1]] = [swapped.findings[1], swapped.findings[0]];
+  reject(swapped);
+
+  const rotated = clone();
+  rotated.findings.push(rotated.findings.shift());
+  reject(rotated);
+});
+
+test("preserves noncontractual catalog order without normalization", () => {
+  const candidate = clone();
+  candidate.cloud.services.reverse();
+  const validated = validateCcacDashboardView(candidate);
+  expect(validated.cloud.services.map(({ id }) => id)).toEqual(candidate.cloud.services.map(({ id }) => id));
+});
+
+test("isolates caller data, validation results, accessors, and the imported canonical source", () => {
+  const candidate = clone();
+  const result = validateCcacDashboardView(candidate);
+  expect(result).not.toBe(candidate);
+  expect(result.cloud).not.toBe(candidate.cloud);
+  expect(result.cloud.services).not.toBe(candidate.cloud.services);
+  expect(result.cloud.services[0]).not.toBe(candidate.cloud.services[0]);
+
+  const canonicalValue = result.cloud.total.value;
+  candidate.cloud.total.value = "caller mutation";
+  expect(result.cloud.total.value).toBe(canonicalValue);
+  result.cloud.total.value = "result mutation";
+  expect(candidate.cloud.total.value).toBe("caller mutation");
+
+  const secondResult = validateCcacDashboardView(clone());
+  expect(secondResult.cloud.total.value).toBe(canonicalValue);
+  const firstAccessor = getValidatedCcacDashboardView();
+  const secondAccessor = getValidatedCcacDashboardView();
+  firstAccessor.cloud.services[0].name = "accessor mutation";
+  expect(secondAccessor.cloud.services[0].name).not.toBe("accessor mutation");
+  expect(getValidatedCcacDashboardView().cloud.services[0].name).not.toBe("accessor mutation");
+});
+
+test("rejects non-JSON values and unsupported object types before cloning", () => {
+  for (const invalid of [
+    NaN,
+    Infinity,
+    -Infinity,
+    undefined,
+    () => "not data",
+    Symbol("not data"),
+    1n,
+    new Date(),
+    new Map(),
+    new Set(),
+  ]) {
+    const candidate = clone();
+    candidate.source_metadata.invalid_value = invalid;
+    reject(candidate);
+  }
+
+  const cyclic = clone();
+  cyclic.source_metadata.cycle = cyclic;
+  reject(cyclic);
+
+  const accessor = clone();
+  Object.defineProperty(accessor.source_metadata, "computed", {
+    enumerable: true,
+    get: () => "not plain data",
+  });
+  reject(accessor);
+
+  const hostileProxy = new Proxy(clone(), {
+    getPrototypeOf: () => { throw new Error("hostile trap"); },
+  });
+  reject(hostileProxy);
+});
+
+test("preserves explicit zero separately from null and its unknown reason", () => {
+  const zeroCandidate = clone();
+  zeroCandidate.ai.metrics[0].value = "0";
+  zeroCandidate.ai.metrics[0].unknown_reason = null;
+  const zeroResult = validateCcacDashboardView(zeroCandidate);
+  expect(zeroResult.ai.metrics[0].value).toBe("0");
+  expect(zeroResult.ai.metrics[0].unknown_reason).toBeNull();
+
+  const nullCandidate = clone();
+  nullCandidate.ai.metrics[0].value = null;
+  nullCandidate.ai.metrics[0].unknown_reason = "Illustrative value intentionally unavailable";
+  const nullResult = validateCcacDashboardView(nullCandidate);
+  expect(nullResult.ai.metrics[0].value).toBeNull();
+  expect(nullResult.ai.metrics[0].unknown_reason).toBe("Illustrative value intentionally unavailable");
 });
 
 test("owns the generated import without crossing the dashboard or Lumen boundaries", () => {
