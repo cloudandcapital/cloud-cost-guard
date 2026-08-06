@@ -67,6 +67,8 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
     "validate:data": "node ../scripts/validate-report.cjs",
     "test:api": "node --test ../scripts/lumen-handler.test.cjs"
   },
@@ -78,6 +80,7 @@
 
   "devDependencies": {
     "@craco/craco": "^7.1.0",
+    "@playwright/test": "1.62.1",
     "autoprefixer": "^10.4.20",
     "eslint": "8.57.0",
     "eslint-plugin-import": "2.31.0",

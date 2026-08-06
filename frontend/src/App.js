@@ -208,7 +208,7 @@ const Modal = ({ open, onClose, title, children }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg" role="dialog" aria-modal="true" aria-labelledby="finding-modal-title">
+      <div className="w-full max-w-2xl rounded-xl bg-white shadow-lg" role="dialog" aria-modal="true" aria-labelledby="finding-modal-title" data-testid="finding-modal">
         <div className="flex items-center justify-between border-b border-[#E7DCCF] px-4 py-3">
           <h3 id="finding-modal-title" className="text-sm font-semibold text-brand-ink">{title}</h3>
           <button
@@ -745,9 +745,9 @@ const Dashboard = () => {
   const k8sOpportunity = getOpportunity(report, report?.kubernetes?.opportunity_id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light">
+    <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light" data-testid="approved-dashboard">
       {/* Header */}
-      <div className="nav-header">
+      <div className="nav-header" data-testid="dashboard-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
@@ -789,7 +789,7 @@ const Dashboard = () => {
         </div>
 
         {/* ── Cloud+ Executive Summary ───────────────────── */}
-        <div className="space-y-6 mb-8">
+        <div className="space-y-6 mb-8" data-testid="executive-summary">
 
           {/* Hero banner: grand total + period delta + projected */}
           <Card className="kpi-card shadow-sm">
@@ -823,7 +823,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Three scope cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="scope-cards">
             <KPICard
               title="Cloud Infrastructure"
               value={formatCurrency(cloudTotal)}
@@ -884,7 +884,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* Reconciled total technology-spend trend */}
-            <Card className="kpi-card shadow-sm">
+            <Card className="kpi-card shadow-sm" data-testid="daily-tech-spend-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink">
                   <BarChart3 className="h-5 w-5" />Daily Tech Spend
@@ -912,7 +912,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Tech Spend by Scope donut */}
-            <Card className="kpi-card shadow-sm">
+            <Card className="kpi-card shadow-sm" data-testid="scope-donut-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink">
                   <PieChartIcon className="h-5 w-5" />Tech Spend by Scope
@@ -956,7 +956,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Top anomaly + next-month forecast */}
-            <Card className="kpi-card shadow-sm">
+            <Card className="kpi-card shadow-sm" data-testid="top-signal-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-brand-ink">
                   <AlertTriangle className="h-5 w-5" />Top Signal &amp; Forecast
@@ -1048,7 +1048,7 @@ const Dashboard = () => {
 
         {/* Tabs — drill-down by scope */}
         <Tabs defaultValue="findings" className="space-y-6">
-          <TabsList className="ccg-tabs">
+          <TabsList className="ccg-tabs" data-testid="primary-tabs">
             <TabsTrigger value="findings" className="ccg-tab">Findings</TabsTrigger>
             <TabsTrigger value="products" className="ccg-tab">Products</TabsTrigger>
             <TabsTrigger value="clouds" className="ccg-tab">Clouds</TabsTrigger>

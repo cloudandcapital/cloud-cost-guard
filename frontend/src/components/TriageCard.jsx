@@ -45,7 +45,7 @@ export default function TriageCard({ defaultExpanded = false, onDismiss }) {
   };
 
   return (
-    <Card className="kpi-card border-amber-200 bg-amber-50/60">
+    <Card className="kpi-card border-amber-200 bg-amber-50/60" data-testid="triage-card">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
