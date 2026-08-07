@@ -20,6 +20,7 @@ The rejected PR #8 branch and commit `5a1a16ecb075e6a41513b5079eea3c5ece79c50c` 
 - The tracked deterministic `frontend/src/data/report.json` remains the dashboard and Lumen fixture. No network billing source is used.
 - Snapshot changes require the explicit `npm run test:visual:update` command, patch review, and independent visual approval.
 - Screenshot comparison permits exactly zero changed pixels (`maxDiffPixels: 0`). Three consecutive clean no-update runs under the pinned environment were pixel-identical, so no nonzero tolerance is justified.
+- Screenshot baselines are platform-specific when operating-system text rasterization changes pixels or font metrics: the existing approved files remain the macOS contract, while CI uses separately reviewed `-linux` files. Both platforms retain the same zero-pixel threshold; cross-platform differences are never converted into a tolerance.
 
 ## Visible-element inventory
 
@@ -70,7 +71,7 @@ The rejected PR #8 branch and commit `5a1a16ecb075e6a41513b5079eea3c5ece79c50c` 
 
 At the approved 390 × 844 viewport, the primary tab list is exactly seven controls in a five-column CSS grid. Findings, Products, Clouds, Kubernetes, and Overview occupy the first row. AI Spend and SaaS are 30 px-high controls in an implicit second row whose top is 36 px below the first row. The list retains a fixed total height of 38 px and `overflow: hidden`; it has no horizontal scrolling. The second row begins below the container's visible content area and is clipped, creating a concrete usability risk. PR #9 deliberately preserves this legacy behavior and does not redesign it. A separate future design issue must own any repair.
 
-The approved AI Spend mobile state has exactly 18 px of page-level horizontal overflow (`clientWidth` 390 px; `scrollWidth` 408 px). Provider drilldown measurement also records AWS at zero overflow, Azure at exactly 83 px (`scrollWidth` 473 px), and GCP at exactly 148 px (`scrollWidth` 538 px). The contract asserts these exact approved-base defects so any increase, decrease, disappearance, or other change requires intentional review. Every other primary tab must have `scrollWidth === clientWidth`, as must AWS and all desktop states. These exceptions must be removed when a dedicated mobile-overflow correction is approved; they do not weaken any other no-overflow assertion.
+The approved AI Spend mobile state has exactly 18 px of page-level horizontal overflow on the review workstation (`clientWidth` 390 px; `scrollWidth` 408 px). Provider drilldown measurement there also records AWS at zero overflow, Azure at exactly 83 px (`scrollWidth` 473 px), and GCP at exactly 148 px (`scrollWidth` 538 px). Ubuntu CI's rasterization metrics are separately pinned at AI 20 px, AWS 0 px, Azure 82 px, and GCP 147 px. The contract asserts these exact platform-specific approved-base defects so any increase, decrease, disappearance, or other change requires intentional review. Every other primary tab must have `scrollWidth === clientWidth`, as must AWS and all desktop states. These exceptions must be removed when a dedicated mobile-overflow correction is approved; they do not weaken any other no-overflow assertion.
 
 ## Existing but not reproducibly baselined states
 

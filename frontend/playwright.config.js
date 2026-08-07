@@ -1,11 +1,14 @@
 const { defineConfig } = require("@playwright/test");
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4174";
+const snapshotPathTemplate = process.platform === "linux"
+  ? "{testDir}/snapshots/{testFilePath}/{arg}-{projectName}-linux{ext}"
+  : "{testDir}/snapshots/{testFilePath}/{arg}-{projectName}{ext}";
 
 module.exports = defineConfig({
   testDir: "./visual-contract",
   outputDir: "./test-results/visual-contract",
-  snapshotPathTemplate: "{testDir}/snapshots/{testFilePath}/{arg}-{projectName}{ext}",
+  snapshotPathTemplate,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

@@ -18,6 +18,17 @@ const PRIMARY_TAB_CASES = [
   ["SaaS", "SaaS Spend"],
 ];
 
+const MOBILE_OVERFLOW_BY_PLATFORM = {
+  darwin: { "AI Spend": 18, AWS: 0, Azure: 83, GCP: 148 },
+  linux: { "AI Spend": 20, AWS: 0, Azure: 82, GCP: 147 },
+};
+
+function expectedMobileOverflow(state) {
+  const platformExpectations = MOBILE_OVERFLOW_BY_PLATFORM[process.platform];
+  if (!platformExpectations) throw new Error(`No approved overflow contract for ${process.platform}`);
+  return platformExpectations[state] ?? 0;
+}
+
 test.describe("approved Cloud Cost Guard structure and interactions", () => {
   let consoleProblems;
 
@@ -69,7 +80,9 @@ test.describe("approved Cloud Cost Guard structure and interactions", () => {
     for (const [tab, heading] of PRIMARY_TAB_CASES) {
       await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
-      const expectedOverflow = testInfo.project.name === "mobile-390x844" && tab === "AI Spend" ? 18 : 0;
+      const expectedOverflow = testInfo.project.name === "mobile-390x844"
+        ? expectedMobileOverflow(tab)
+        : 0;
       await expectExactPageOverflow(page, expectedOverflow);
     }
   });
@@ -104,16 +117,18 @@ test.describe("approved Cloud Cost Guard structure and interactions", () => {
 
   test("preserves cloud provider drilldowns and rendered service graphs", async ({ page }, testInfo) => {
     await page.getByTestId("primary-tabs").getByRole("tab", { name: "Clouds", exact: true }).click();
-    for (const [tab, label, mobileOverflow] of [
-      ["AWS", "Amazon Web Services", 0],
-      ["Azure", "Microsoft Azure", 83],
-      ["GCP", "Google Cloud", 148],
+    for (const [tab, label] of [
+      ["AWS", "Amazon Web Services"],
+      ["Azure", "Microsoft Azure"],
+      ["GCP", "Google Cloud"],
     ]) {
       await page.getByRole("tab", { name: tab, exact: true }).click();
       await expect(page.getByText(`${label} — Service Breakdown`, { exact: true })).toBeVisible();
       await expect(page.getByText(`${label} Total`, { exact: true })).toBeVisible();
       await page.mouse.move(0, 0);
-      const expectedOverflow = testInfo.project.name === "mobile-390x844" ? mobileOverflow : 0;
+      const expectedOverflow = testInfo.project.name === "mobile-390x844"
+        ? expectedMobileOverflow(tab)
+        : 0;
       await expectExactPageOverflow(page, expectedOverflow);
       const chart = page.getByText(`${label} — Service Breakdown`, { exact: true })
         .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');

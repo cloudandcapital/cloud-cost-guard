@@ -53,6 +53,16 @@ jobs:
         working-directory: frontend
         run: npm run test:visual
 
+      - name: Upload visual-contract failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-contract-failure-evidence
+          if-no-files-found: error
+          path: |
+            frontend/test-results/visual-contract
+            frontend/visual-contract/snapshots
+
       - name: Build frontend
         working-directory: frontend
         env:
