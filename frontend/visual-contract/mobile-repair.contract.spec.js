@@ -4,6 +4,7 @@ const {
   expectNoBrokenDisplayValues,
   expectRenderedSvgGeometry,
   openApprovedDashboard,
+  waitForChartsStable,
 } = require("./helpers");
 
 test.describe("mobile overflow repair", () => {
@@ -14,6 +15,7 @@ test.describe("mobile overflow repair", () => {
 
   test("repairs AI model layout without removing chart, legend, values, or table", async ({ page }) => {
     await page.getByTestId("primary-tabs").getByRole("tab", { name: "AI Spend", exact: true }).click();
+    await waitForChartsStable(page);
     await expectExactPageOverflow(page);
     const breakdown = page.locator(".ai-model-breakdown");
     await expect(breakdown).toContainText("Cost by Model");
