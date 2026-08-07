@@ -17,7 +17,7 @@ module.exports = defineConfig({
       animations: "disabled",
       caret: "hide",
       scale: "css",
-      maxDiffPixelRatio: 0.003,
+      maxDiffPixels: 0,
     },
   },
   use: {

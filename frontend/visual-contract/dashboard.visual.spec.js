@@ -1,5 +1,5 @@
 const { test, expect } = require("@playwright/test");
-const { openApprovedDashboard } = require("./helpers");
+const { openApprovedDashboard, waitForChartsStable } = require("./helpers");
 
 const TAB_CASES = [
   ["findings", "Findings"],
@@ -17,7 +17,7 @@ test.describe("approved visual contract", () => {
   for (const [slug, tab] of TAB_CASES) {
     test(`${tab} full-page`, async ({ page }) => {
       await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
-      await page.waitForTimeout(1800);
+      await waitForChartsStable(page);
       await expect(page).toHaveScreenshot(`${slug}-full-page.png`, { fullPage: true });
     });
   }
