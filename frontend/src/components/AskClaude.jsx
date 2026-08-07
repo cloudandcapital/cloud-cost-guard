@@ -196,7 +196,7 @@ const AskClaude = () => {
           {messages.length === 0 && !loading && (
             <div className="ask-claude-chips">
               <p style={{ fontSize: 12, color: "#7A6B5D", textAlign: "center", marginBottom: 10 }}>
-                Ask about the illustrative cost data
+                Grounded only in this illustrative report; Lumen cannot access customer accounts or external resources.
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {SAMPLE_QUESTIONS.map((q, i) => (
@@ -240,7 +240,7 @@ const AskClaude = () => {
             ref={inputRef}
             type="text"
             className="ask-claude-input"
-            placeholder="Ask about your costs…"
+            placeholder="Ask about this sample report…"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}

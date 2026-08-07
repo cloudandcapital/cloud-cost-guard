@@ -199,7 +199,7 @@ test.describe("approved Cloud Cost Guard structure and interactions", () => {
     await expect(lumen).toContainText("Immediate signal: Amazon EC2 increased");
     await expect(lumen).toContainText("Grounded in illustrative report");
     await lumen.getByRole("button", { name: "New chat" }).click();
-    await expect(lumen.getByText("Ask about the illustrative cost data", { exact: true })).toBeVisible();
+    await expect(lumen.getByText("Grounded only in this illustrative report; Lumen cannot access customer accounts or external resources.", { exact: true })).toBeVisible();
     await lumen.getByTitle("Close").click();
     await expect(page.getByTestId("lumen-trigger")).toBeVisible();
   });

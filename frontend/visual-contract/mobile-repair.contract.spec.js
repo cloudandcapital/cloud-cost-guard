@@ -18,6 +18,7 @@ test.describe("mobile overflow repair", () => {
     await waitForChartsStable(page);
     await expectExactPageOverflow(page);
     const breakdown = page.locator(".ai-model-breakdown");
+    await breakdown.scrollIntoViewIfNeeded();
     await expect(breakdown).toContainText("Cost by Model");
     await expect(breakdown).toContainText("gpt-4o");
     await expect(breakdown).toContainText("$512.30");

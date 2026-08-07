@@ -142,18 +142,12 @@ const sortAndPickFindings = (arr, limit = 9) => {
 };
 
 /* -------- Presentational components -------- */
-const KPICard = ({ title, value, change, icon: Icon, subtitle, dataFreshness }) => (
+const KPICard = ({ title, value, change, icon: Icon, subtitle }) => (
   <Card className="kpi-card shadow-sm hover:shadow-brand-md transition-all duration-200">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-brand-muted">{title}</CardTitle>
       <div className="flex items-center">
         <Icon className="h-4 w-4 text-brand-light-muted" />
-        {Number.isFinite(dataFreshness) && dataFreshness < 1 && (
-          <span className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] bg-green-50 text-green-700">LIVE</span>
-        )}
-        {Number.isFinite(dataFreshness) && dataFreshness >= 1 && (
-          <span className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] bg-[#F2EFEA] text-brand-light-muted">{dataFreshness}h</span>
-        )}
       </div>
     </CardHeader>
     <CardContent className="py-3">
@@ -781,9 +775,11 @@ const Dashboard = () => {
       {/* Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Data Source banner (compact caption) */}
-        <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3">
-          <span><span className="font-medium">Data:</span> Illustrative AWS, Azure, GCP, Kubernetes, AI and SaaS sample</span>
+        {/* Data source and refresh behavior (compact caption) */}
+        <div className="mb-4 text-xs text-brand-muted flex flex-wrap items-center gap-3" data-testid="capability-disclosure">
+          <span className="font-medium">Illustrative sample billing data. No customer accounts, credentials, or production resources are connected.</span>
+          <span className="hidden sm:inline">•</span>
+          <span>Refresh reloads the tracked sample report; it does not sync cloud accounts.</span>
           <span className="hidden sm:inline">•</span>
           <span>Demo snapshot: {formatUtcTimestamp(report?.generated_at)}</span>
         </div>

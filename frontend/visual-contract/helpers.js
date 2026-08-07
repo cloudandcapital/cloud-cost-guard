@@ -22,18 +22,11 @@ async function expectRenderedSvgGeometry(container, pathSelector, minimumPathCou
   const paths = container.locator(pathSelector);
   await expect(paths.first()).toBeVisible();
   expect(await paths.count()).toBeGreaterThanOrEqual(minimumPathCount);
-  const geometry = await paths.evaluateAll((elements) => elements.map((element) => {
+  await expect.poll(async () => paths.evaluateAll((elements) => elements.filter((element) => {
     const box = element.getBBox();
-    return {
-      d: element.getAttribute("d") || "",
-      width: box.width,
-      height: box.height,
-    };
-  }));
-  const renderedGeometry = geometry.filter((path) => (
-    path.d.trim() !== "" && path.width > 0 && path.height > 0
-  ));
-  expect(renderedGeometry.length).toBeGreaterThanOrEqual(minimumPathCount);
+    const d = element.getAttribute("d") || "";
+    return d.trim() !== "" && box.width > 0 && box.height > 0;
+  }).length)).toBeGreaterThanOrEqual(minimumPathCount);
 }
 
 async function expectDashboardFonts(page) {
