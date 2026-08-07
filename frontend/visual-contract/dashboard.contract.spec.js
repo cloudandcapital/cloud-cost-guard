@@ -20,7 +20,7 @@ const PRIMARY_TAB_CASES = [
 
 const MOBILE_OVERFLOW_BY_PLATFORM = {
   darwin: { "AI Spend": 18, AWS: 0, Azure: 83, GCP: 148 },
-  linux: { "AI Spend": 20, AWS: 0, Azure: 82, GCP: 147 },
+  linux: { "AI Spend": 20, AWS: 0, Azure: 82, GCP: 146 },
 };
 
 function expectedMobileOverflow(state) {
