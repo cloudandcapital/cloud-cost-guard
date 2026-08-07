@@ -275,7 +275,7 @@ const FindingCard = ({ finding, onViewDetails }) => (
         )}
 
         {finding.commands && finding.commands.length > 0 && !String(pickBestCommand(finding) || "").startsWith("#") && (
-          <div className="p-3 rounded-lg border border-[#E7DCCF] bg-[#F7F1EA]"><code className="text-xs font-mono text-brand-ink">{pickBestCommand(finding)}</code></div>
+          <div className="finding-command p-3 rounded-lg border border-[#E7DCCF] bg-[#F7F1EA]"><code className="text-xs font-mono text-brand-ink">{pickBestCommand(finding)}</code></div>
         )}
 
         <div className="flex items-center justify-between text-xs text-brand-muted">
@@ -330,7 +330,7 @@ const ProductTable = ({ products }) => (
 );
 
 const AiModelBreakdown = ({ models }) => (
-  <Card className="kpi-card shadow-sm">
+  <Card className="ai-model-breakdown kpi-card shadow-sm">
     <CardHeader className="pb-3">
       <CardTitle className="flex items-center gap-2 text-brand-ink">
         <PieChartIcon className="h-5 w-5" />Cost by Model
@@ -338,8 +338,8 @@ const AiModelBreakdown = ({ models }) => (
       <CardDescription className="text-brand-muted">AI model spend breakdown this period</CardDescription>
     </CardHeader>
     <CardContent className="pt-0">
-      <div className="flex items-center justify-between">
-        <div style={{ width: "55%", height: 260 }}>
+      <div className="ai-model-breakdown__content flex items-center justify-between">
+        <div className="ai-model-breakdown__chart" style={{ width: "55%", height: 260 }}>
           <ResponsiveContainer>
             <PieChart>
               <Pie data={models} cx="50%" cy="50%" innerRadius={45} outerRadius={105} paddingAngle={2} dataKey="value">
@@ -352,7 +352,7 @@ const AiModelBreakdown = ({ models }) => (
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="w-2/5 space-y-2">
+        <div className="ai-model-breakdown__legend w-2/5 space-y-2">
           {models.map((m, i) => (
             <div key={i} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
