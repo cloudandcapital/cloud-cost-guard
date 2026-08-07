@@ -13,7 +13,9 @@
 
 ---
 
-The public application is an illustrative demo. It uses one deterministic sample report so every total, period, chart, and finding can be inspected without connecting a customer billing account.
+**Illustrative sample billing data. No customer accounts, credentials, or production resources are connected.**
+
+The public application uses one deterministic tracked sample report so every total, period, chart, and finding can be inspected. Refresh reloads that tracked report; it does not synchronize a cloud account or billing export.
 
 **Features:**
 - Multi-cloud cost dashboard — AWS, Azure, GCP with per-cloud service breakdowns
@@ -84,13 +86,13 @@ python backend/mcp_server.py
 ```
 
 **Tools available via MCP:**
-- `get_cloud_summary` — AWS/Azure/GCP totals and trends
-- `get_findings` — prioritized savings findings with evidence
-- `get_cost_by_cloud` — per-cloud service breakdown
-- `get_saas_spend` — SaaS tool spend and unused license data
-- `get_ai_spend` — AI/LLM model-level costs and trends
-- `get_k8s_spend` — Kubernetes namespace and node pool data
-- `ask_lumen` — natural language FinOps query
+- `get_cloud_summary` — illustrative AWS/Azure/GCP totals and trends
+- `get_findings` — illustrative findings with evidence and estimated opportunities
+- `get_cost_by_cloud` — illustrative per-cloud service breakdown
+- `get_saas_spend` — illustrative SaaS tool spend and unused license data
+- `get_ai_spend` — illustrative AI/LLM model-level costs and trends
+- `get_k8s_spend` — illustrative Kubernetes namespace and node pool data
+- `ask_lumen` — natural-language analysis grounded only in the synthetic demo dataset
 
 **Claude Code setup** (`~/.claude/mcp_servers.json`):
 ```json

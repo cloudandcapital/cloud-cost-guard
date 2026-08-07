@@ -312,7 +312,7 @@ def build_server() -> "Server":
             types.Tool(
                 name="get_cloud_summary",
                 description=(
-                    "Return total cloud infrastructure spend and trends across AWS, Azure, and GCP. "
+                    "Return illustrative sample cloud infrastructure spend and trends across AWS, Azure, and GCP. "
                     "Includes grand total, per-cloud totals, top services, and period change %."
                 ),
                 inputSchema={
@@ -330,8 +330,8 @@ def build_server() -> "Server":
             types.Tool(
                 name="get_findings",
                 description=(
-                    "Return prioritized cost optimization findings with evidence and savings estimates. "
-                    "Covers cloud infrastructure, SaaS, AI spend, and Kubernetes waste."
+                    "Return illustrative cost optimization findings with evidence and estimated opportunities. "
+                    "Covers sample cloud infrastructure, SaaS, AI spend, and Kubernetes data."
                 ),
                 inputSchema={
                     "type": "object",
@@ -343,7 +343,7 @@ def build_server() -> "Server":
                         },
                         "min_savings": {
                             "type": "number",
-                            "description": "Only return findings with monthly savings >= this amount (USD).",
+                            "description": "Only return findings with an estimated monthly opportunity >= this amount (USD).",
                         },
                     },
                     "required": [],
@@ -352,8 +352,8 @@ def build_server() -> "Server":
             types.Tool(
                 name="get_cost_by_cloud",
                 description=(
-                    "Return per-cloud cost breakdown: total spend, top services, "
-                    "and period-over-period change for a specific cloud provider."
+                    "Return an illustrative per-cloud cost breakdown: total spend, top services, "
+                    "and period-over-period change for a selected sample provider."
                 ),
                 inputSchema={
                     "type": "object",
@@ -361,7 +361,7 @@ def build_server() -> "Server":
                         "cloud": {
                             "type": "string",
                             "enum": ["aws", "azure", "gcp"],
-                            "description": "Cloud provider to fetch data for.",
+                            "description": "Illustrative cloud provider to select from the synthetic dataset.",
                         },
                         "window": {
                             "type": "string",
@@ -375,8 +375,8 @@ def build_server() -> "Server":
             types.Tool(
                 name="get_saas_spend",
                 description=(
-                    "Return SaaS tool spend, seat utilization, unused licenses, "
-                    "and estimated waste across all tracked SaaS products."
+                    "Return illustrative SaaS tool spend, seat utilization, unused licenses, "
+                    "and estimated opportunities across sample SaaS products."
                 ),
                 inputSchema={
                     "type": "object",
@@ -387,7 +387,7 @@ def build_server() -> "Server":
             types.Tool(
                 name="get_ai_spend",
                 description=(
-                    "Return AI and LLM model-level spend across OpenAI, Anthropic, "
+                    "Return illustrative AI and LLM model-level spend across OpenAI, Anthropic, "
                     "and AWS Bedrock — with per-model costs and period trends."
                 ),
                 inputSchema={
@@ -399,8 +399,8 @@ def build_server() -> "Server":
             types.Tool(
                 name="get_k8s_spend",
                 description=(
-                    "Return Kubernetes cost visibility: total cluster spend, namespace "
-                    "breakdowns, node pool efficiency, and over-provisioning waste estimate."
+                    "Return illustrative Kubernetes cost visibility: sample cluster spend, namespace "
+                    "breakdowns, node pool efficiency, and an estimated opportunity."
                 ),
                 inputSchema={
                     "type": "object",
@@ -412,8 +412,8 @@ def build_server() -> "Server":
                 name="ask_lumen",
                 description=(
                     "Ask Lumen — Cloud & Capital's FinOps AI — a natural language question "
-                    "about your cloud, SaaS, AI, or Kubernetes costs. Returns analysis with "
-                    "specific findings and actionable recommendations."
+                    "about the synthetic cloud, SaaS, AI, or Kubernetes demo data. Returns "
+                    "illustrative findings and review suggestions; it has no customer-account access."
                 ),
                 inputSchema={
                     "type": "object",

@@ -3,7 +3,8 @@ const assert = require("node:assert/strict");
 const { _internals } = require("../api/ask-claude.js");
 
 test("Lumen identifies the dataset as illustrative and requires safe remediation", () => {
-  assert.match(_internals.LUMEN_SYSTEM, /illustrative sample data/i);
+  assert.match(_internals.LUMEN_SYSTEM, /illustrative sample billing data/i);
+  assert.match(_internals.LUMEN_SYSTEM, /No customer accounts, credentials, or production resources are connected/i);
   assert.match(_internals.LUMEN_SYSTEM, /owner approval/i);
   assert.match(_internals.LUMEN_SYSTEM, /rollback/i);
   assert.match(_internals.LUMEN_SYSTEM, /verified savings/i);
