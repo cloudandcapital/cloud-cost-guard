@@ -137,7 +137,7 @@ const AskClaude = () => {
     <>
       {/* Floating trigger button */}
       {!open && (
-        <button className="ask-claude-btn" onClick={() => setOpen(true)} aria-label="Open Lumen">
+        <button className="ask-claude-btn" onClick={() => setOpen(true)} aria-label="Open Lumen" data-testid="lumen-trigger">
           <span className="ask-claude-sparkle" aria-hidden="true">✦</span>
           Lumen
         </button>
@@ -157,6 +157,7 @@ const AskClaude = () => {
         className={`ask-claude-panel${open ? " ask-claude-panel--open" : ""}`}
         role="dialog"
         aria-label="Lumen assistant"
+        data-testid="lumen-panel"
       >
         {/* Header */}
         <div className="ask-claude-header">
