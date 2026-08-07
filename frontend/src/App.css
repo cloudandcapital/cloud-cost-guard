@@ -215,6 +215,31 @@ h1{ font-weight:600; } h2{ font-weight:600; }
   .ccg-tabs{ height: 40px; padding: 2px; }
 }
 
+@media (max-width: 767px){
+  .ai-model-breakdown__content{ gap: 12px; }
+  .ai-model-breakdown__chart{
+    flex: 1 1 55%;
+    min-width: 0;
+    width: auto !important;
+  }
+  .ai-model-breakdown__legend{
+    flex: 0 1 40%;
+    min-width: 0;
+    width: auto;
+  }
+  .ai-model-breakdown__legend > div > div:first-child{ min-width: 0; }
+  .finding-command code{
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .finding-card .evidence-box .font-mono{
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
 /* -------------------------------------------------- */
 /* Evidence box (white, subtle border, smaller text)  */
 /* -------------------------------------------------- */
