@@ -1,0 +1,4616 @@
+{
+  "ai": {
+    "cross_domain_additivity": "non_additive",
+    "metrics": [
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+        "name": "Cached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "100000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+        "name": "anthropic illustrative-model-b AI usage cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage",
+            "evidence.ai-cost-lens.price-book"
+          ],
+          "formula": "sum calculated token-category costs",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "2.1375"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens",
+        "name": "Cost per million categorized tokens",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-million-tokens",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+          "input_metric_ids": [
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cached-input-tokens",
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_million_tokens"
+        },
+        "unknown_reason": null,
+        "value": "2.375"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request",
+        "name": "Cost per request",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost-per-request",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / requests",
+          "input_metric_ids": [
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_request"
+        },
+        "unknown_reason": null,
+        "value": "0.026719"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+        "name": "Output tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.output-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "200000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens",
+        "name": "Reasoning tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.reasoning-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "0"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests",
+        "name": "AI requests",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.requests",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "requests"
+        },
+        "unknown_reason": null,
+        "value": "80"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "anthropic",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-b",
+          "project": "research",
+          "provider": "anthropic",
+          "scope": "ai_usage",
+          "task": "summarization",
+          "team": "data"
+        },
+        "id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+        "name": "Uncached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.uncached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "600000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+        "name": "Cached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "0"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+        "name": "bedrock illustrative-model-c AI usage cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "4.25"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens",
+        "name": "Cost per million categorized tokens",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-million-tokens",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+          "input_metric_ids": [
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cached-input-tokens",
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_million_tokens"
+        },
+        "unknown_reason": null,
+        "value": "4.722222"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request",
+        "name": "Cost per request",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost-per-request",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / requests",
+          "input_metric_ids": [
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_request"
+        },
+        "unknown_reason": null,
+        "value": "0.070833"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+        "name": "Output tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.output-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "100000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens",
+        "name": "Reasoning tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.reasoning-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "0"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests",
+        "name": "AI requests",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.requests",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "requests"
+        },
+        "unknown_reason": null,
+        "value": "60"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "cloud_provider_billing",
+          "billing_provider": "aws",
+          "cloud_spend_overlap": "potential",
+          "cost_basis": "provider_reported",
+          "environment": "production",
+          "model": "illustrative-model-c",
+          "project": "assistant",
+          "provider": "bedrock",
+          "scope": "ai_usage",
+          "task": "batch-classification",
+          "team": "platform"
+        },
+        "id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+        "name": "Uncached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.uncached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "800000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+        "name": "Cached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "200000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+        "name": "openai illustrative-model-a AI usage cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage",
+            "evidence.ai-cost-lens.price-book"
+          ],
+          "formula": "sum calculated token-category costs",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "4.9"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens",
+        "name": "Cost per million categorized tokens",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-million-tokens",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+          "input_metric_ids": [
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cached-input-tokens",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_million_tokens"
+        },
+        "unknown_reason": null,
+        "value": "3.16129"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request",
+        "name": "Cost per request",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost-per-request",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / requests",
+          "input_metric_ids": [
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_request"
+        },
+        "unknown_reason": null,
+        "value": "0.049"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+        "name": "Output tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.output-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "300000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens",
+        "name": "Reasoning tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.reasoning-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "50000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests",
+        "name": "AI requests",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.requests",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "requests"
+        },
+        "unknown_reason": null,
+        "value": "100"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "production",
+          "model": "illustrative-model-a",
+          "project": "assistant",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "customer-support",
+          "team": "product"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+        "name": "Uncached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-assistant-product-62792193.uncached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "1000000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+        "name": "Cached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "50000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+        "name": "openai illustrative-model-a AI usage cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage",
+            "evidence.ai-cost-lens.price-book"
+          ],
+          "formula": "sum calculated token-category costs",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "1.245"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens",
+        "name": "Cost per million categorized tokens",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-million-tokens",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / (uncached_input_tokens + cached_input_tokens + output_tokens + reasoning_tokens) * 1,000,000",
+          "input_metric_ids": [
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cached-input-tokens",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_million_tokens"
+        },
+        "unknown_reason": null,
+        "value": "3.192308"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request",
+        "name": "Cost per request",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost-per-request",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": "cost / requests",
+          "input_metric_ids": [
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency_per_request"
+        },
+        "unknown_reason": null,
+        "value": "0.0498"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+        "name": "Output tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.output-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "80000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens",
+        "name": "Reasoning tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.reasoning-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "10000"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests",
+        "name": "AI requests",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.requests",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "requests"
+        },
+        "unknown_reason": null,
+        "value": "25"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "billing_provider": "openai",
+          "cloud_spend_overlap": "none_known",
+          "cost_basis": "calculated",
+          "environment": "development",
+          "model": "illustrative-model-a",
+          "project": "unattributed",
+          "provider": "openai",
+          "scope": "ai_usage",
+          "task": "experimentation",
+          "team": "unattributed"
+        },
+        "id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+        "name": "Uncached input tokens",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.uncached-input-tokens",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "tokens"
+        },
+        "unknown_reason": null,
+        "value": "250000"
+      },
+      {
+        "dimensions": {
+          "cloud_spend_overlap": "potential_when_provider_is_bedrock",
+          "cost_basis": "mixed_calculated_and_provider_reported",
+          "scope": "ai_usage"
+        },
+        "id": "metric.ai.total-cost",
+        "name": "AI usage cost",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "calculated",
+          "canonical_id": "metric.ai.total-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage",
+            "evidence.ai-cost-lens.price-book"
+          ],
+          "formula": "sum provider-reported and calculated model/allocation cost metrics exactly once; non-additive outside the AI domain",
+          "input_metric_ids": [
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+            "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "12.5325"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "component_bases": "calculated",
+          "cost_basis": "net_cost",
+          "scope": "direct_ai"
+        },
+        "id": "metric.tech-spend.scope.direct_ai",
+        "name": "Canonical direct-AI scope spend",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.tech-spend.scope.direct_ai",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage",
+            "evidence.ai-cost-lens.analysis",
+            "evidence.ai-cost-lens.price-book"
+          ],
+          "formula": "sum explicitly classified direct_ai_vendor cost components exactly once",
+          "input_metric_ids": [
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "8.2825"
+      }
+    ],
+    "total": {
+      "dimensions": {
+        "cloud_spend_overlap": "potential_when_provider_is_bedrock",
+        "cost_basis": "mixed_calculated_and_provider_reported",
+        "scope": "ai_usage"
+      },
+      "id": "metric.ai.total-cost",
+      "name": "AI usage cost",
+      "trace": {
+        "additivity": "non_additive",
+        "basis": "calculated",
+        "canonical_id": "metric.ai.total-cost",
+        "currency": "USD",
+        "evidence_ids": [
+          "evidence.ai-cost-lens.usage",
+          "evidence.ai-cost-lens.price-book"
+        ],
+        "formula": "sum provider-reported and calculated model/allocation cost metrics exactly once; non-additive outside the AI domain",
+        "input_metric_ids": [
+          "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+          "metric.ai.bedrock-illustrative-model-c-assistant-platfo-591c8d57.cost",
+          "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+          "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+        ],
+        "period": {
+          "end": "2026-07-22",
+          "start": "2026-07-01",
+          "timezone": "UTC"
+        },
+        "producer": {
+          "name": "ai-cost-lens",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "source_artifact": "ai-cost-lens.json",
+        "unit": "currency"
+      },
+      "unknown_reason": null,
+      "value": "12.5325"
+    },
+    "unattributed_findings": [
+      {
+        "context": "Ownership is missing. This is unattributed cost, not a savings estimate.",
+        "evidence_ids": [
+          "evidence.ai-cost-lens.usage"
+        ],
+        "first_observed_at": "2026-08-04T12:00:00Z",
+        "id": "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
+        "last_observed_at": "2026-08-04T12:00:00Z",
+        "metric_ids": [
+          "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+        ],
+        "producer": {
+          "name": "ai-cost-lens",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "severity": "medium",
+        "status": "open",
+        "title": "Unattributed AI cost for openai illustrative-model-a",
+        "trace": {
+          "canonical_id": "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage"
+          ],
+          "metric_ids": [
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+          ],
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "source_artifact": "ai-cost-lens.json"
+        },
+        "type": "allocation"
+      }
+    ]
+  },
+  "anomalies": [
+    {
+      "expected": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonEC2"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+        "name": "Trailing median expected cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "median of the prior 14 daily observed costs",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "70.7"
+      },
+      "finding": {
+        "context": "Observed 122.5 USD; trailing median 70.7 USD; observed excess 51.8 USD. This is an anomaly impact, not a savings estimate or root-cause claim.",
+        "evidence_ids": [
+          "evidence.finops-watchdog.input-result"
+        ],
+        "first_observed_at": "2026-07-21T00:00:00Z",
+        "id": "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+        "last_observed_at": "2026-07-21T23:59:59Z",
+        "metric_ids": [
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score"
+        ],
+        "producer": {
+          "name": "finops-watchdog",
+          "version": "0.5.0"
+        },
+        "quality": "valid",
+        "severity": "critical",
+        "status": "open",
+        "title": "Spend Increase detected for provider=aws, scope=cloud, service=AmazonEC2",
+        "trace": {
+          "canonical_id": "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score"
+          ],
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "source_artifact": "finops-watchdog.json"
+        },
+        "type": "anomaly"
+      },
+      "impact": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonEC2"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+        "name": "Observed anomaly cost impact",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "observed cost - trailing median expected cost",
+          "input_metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "51.8"
+      },
+      "impact_classification": "anomaly_impact_not_savings",
+      "observed": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonEC2"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "name": "Observed cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "122.5"
+      },
+      "percentage_change": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonEC2"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+        "name": "Observed cost change percentage",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "(observed cost - expected cost) / expected cost * 100; new spend is represented as 100",
+          "input_metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "percent"
+        },
+        "unknown_reason": null,
+        "value": "73.2673"
+      },
+      "score": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonEC2"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score",
+        "name": "Robust anomaly score",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "(observed cost - trailing median) / (1.4826 * median absolute deviation)",
+          "input_metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "score"
+        },
+        "unknown_reason": null,
+        "value": "49.9123"
+      }
+    },
+    {
+      "expected": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonS3"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+        "name": "Trailing median expected cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "median of the prior 14 daily observed costs",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "30.3"
+      },
+      "finding": {
+        "context": "Observed 52.5 USD; trailing median 30.3 USD; observed excess 22.2 USD. This is an anomaly impact, not a savings estimate or root-cause claim.",
+        "evidence_ids": [
+          "evidence.finops-watchdog.input-result"
+        ],
+        "first_observed_at": "2026-07-21T00:00:00Z",
+        "id": "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
+        "last_observed_at": "2026-07-21T23:59:59Z",
+        "metric_ids": [
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+        ],
+        "producer": {
+          "name": "finops-watchdog",
+          "version": "0.5.0"
+        },
+        "quality": "valid",
+        "severity": "critical",
+        "status": "open",
+        "title": "Spend Increase detected for provider=aws, scope=cloud, service=AmazonS3",
+        "trace": {
+          "canonical_id": "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+          ],
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "source_artifact": "finops-watchdog.json"
+        },
+        "type": "anomaly"
+      },
+      "impact": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonS3"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+        "name": "Observed anomaly cost impact",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "observed cost - trailing median expected cost",
+          "input_metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "22.2"
+      },
+      "impact_classification": "anomaly_impact_not_savings",
+      "observed": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonS3"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "name": "Observed cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "52.5"
+      },
+      "percentage_change": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonS3"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+        "name": "Observed cost change percentage",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "(observed cost - expected cost) / expected cost * 100; new spend is represented as 100",
+          "input_metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "percent"
+        },
+        "unknown_reason": null,
+        "value": "73.2673"
+      },
+      "score": {
+        "dimensions": {
+          "anomaly_type": "spend_increase",
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonS3"
+        },
+        "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score",
+        "name": "Robust anomaly score",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "calculated",
+          "canonical_id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.finops-watchdog.input-result"
+          ],
+          "formula": "(observed cost - trailing median) / (1.4826 * median absolute deviation)",
+          "input_metric_ids": [
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+            "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-watchdog",
+            "version": "0.5.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-watchdog.json",
+          "unit": "score"
+        },
+        "unknown_reason": null,
+        "value": "49.9123"
+      }
+    }
+  ],
+  "cloud": {
+    "comparison": [
+      {
+        "dimensions": {
+          "comparison": "previous_equal_length_period",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.previous-total",
+        "name": "Previous cloud cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.previous-total",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-01",
+            "start": "2026-06-10",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "2000.0"
+      },
+      {
+        "dimensions": {
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.change-amount",
+        "name": "Cloud cost change amount",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "calculated",
+          "canonical_id": "metric.cloud.change-amount",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": "metric.tech-spend.scope.cloud - metric.cloud.previous-total",
+          "input_metric_ids": [
+            "metric.tech-spend.scope.cloud",
+            "metric.cloud.previous-total"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "194.0"
+      },
+      {
+        "dimensions": {
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.change-percentage",
+        "name": "Cloud cost change percentage",
+        "trace": {
+          "additivity": "ratio",
+          "basis": "calculated",
+          "canonical_id": "metric.cloud.change-percentage",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": "(metric.tech-spend.scope.cloud - metric.cloud.previous-total) / metric.cloud.previous-total * 100",
+          "input_metric_ids": [
+            "metric.tech-spend.scope.cloud",
+            "metric.cloud.previous-total"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "percent"
+        },
+        "unknown_reason": null,
+        "value": "9.7"
+      }
+    ],
+    "daily": [
+      {
+        "dimensions": {
+          "date": "2026-07-01",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-01.cost",
+        "name": "Cloud cost for 2026-07-01",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-01.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-02",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-02",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-02.cost",
+        "name": "Cloud cost for 2026-07-02",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-02.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-03",
+            "start": "2026-07-02",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-03",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-03.cost",
+        "name": "Cloud cost for 2026-07-03",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-03.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-04",
+            "start": "2026-07-03",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "102.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-04",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-04.cost",
+        "name": "Cloud cost for 2026-07-04",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-04.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-05",
+            "start": "2026-07-04",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-05",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-05.cost",
+        "name": "Cloud cost for 2026-07-05",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-05.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-06",
+            "start": "2026-07-05",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-06",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-06.cost",
+        "name": "Cloud cost for 2026-07-06",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-06.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-07",
+            "start": "2026-07-06",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "102.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-07",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-07.cost",
+        "name": "Cloud cost for 2026-07-07",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-07.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-08",
+            "start": "2026-07-07",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-08",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-08.cost",
+        "name": "Cloud cost for 2026-07-08",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-08.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-09",
+            "start": "2026-07-08",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-09",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-09.cost",
+        "name": "Cloud cost for 2026-07-09",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-09.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-10",
+            "start": "2026-07-09",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "102.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-10",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-10.cost",
+        "name": "Cloud cost for 2026-07-10",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-10.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-11",
+            "start": "2026-07-10",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-11",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-11.cost",
+        "name": "Cloud cost for 2026-07-11",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-11.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-12",
+            "start": "2026-07-11",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-12",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-12.cost",
+        "name": "Cloud cost for 2026-07-12",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-12.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-13",
+            "start": "2026-07-12",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "102.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-13",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-13.cost",
+        "name": "Cloud cost for 2026-07-13",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-13.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-14",
+            "start": "2026-07-13",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-14",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-14.cost",
+        "name": "Cloud cost for 2026-07-14",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-14.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-15",
+            "start": "2026-07-14",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-15",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-15.cost",
+        "name": "Cloud cost for 2026-07-15",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-15.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-16",
+            "start": "2026-07-15",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "102.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-16",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-16.cost",
+        "name": "Cloud cost for 2026-07-16",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-16.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-17",
+            "start": "2026-07-16",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-17",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-17.cost",
+        "name": "Cloud cost for 2026-07-17",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-17.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-18",
+            "start": "2026-07-17",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-18",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-18.cost",
+        "name": "Cloud cost for 2026-07-18",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-18.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-19",
+            "start": "2026-07-18",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "102.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-19",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-19.cost",
+        "name": "Cloud cost for 2026-07-19",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-19.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-20",
+            "start": "2026-07-19",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-20",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-20.cost",
+        "name": "Cloud cost for 2026-07-20",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-20.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-21",
+            "start": "2026-07-20",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "101.0"
+      },
+      {
+        "dimensions": {
+          "date": "2026-07-21",
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.cloud.day.2026-07-21.cost",
+        "name": "Cloud cost for 2026-07-21",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.day.2026-07-21.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-21",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "175.0"
+      }
+    ],
+    "services": [
+      {
+        "dimensions": {
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonEC2"
+        },
+        "id": "metric.cloud.service.amazonec2-23d867e0.cost",
+        "name": "AmazonEC2 cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.service.amazonec2-23d867e0.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "1535.8"
+      },
+      {
+        "dimensions": {
+          "provider": "aws",
+          "scope": "cloud",
+          "service": "AmazonS3"
+        },
+        "id": "metric.cloud.service.amazons3-c600b2aa.cost",
+        "name": "AmazonS3 cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.cloud.service.amazons3-c600b2aa.cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "658.2"
+      }
+    ],
+    "total": {
+      "dimensions": {
+        "provider": "aws",
+        "scope": "cloud"
+      },
+      "id": "metric.tech-spend.scope.cloud",
+      "name": "Cloud cost",
+      "trace": {
+        "additivity": "additive",
+        "basis": "observed",
+        "canonical_id": "metric.tech-spend.scope.cloud",
+        "currency": "USD",
+        "evidence_ids": [
+          "evidence.finops-lite.cost-summary"
+        ],
+        "formula": null,
+        "input_metric_ids": [],
+        "period": {
+          "end": "2026-07-22",
+          "start": "2026-07-01",
+          "timezone": "UTC"
+        },
+        "producer": {
+          "name": "finops-lite",
+          "version": "0.4.0"
+        },
+        "quality": "valid",
+        "source_artifact": "finops-lite.json",
+        "unit": "currency"
+      },
+      "unknown_reason": null,
+      "value": "2194.0"
+    }
+  },
+  "findings": [
+    {
+      "context": "Observed 122.5 USD; trailing median 70.7 USD; observed excess 51.8 USD. This is an anomaly impact, not a savings estimate or root-cause claim.",
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "first_observed_at": "2026-07-21T00:00:00Z",
+      "id": "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+      "last_observed_at": "2026-07-21T23:59:59Z",
+      "metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score"
+      ],
+      "producer": {
+        "name": "finops-watchdog",
+        "version": "0.5.0"
+      },
+      "quality": "valid",
+      "severity": "critical",
+      "status": "open",
+      "title": "Spend Increase detected for provider=aws, scope=cloud, service=AmazonEC2",
+      "trace": {
+        "canonical_id": "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+        "evidence_ids": [
+          "evidence.finops-watchdog.input-result"
+        ],
+        "metric_ids": [
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score"
+        ],
+        "producer": {
+          "name": "finops-watchdog",
+          "version": "0.5.0"
+        },
+        "source_artifact": "finops-watchdog.json"
+      },
+      "type": "anomaly"
+    },
+    {
+      "context": "Observed 52.5 USD; trailing median 30.3 USD; observed excess 22.2 USD. This is an anomaly impact, not a savings estimate or root-cause claim.",
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "first_observed_at": "2026-07-21T00:00:00Z",
+      "id": "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
+      "last_observed_at": "2026-07-21T23:59:59Z",
+      "metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+      ],
+      "producer": {
+        "name": "finops-watchdog",
+        "version": "0.5.0"
+      },
+      "quality": "valid",
+      "severity": "critical",
+      "status": "open",
+      "title": "Spend Increase detected for provider=aws, scope=cloud, service=AmazonS3",
+      "trace": {
+        "canonical_id": "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
+        "evidence_ids": [
+          "evidence.finops-watchdog.input-result"
+        ],
+        "metric_ids": [
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+          "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+        ],
+        "producer": {
+          "name": "finops-watchdog",
+          "version": "0.5.0"
+        },
+        "source_artifact": "finops-watchdog.json"
+      },
+      "type": "anomaly"
+    },
+    {
+      "context": "Modeled recovery time is 6.5 hours versus a 2.0 hour target. This is a scenario estimate, not proof of recoverability.",
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.rto",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rto-hours"
+      ],
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.3.0"
+      },
+      "quality": "valid",
+      "severity": "high",
+      "status": "open",
+      "title": "Modeled RTO exceeds target for Illustrative Orders Database",
+      "trace": {
+        "canonical_id": "finding.resilience-gap.orders-db.rto",
+        "evidence_ids": [
+          "evidence.recovery-economics.scenario-input"
+        ],
+        "metric_ids": [
+          "metric.resilience.orders-db.modeled-rto-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "source_artifact": "recovery-economics.json"
+      },
+      "type": "resilience_gap"
+    },
+    {
+      "context": "Backup interval is 4.0 hours versus a 1.0 hour target.",
+      "evidence_ids": [
+        "evidence.recovery-economics.scenario-input"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.rpo",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rpo-hours"
+      ],
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.3.0"
+      },
+      "quality": "valid",
+      "severity": "high",
+      "status": "open",
+      "title": "Modeled RPO exceeds target for Illustrative Orders Database",
+      "trace": {
+        "canonical_id": "finding.resilience-gap.orders-db.rpo",
+        "evidence_ids": [
+          "evidence.recovery-economics.scenario-input"
+        ],
+        "metric_ids": [
+          "metric.resilience.orders-db.modeled-rpo-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "source_artifact": "recovery-economics.json"
+      },
+      "type": "resilience_gap"
+    },
+    {
+      "context": "No fresh passing restore-test evidence was supplied. Modeled RTO/RPO values must not be presented as demonstrated recovery capability.",
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.restore-evidence",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.modeled-rto-hours",
+        "metric.resilience.orders-db.modeled-rpo-hours"
+      ],
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.3.0"
+      },
+      "quality": "valid",
+      "severity": "high",
+      "status": "open",
+      "title": "Recoverability is not substantiated for Illustrative Orders Database",
+      "trace": {
+        "canonical_id": "finding.resilience-gap.orders-db.restore-evidence",
+        "evidence_ids": [
+          "evidence.recovery-economics.restore-test"
+        ],
+        "metric_ids": [
+          "metric.resilience.orders-db.modeled-rto-hours",
+          "metric.resilience.orders-db.modeled-rpo-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "source_artifact": "recovery-economics.json"
+      },
+      "type": "resilience_gap"
+    },
+    {
+      "context": "Observed restore-test duration exceeded the declared RTO target.",
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.tested-rto",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.tested-restore-duration-hours"
+      ],
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.3.0"
+      },
+      "quality": "valid",
+      "severity": "critical",
+      "status": "open",
+      "title": "Restore test missed the RTO target for Illustrative Orders Database",
+      "trace": {
+        "canonical_id": "finding.resilience-gap.orders-db.tested-rto",
+        "evidence_ids": [
+          "evidence.recovery-economics.restore-test"
+        ],
+        "metric_ids": [
+          "metric.resilience.orders-db.tested-restore-duration-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "source_artifact": "recovery-economics.json"
+      },
+      "type": "resilience_gap"
+    },
+    {
+      "context": "Observed recovered point age exceeded the declared RPO target.",
+      "evidence_ids": [
+        "evidence.recovery-economics.restore-test"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.resilience-gap.orders-db.tested-rpo",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.resilience.orders-db.tested-recovered-point-age-hours"
+      ],
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.3.0"
+      },
+      "quality": "valid",
+      "severity": "critical",
+      "status": "open",
+      "title": "Restore test missed the RPO target for Illustrative Orders Database",
+      "trace": {
+        "canonical_id": "finding.resilience-gap.orders-db.tested-rpo",
+        "evidence_ids": [
+          "evidence.recovery-economics.restore-test"
+        ],
+        "metric_ids": [
+          "metric.resilience.orders-db.tested-recovered-point-age-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "source_artifact": "recovery-economics.json"
+      },
+      "type": "resilience_gap"
+    },
+    {
+      "context": "Ownership is missing. This is unattributed cost, not a savings estimate.",
+      "evidence_ids": [
+        "evidence.ai-cost-lens.usage"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+      ],
+      "producer": {
+        "name": "ai-cost-lens",
+        "version": "0.3.0"
+      },
+      "quality": "valid",
+      "severity": "medium",
+      "status": "open",
+      "title": "Unattributed AI cost for openai illustrative-model-a",
+      "trace": {
+        "canonical_id": "finding.allocation.openai-illustrative-model-a-unattributed-unat-cdf1dc72",
+        "evidence_ids": [
+          "evidence.ai-cost-lens.usage"
+        ],
+        "metric_ids": [
+          "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+        ],
+        "producer": {
+          "name": "ai-cost-lens",
+          "version": "0.3.0"
+        },
+        "source_artifact": "ai-cost-lens.json"
+      },
+      "type": "allocation"
+    },
+    {
+      "context": "Unknown or stale activity is not classified as unused and creates no savings claim.",
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.saas.design-a77de8a6.activity-evidence",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.saas.design-a77de8a6.unknown-activity-seats"
+      ],
+      "producer": {
+        "name": "saas-cost-analyzer",
+        "version": "0.3.0"
+      },
+      "quality": "partial",
+      "severity": "medium",
+      "status": "open",
+      "title": "Activity evidence needs review for Illustrative Design Suite",
+      "trace": {
+        "canonical_id": "finding.saas.design-a77de8a6.activity-evidence",
+        "evidence_ids": [
+          "evidence.saas-governance.bundle"
+        ],
+        "metric_ids": [
+          "metric.saas.design-a77de8a6.unknown-activity-seats"
+        ],
+        "producer": {
+          "name": "saas-cost-analyzer",
+          "version": "0.3.0"
+        },
+        "source_artifact": "saas-cost-analyzer.json"
+      },
+      "type": "data_quality"
+    },
+    {
+      "context": "Unassigned seats cannot be calculated until roster completeness is established.",
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "id": "finding.saas.design-a77de8a6.assignment-roster",
+      "last_observed_at": "2026-08-04T12:00:00Z",
+      "metric_ids": [
+        "metric.saas.design-a77de8a6.unassigned-seats"
+      ],
+      "producer": {
+        "name": "saas-cost-analyzer",
+        "version": "0.3.0"
+      },
+      "quality": "partial",
+      "severity": "medium",
+      "status": "open",
+      "title": "Assignment roster is incomplete for Illustrative Design Suite",
+      "trace": {
+        "canonical_id": "finding.saas.design-a77de8a6.assignment-roster",
+        "evidence_ids": [
+          "evidence.saas-governance.bundle"
+        ],
+        "metric_ids": [
+          "metric.saas.design-a77de8a6.unassigned-seats"
+        ],
+        "producer": {
+          "name": "saas-cost-analyzer",
+          "version": "0.3.0"
+        },
+        "source_artifact": "saas-cost-analyzer.json"
+      },
+      "type": "data_quality"
+    }
+  ],
+  "identity": {
+    "command_center_version": "0.3.0",
+    "contract": "ccac/1.1.0",
+    "disclosures": [
+      "All data in this report is illustrative; no customer systems or live accounts are connected.",
+      "Technology Spend contains Cloud, direct AI, and SaaS canonical scopes only.",
+      "FinOps Watchdog and Recovery Economics are diagnostic-only and add no spend.",
+      "This report is analysis, not verified savings or automated remediation.",
+      "Cloud Cost Guard is not connected, and Lumen is not grounded in this report."
+    ],
+    "generated_at": "2026-08-04T12:00:00Z",
+    "mode": "illustrative",
+    "report_id": "report.tech-spend.trusted",
+    "report_period": {
+      "end": "2026-07-22",
+      "start": "2026-07-01",
+      "timezone": "UTC"
+    },
+    "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "source_report_sha256": "5479da098b31fdf630fe3a0edc3ac67d30848185cecc61b640d998461b2f6b41",
+    "status": "complete"
+  },
+  "opportunity": {
+    "annual_aggregate": null,
+    "source": {
+      "confidence": "low",
+      "estimate": {
+        "basis": "estimated",
+        "currency": "USD",
+        "expected": "4320.0",
+        "formula": "0 lower bound; modeled upper capacity = reviewable seats * normalized monthly unit price * 12; realization only after approved renewal change and invoice verification",
+        "high": "4320.0",
+        "low": "0",
+        "period": "annual"
+      },
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "id": "opportunity.saas.crm-9261ceef.renewal-seat-review",
+      "overlap": {
+        "disposition": "none_known",
+        "group_id": "overlap.saas.crm-9261ceef.renewal-seat-review",
+        "reason": "Inactive assigned and unassigned seat populations are disjoint; this opportunity combines them once for this application renewal."
+      },
+      "producer": {
+        "name": "saas-cost-analyzer",
+        "version": "0.3.0"
+      },
+      "review": {
+        "approval_required": true,
+        "required": true,
+        "rollback_plan_required": true,
+        "verification_required": true
+      },
+      "status": "identified",
+      "title": "Review 3 Illustrative CRM seats by the open notice deadline",
+      "trace": {
+        "canonical_id": "opportunity.saas.crm-9261ceef.renewal-seat-review",
+        "evidence_ids": [
+          "evidence.saas-governance.bundle"
+        ],
+        "producer": {
+          "name": "saas-cost-analyzer",
+          "version": "0.3.0"
+        },
+        "source_artifact": "saas-cost-analyzer.json"
+      },
+      "type": "saas_reclaim"
+    }
+  },
+  "producers": [
+    {
+      "name": "ai-cost-lens",
+      "quality": {
+        "issues": [],
+        "status": "valid"
+      },
+      "source": {
+        "artifact": "ai-cost-lens.json",
+        "artifact_sha256": "c4715c88b5d31e5a7b8e9867bd89ede4edeac5491e2b2dc8c20f79b68eb95af4"
+      },
+      "version": "0.3.0"
+    },
+    {
+      "name": "finops-lite",
+      "quality": {
+        "issues": [],
+        "status": "valid"
+      },
+      "source": {
+        "artifact": "finops-lite.json",
+        "artifact_sha256": "0dc4e0d5e3053f03daa773da7bb5c84d3cb8ad8e7f1a52d0e4b4937da722d570"
+      },
+      "version": "0.4.0"
+    },
+    {
+      "name": "finops-watchdog",
+      "quality": {
+        "issues": [],
+        "status": "valid"
+      },
+      "source": {
+        "artifact": "finops-watchdog.json",
+        "artifact_sha256": "4ff11ff8dd0562a128c2aa22ef2fb85f78574a042b08f70b0b000312fd5e4aeb"
+      },
+      "version": "0.5.0"
+    },
+    {
+      "name": "recovery-economics",
+      "quality": {
+        "issues": [],
+        "status": "valid"
+      },
+      "source": {
+        "artifact": "recovery-economics.json",
+        "artifact_sha256": "eaeae3b11501d1cc4e77ab02ad5c594e8122e49abb5e1335a9130b909694be02"
+      },
+      "version": "0.3.0"
+    },
+    {
+      "name": "saas-cost-analyzer",
+      "quality": {
+        "issues": [
+          {
+            "code": "quality.saas.design-a77de8a6.activity",
+            "field": "applications.assignments.last_activity_at",
+            "message": "Illustrative Design Suite has stale or unknown activity evidence.",
+            "row_count": 2,
+            "severity": "warning",
+            "source_id": "source.saas-governance.bundle"
+          },
+          {
+            "code": "quality.saas.design-a77de8a6.roster",
+            "field": "applications.assignment_roster_complete",
+            "message": "Illustrative Design Suite assignment roster is not declared complete.",
+            "row_count": null,
+            "severity": "warning",
+            "source_id": "source.saas-governance.bundle"
+          }
+        ],
+        "status": "partial"
+      },
+      "source": {
+        "artifact": "saas-cost-analyzer.json",
+        "artifact_sha256": "1f8af7f1e03cb4b5fdcb0c4692974640844d3d216bb3f2502640d6c2939d5b43"
+      },
+      "version": "0.3.0"
+    }
+  ],
+  "resilience": {
+    "findings": [
+      {
+        "context": "Modeled recovery time is 6.5 hours versus a 2.0 hour target. This is a scenario estimate, not proof of recoverability.",
+        "evidence_ids": [
+          "evidence.recovery-economics.scenario-input"
+        ],
+        "first_observed_at": "2026-08-04T12:00:00Z",
+        "id": "finding.resilience-gap.orders-db.rto",
+        "last_observed_at": "2026-08-04T12:00:00Z",
+        "metric_ids": [
+          "metric.resilience.orders-db.modeled-rto-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "severity": "high",
+        "status": "open",
+        "title": "Modeled RTO exceeds target for Illustrative Orders Database",
+        "trace": {
+          "canonical_id": "finding.resilience-gap.orders-db.rto",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "metric_ids": [
+            "metric.resilience.orders-db.modeled-rto-hours"
+          ],
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "source_artifact": "recovery-economics.json"
+        },
+        "type": "resilience_gap"
+      },
+      {
+        "context": "Backup interval is 4.0 hours versus a 1.0 hour target.",
+        "evidence_ids": [
+          "evidence.recovery-economics.scenario-input"
+        ],
+        "first_observed_at": "2026-08-04T12:00:00Z",
+        "id": "finding.resilience-gap.orders-db.rpo",
+        "last_observed_at": "2026-08-04T12:00:00Z",
+        "metric_ids": [
+          "metric.resilience.orders-db.modeled-rpo-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "severity": "high",
+        "status": "open",
+        "title": "Modeled RPO exceeds target for Illustrative Orders Database",
+        "trace": {
+          "canonical_id": "finding.resilience-gap.orders-db.rpo",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "metric_ids": [
+            "metric.resilience.orders-db.modeled-rpo-hours"
+          ],
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "source_artifact": "recovery-economics.json"
+        },
+        "type": "resilience_gap"
+      },
+      {
+        "context": "No fresh passing restore-test evidence was supplied. Modeled RTO/RPO values must not be presented as demonstrated recovery capability.",
+        "evidence_ids": [
+          "evidence.recovery-economics.restore-test"
+        ],
+        "first_observed_at": "2026-08-04T12:00:00Z",
+        "id": "finding.resilience-gap.orders-db.restore-evidence",
+        "last_observed_at": "2026-08-04T12:00:00Z",
+        "metric_ids": [
+          "metric.resilience.orders-db.modeled-rto-hours",
+          "metric.resilience.orders-db.modeled-rpo-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "severity": "high",
+        "status": "open",
+        "title": "Recoverability is not substantiated for Illustrative Orders Database",
+        "trace": {
+          "canonical_id": "finding.resilience-gap.orders-db.restore-evidence",
+          "evidence_ids": [
+            "evidence.recovery-economics.restore-test"
+          ],
+          "metric_ids": [
+            "metric.resilience.orders-db.modeled-rto-hours",
+            "metric.resilience.orders-db.modeled-rpo-hours"
+          ],
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "source_artifact": "recovery-economics.json"
+        },
+        "type": "resilience_gap"
+      },
+      {
+        "context": "Observed restore-test duration exceeded the declared RTO target.",
+        "evidence_ids": [
+          "evidence.recovery-economics.restore-test"
+        ],
+        "first_observed_at": "2026-08-04T12:00:00Z",
+        "id": "finding.resilience-gap.orders-db.tested-rto",
+        "last_observed_at": "2026-08-04T12:00:00Z",
+        "metric_ids": [
+          "metric.resilience.orders-db.tested-restore-duration-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "severity": "critical",
+        "status": "open",
+        "title": "Restore test missed the RTO target for Illustrative Orders Database",
+        "trace": {
+          "canonical_id": "finding.resilience-gap.orders-db.tested-rto",
+          "evidence_ids": [
+            "evidence.recovery-economics.restore-test"
+          ],
+          "metric_ids": [
+            "metric.resilience.orders-db.tested-restore-duration-hours"
+          ],
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "source_artifact": "recovery-economics.json"
+        },
+        "type": "resilience_gap"
+      },
+      {
+        "context": "Observed recovered point age exceeded the declared RPO target.",
+        "evidence_ids": [
+          "evidence.recovery-economics.restore-test"
+        ],
+        "first_observed_at": "2026-08-04T12:00:00Z",
+        "id": "finding.resilience-gap.orders-db.tested-rpo",
+        "last_observed_at": "2026-08-04T12:00:00Z",
+        "metric_ids": [
+          "metric.resilience.orders-db.tested-recovered-point-age-hours"
+        ],
+        "producer": {
+          "name": "recovery-economics",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "severity": "critical",
+        "status": "open",
+        "title": "Restore test missed the RPO target for Illustrative Orders Database",
+        "trace": {
+          "canonical_id": "finding.resilience-gap.orders-db.tested-rpo",
+          "evidence_ids": [
+            "evidence.recovery-economics.restore-test"
+          ],
+          "metric_ids": [
+            "metric.resilience.orders-db.tested-recovered-point-age-hours"
+          ],
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "source_artifact": "recovery-economics.json"
+        },
+        "type": "resilience_gap"
+      }
+    ],
+    "modeled_metrics": [
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.compute-cost-per-event",
+        "name": "Modeled compute cost per recovery event",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.compute-cost-per-event",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "compute_hours * compute_rate_per_hour",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "4.0"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.effective-stored-gb",
+        "name": "Modeled effective protected storage",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.effective-stored-gb",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "((data_gb * ceil(retention_days / full_backup_interval_days)) + (data_gb * daily_change_percent / 100 * max(retention_days - retained_full_copies, 0))) * compression_ratio * deduplication_ratio",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "GB"
+        },
+        "unknown_reason": null,
+        "value": "13081.25"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.egress-cost-per-event",
+        "name": "Modeled egress cost per recovery event",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.egress-cost-per-event",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "egress_gb * egress_rate_per_gb",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "0.0"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.expected-monthly-economic-exposure",
+        "name": "Modeled monthly resilience economic exposure",
+        "trace": {
+          "additivity": "additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.expected-monthly-economic-exposure",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "monthly_design_cost + expected_monthly_recovery_cost + expected_monthly_outage_exposure",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "5723.57"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.expected-monthly-outage-exposure",
+        "name": "Frequency-weighted monthly outage exposure",
+        "trace": {
+          "additivity": "additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.expected-monthly-outage-exposure",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "modeled_rto_hours * outage_impact_per_hour * recovery_events_per_year / 12",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "5416.67"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.expected-monthly-recovery-cost",
+        "name": "Frequency-weighted monthly recovery execution cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.expected-monthly-recovery-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "recovery_event_cost * recovery_events_per_year / 12",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "4.23"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.failback-cost-per-event",
+        "name": "Modeled failback cost per recovery event",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.failback-cost-per-event",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "recovery.failback_cost",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.failover-cost-per-event",
+        "name": "Modeled failover cost per recovery event",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.failover-cost-per-event",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "recovery.failover_cost",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "100.0"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.modeled-rpo-hours",
+        "name": "Modeled recovery point interval",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.modeled-rpo-hours",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "backup.frequency_hours",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "hours"
+        },
+        "unknown_reason": null,
+        "value": "4.0"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.modeled-rto-hours",
+        "name": "Modeled recovery time",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.modeled-rto-hours",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "restore_gb / restore_throughput_gb_per_hour + orchestration_hours + compute_hours",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "hours"
+        },
+        "unknown_reason": null,
+        "value": "6.5"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.monthly-backup-request-cost",
+        "name": "Modeled monthly backup request cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.monthly-backup-request-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "monthly_backup_operations * request_cost_per_backup",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "1.8"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.monthly-design-cost",
+        "name": "Modeled monthly resilience design cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.monthly-design-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "effective_stored_gb * storage_rate_per_gb_month + (30 * 24 / frequency_hours) * request_cost_per_backup",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "302.67"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.monthly-storage-cost",
+        "name": "Modeled monthly protected-storage cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.monthly-storage-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "effective_stored_gb * storage_rate_per_gb_month",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "300.87"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.recovery-event-cost",
+        "name": "Modeled recovery execution cost per event",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.recovery-event-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "restore_gb * retrieval_rate_per_gb + compute_hours * compute_rate_per_hour + egress_gb * egress_rate_per_gb + failover_cost + failback_cost",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "254.0"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.retrieval-cost-per-event",
+        "name": "Modeled retrieval cost per recovery event",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "estimated",
+          "canonical_id": "metric.resilience.orders-db.retrieval-cost-per-event",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.recovery-economics.scenario-input"
+          ],
+          "formula": "restore_gb * retrieval_rate_per_gb",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-08-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "50.0"
+      }
+    ],
+    "observed_restore_metrics": [
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.tested-recovered-point-age-hours",
+        "name": "Observed recovered point age in restore test",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "observed",
+          "canonical_id": "metric.resilience.orders-db.tested-recovered-point-age-hours",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.recovery-economics.restore-test"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-06-16",
+            "start": "2026-06-15",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "hours"
+        },
+        "unknown_reason": null,
+        "value": "3.8"
+      },
+      {
+        "dimensions": {
+          "criticality": "critical",
+          "scenario": "illustrative-orders-db",
+          "scope": "resilience_scenario",
+          "workload": "orders-db"
+        },
+        "id": "metric.resilience.orders-db.tested-restore-duration-hours",
+        "name": "Observed restore-test duration",
+        "trace": {
+          "additivity": "non_additive",
+          "basis": "observed",
+          "canonical_id": "metric.resilience.orders-db.tested-restore-duration-hours",
+          "currency": null,
+          "evidence_ids": [
+            "evidence.recovery-economics.restore-test"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-06-16",
+            "start": "2026-06-15",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "recovery-economics",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "recovery-economics.json",
+          "unit": "hours"
+        },
+        "unknown_reason": null,
+        "value": "5.2"
+      }
+    ],
+    "recoverability_classification": "not_demonstrated"
+  },
+  "saas": {
+    "canonical_scope_total": {
+      "dimensions": {
+        "billing_channel": "saas_invoice_or_entitlement",
+        "cost_basis": "net_cost",
+        "scope": "saas"
+      },
+      "id": "metric.tech-spend.scope.saas",
+      "name": "Canonical SaaS scope spend",
+      "trace": {
+        "additivity": "additive",
+        "basis": "calculated",
+        "canonical_id": "metric.tech-spend.scope.saas",
+        "currency": "USD",
+        "evidence_ids": [
+          "evidence.saas-governance.bundle",
+          "evidence.saas-governance.analysis"
+        ],
+        "formula": "sum rounded application reporting-period net-cost components exactly once",
+        "input_metric_ids": [
+          "metric.saas.crm-9261ceef.period-net-cost",
+          "metric.saas.design-a77de8a6.period-net-cost"
+        ],
+        "period": {
+          "end": "2026-07-22",
+          "start": "2026-07-01",
+          "timezone": "UTC"
+        },
+        "producer": {
+          "name": "saas-cost-analyzer",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "source_artifact": "saas-cost-analyzer.json",
+        "unit": "currency"
+      },
+      "unknown_reason": null,
+      "value": "736.77"
+    },
+    "combined_invoice_total": null,
+    "invoice_metrics": [
+      {
+        "dimensions": {
+          "application": "Illustrative CRM",
+          "application_id": "crm",
+          "billing_cadence": "annual",
+          "contract_evidence_status": "user_supplied",
+          "owner": "Revenue Operations",
+          "scope": "saas_application"
+        },
+        "id": "metric.saas.crm-9261ceef.invoice-cost",
+        "name": "Supplied invoice amount",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.saas.crm-9261ceef.invoice-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.saas-governance.bundle"
+          ],
+          "formula": "sum supplied non-overlapping invoice rows only; invoice ledger completeness is not asserted",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-12-01",
+            "start": "2025-12-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "saas-cost-analyzer",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "saas-cost-analyzer.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "8640.0"
+      },
+      {
+        "dimensions": {
+          "application": "Illustrative Design Suite",
+          "application_id": "design",
+          "billing_cadence": "quarterly",
+          "contract_evidence_status": "user_supplied",
+          "owner": "Design",
+          "scope": "saas_application"
+        },
+        "id": "metric.saas.design-a77de8a6.invoice-cost",
+        "name": "Supplied invoice amount",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.saas.design-a77de8a6.invoice-cost",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.saas-governance.bundle"
+          ],
+          "formula": "sum supplied non-overlapping invoice rows only; invoice ledger completeness is not asserted",
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-10-01",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "saas-cost-analyzer",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "saas-cost-analyzer.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "1050.0"
+      }
+    ]
+  },
+  "schema": "ccg-dashboard-view/1.1.0",
+  "source_metadata": {
+    "approved_release_provenance": {
+      "ccac": {
+        "version": "v0.2.0",
+        "wheel_sha256": "bc46f363b1a03c94cf0da75759bccd0271de2c53b1f77a1a7255f9c8e7f768f1"
+      },
+      "command_center_commit": "b114f776727a070e34c2f0d771165464f2055b93",
+      "producer_commits": {
+        "ai-cost-lens": "c4ab27a5c83ca7165de130a08c5d118fd18887b2",
+        "finops-lite": "d72649ec07aa57c60a7ea3f8ff2890b8d95c4b93",
+        "finops-watchdog": "9bc4e90725969f7775b3aef110b01e10dec4a7e0",
+        "recovery-economics": "9a6c4e1ce34e58af10fc42d44d911338a724dabe",
+        "saas-cost-analyzer": "a627aff595eb0c0fc44f23a07662cfd82cc98bbe"
+      }
+    },
+    "artifact_sha256s": {
+      "ai-cost-lens": "c4715c88b5d31e5a7b8e9867bd89ede4edeac5491e2b2dc8c20f79b68eb95af4",
+      "finops-lite": "0dc4e0d5e3053f03daa773da7bb5c84d3cb8ad8e7f1a52d0e4b4937da722d570",
+      "finops-watchdog": "4ff11ff8dd0562a128c2aa22ef2fb85f78574a042b08f70b0b000312fd5e4aeb",
+      "recovery-economics": "eaeae3b11501d1cc4e77ab02ad5c594e8122e49abb5e1335a9130b909694be02",
+      "saas-cost-analyzer": "1f8af7f1e03cb4b5fdcb0c4692974640844d3d216bb3f2502640d6c2939d5b43"
+    },
+    "catalog_counts": {
+      "findings": 10,
+      "metrics": 160,
+      "opportunities": 1,
+      "opportunity_aggregates": 0
+    },
+    "final_manifest_sha256": "1919025af73e9cc4a3b5d29d21f13ad9c391e40533874b0c5cfc0325867eb632",
+    "report_provenance_manifest_sha256": "a991ba3fbe53c11b9ac9cc347b4b62307fe5de083a90362ae46088c7bc08eeb5"
+  },
+  "technology_spend": {
+    "reconciliation": {
+      "assertion": "Canonical Cloud, direct-AI, and SaaS scopes sum exactly to Technology Spend.",
+      "difference": "0.0",
+      "id": "reconciliation.tech-spend",
+      "input_metric_ids": [
+        "metric.tech-spend.scope.cloud",
+        "metric.tech-spend.scope.direct_ai",
+        "metric.tech-spend.scope.saas"
+      ],
+      "output_metric_id": "metric.tech-spend.total",
+      "reconciliation_type": "technology_spend_total",
+      "status": "passed",
+      "tolerance": "0.01"
+    },
+    "scopes": [
+      {
+        "dimensions": {
+          "provider": "aws",
+          "scope": "cloud"
+        },
+        "id": "metric.tech-spend.scope.cloud",
+        "name": "Cloud cost",
+        "trace": {
+          "additivity": "additive",
+          "basis": "observed",
+          "canonical_id": "metric.tech-spend.scope.cloud",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.finops-lite.cost-summary"
+          ],
+          "formula": null,
+          "input_metric_ids": [],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "finops-lite",
+            "version": "0.4.0"
+          },
+          "quality": "valid",
+          "source_artifact": "finops-lite.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "2194.0"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "direct_ai_vendor",
+          "component_bases": "calculated",
+          "cost_basis": "net_cost",
+          "scope": "direct_ai"
+        },
+        "id": "metric.tech-spend.scope.direct_ai",
+        "name": "Canonical direct-AI scope spend",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.tech-spend.scope.direct_ai",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.ai-cost-lens.usage",
+            "evidence.ai-cost-lens.analysis",
+            "evidence.ai-cost-lens.price-book"
+          ],
+          "formula": "sum explicitly classified direct_ai_vendor cost components exactly once",
+          "input_metric_ids": [
+            "metric.ai.anthropic-illustrative-model-b-research-data-5d0cc148.cost",
+            "metric.ai.openai-illustrative-model-a-assistant-product-62792193.cost",
+            "metric.ai.openai-illustrative-model-a-unattributed-unat-cdf1dc72.cost"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "ai-cost-lens",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "ai-cost-lens.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "8.2825"
+      },
+      {
+        "dimensions": {
+          "billing_channel": "saas_invoice_or_entitlement",
+          "cost_basis": "net_cost",
+          "scope": "saas"
+        },
+        "id": "metric.tech-spend.scope.saas",
+        "name": "Canonical SaaS scope spend",
+        "trace": {
+          "additivity": "additive",
+          "basis": "calculated",
+          "canonical_id": "metric.tech-spend.scope.saas",
+          "currency": "USD",
+          "evidence_ids": [
+            "evidence.saas-governance.bundle",
+            "evidence.saas-governance.analysis"
+          ],
+          "formula": "sum rounded application reporting-period net-cost components exactly once",
+          "input_metric_ids": [
+            "metric.saas.crm-9261ceef.period-net-cost",
+            "metric.saas.design-a77de8a6.period-net-cost"
+          ],
+          "period": {
+            "end": "2026-07-22",
+            "start": "2026-07-01",
+            "timezone": "UTC"
+          },
+          "producer": {
+            "name": "saas-cost-analyzer",
+            "version": "0.3.0"
+          },
+          "quality": "valid",
+          "source_artifact": "saas-cost-analyzer.json",
+          "unit": "currency"
+        },
+        "unknown_reason": null,
+        "value": "736.77"
+      }
+    ],
+    "total": {
+      "dimensions": {},
+      "id": "metric.tech-spend.total",
+      "name": "Technology Spend",
+      "trace": {
+        "additivity": "additive",
+        "basis": "calculated",
+        "canonical_id": "metric.tech-spend.total",
+        "currency": "USD",
+        "evidence_ids": [
+          "evidence.ai-cost-lens.analysis",
+          "evidence.ai-cost-lens.price-book",
+          "evidence.ai-cost-lens.usage",
+          "evidence.finops-lite.cost-summary",
+          "evidence.saas-governance.analysis",
+          "evidence.saas-governance.bundle"
+        ],
+        "formula": "cloud + direct_ai + saas",
+        "input_metric_ids": [
+          "metric.tech-spend.scope.cloud",
+          "metric.tech-spend.scope.direct_ai",
+          "metric.tech-spend.scope.saas"
+        ],
+        "period": {
+          "end": "2026-07-22",
+          "start": "2026-07-01",
+          "timezone": "UTC"
+        },
+        "producer": {
+          "name": "tech-spend-command-center",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "source_artifact": "report.json",
+        "unit": "currency"
+      },
+      "unknown_reason": null,
+      "value": "2939.0525"
+    }
+  },
+  "unsupported": [
+    {
+      "concept": "combined_daily_technology_spend",
+      "explanation": "No canonical combined daily series exists.",
+      "reason_code": "missing_canonical_metric"
+    },
+    {
+      "concept": "next_month_forecast",
+      "explanation": "No canonical forecast metric exists.",
+      "reason_code": "missing_canonical_metric"
+    },
+    {
+      "concept": "avoidable_run_rate",
+      "explanation": "The browser must not create financial values.",
+      "reason_code": "browser_derived_value_forbidden"
+    },
+    {
+      "concept": "monthly_opportunity_scalar",
+      "explanation": "The source opportunity is annual, but no canonical opportunity aggregate was published; monthly conversion is forbidden.",
+      "reason_code": "period_conversion_forbidden"
+    },
+    {
+      "concept": "tagging_coverage",
+      "explanation": "No canonical tagging-coverage metric exists.",
+      "reason_code": "missing_canonical_metric"
+    },
+    {
+      "concept": "kubernetes_cost_or_utilization",
+      "explanation": "No canonical Kubernetes metric exists.",
+      "reason_code": "missing_canonical_metric"
+    },
+    {
+      "concept": "verified_savings",
+      "explanation": "The canonical opportunity is estimated, not verified savings.",
+      "reason_code": "trust_classification_forbidden"
+    },
+    {
+      "concept": "realized_savings",
+      "explanation": "No realized-savings evidence exists.",
+      "reason_code": "trust_classification_forbidden"
+    },
+    {
+      "concept": "demonstrated_recoverability",
+      "explanation": "Modeled and failed restore evidence do not demonstrate recoverability.",
+      "reason_code": "insufficient_passing_evidence"
+    },
+    {
+      "concept": "unknown_as_zero",
+      "explanation": "Unknown and missing values must remain null or absent.",
+      "reason_code": "missing_value_substitution_forbidden"
+    }
+  ]
+}

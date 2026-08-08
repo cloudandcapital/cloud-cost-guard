@@ -1,0 +1,92 @@
+{
+  "contract": "ccac/1.1.0",
+  "document_type": "pipeline_manifest",
+  "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "mode": "illustrative",
+  "started_at": "2026-08-04T12:00:00Z",
+  "completed_at": "2026-08-04T12:00:00Z",
+  "status": "complete",
+  "required_producers": [
+    "finops-lite",
+    "finops-watchdog",
+    "recovery-economics",
+    "ai-cost-lens",
+    "saas-cost-analyzer",
+    "tech-spend-command-center"
+  ],
+  "artifacts": [
+    {
+      "producer": {
+        "name": "finops-lite",
+        "version": "0.4.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "finops-lite.json",
+      "content_sha256": "0dc4e0d5e3053f03daa773da7bb5c84d3cb8ad8e7f1a52d0e4b4937da722d570",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "finops-watchdog",
+        "version": "0.5.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "finops-watchdog.json",
+      "content_sha256": "4ff11ff8dd0562a128c2aa22ef2fb85f78574a042b08f70b0b000312fd5e4aeb",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "recovery-economics",
+        "version": "0.3.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "recovery-economics.json",
+      "content_sha256": "eaeae3b11501d1cc4e77ab02ad5c594e8122e49abb5e1335a9130b909694be02",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "ai-cost-lens",
+        "version": "0.3.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "ai-cost-lens.json",
+      "content_sha256": "c4715c88b5d31e5a7b8e9867bd89ede4edeac5491e2b2dc8c20f79b68eb95af4",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "saas-cost-analyzer",
+        "version": "0.3.0"
+      },
+      "document_type": "tool_result",
+      "relative_path": "saas-cost-analyzer.json",
+      "content_sha256": "1f8af7f1e03cb4b5fdcb0c4692974640844d3d216bb3f2502640d6c2939d5b43",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    },
+    {
+      "producer": {
+        "name": "tech-spend-command-center",
+        "version": "0.3.0"
+      },
+      "document_type": "trusted_report",
+      "relative_path": "report.json",
+      "content_sha256": "5479da098b31fdf630fe3a0edc3ac67d30848185cecc61b640d998461b2f6b41",
+      "status": "produced",
+      "contract_valid": true,
+      "omission_reason": null
+    }
+  ],
+  "errors": []
+}

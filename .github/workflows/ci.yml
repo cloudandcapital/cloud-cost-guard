@@ -80,6 +80,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install released CCAC validator
+        run: python -m pip install --disable-pip-version-check "cloudandcapital-ccac @ https://github.com/cloudandcapital/cloud-capital-analysis-contract/releases/download/v0.2.0/cloudandcapital_ccac-0.2.0-py3-none-any.whl#sha256=bc46f363b1a03c94cf0da75759bccd0271de2c53b1f77a1a7255f9c8e7f768f1"
+
       - name: Validate static CCAC fixture integrity
         run: python scripts/validate_ccac_fixture.py fixtures/ccac/illustrative-v0.2.1/run
 
@@ -94,6 +97,24 @@ jobs:
 
       - name: Run CCAC fixture adversarial tests
         run: python -m unittest tests.test_ccac_fixture -v
+
+      - name: Validate static CCAC 1.1 fixture integrity
+        run: python scripts/validate_ccac11_fixture.py fixtures/ccac/illustrative-v0.3.0/run
+
+      - name: Run released CCAC 1.1 complete-run validation
+        run: ccac validate-run fixtures/ccac/illustrative-v0.3.0/run
+
+      - name: Regenerate deterministic CCAC 1.1 dashboard view
+        run: python scripts/build_ccac11_dashboard_view.py --output "$RUNNER_TEMP/ccac-dashboard-view-v1.1.generated.json"
+
+      - name: Verify tracked CCAC 1.1 dashboard view is current
+        run: cmp "$RUNNER_TEMP/ccac-dashboard-view-v1.1.generated.json" frontend/src/data/ccac-dashboard-view-v1.1.generated.json
+
+      - name: Run CCAC 1.1 dashboard projection tests
+        run: python -m unittest tests.test_ccac11_dashboard_view -v
+
+      - name: Run CCAC 1.1 fixture adversarial tests
+        run: python -m unittest tests.test_ccac11_fixture -v
 
       - name: Install released Tech Spend Command Center validator
         run: python -m pip install --disable-pip-version-check "git+https://github.com/cloudandcapital/tech-spend-command-center.git@5c06df63cd014867fe3cb2e346e2e97cd2469689"
