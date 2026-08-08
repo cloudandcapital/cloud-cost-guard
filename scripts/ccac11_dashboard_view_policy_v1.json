@@ -7,9 +7,11 @@
     },
     "command_center_commit": "b114f776727a070e34c2f0d771165464f2055b93",
     "producer_commits": {
+      "ai-cost-lens": "c4ab27a5c83ca7165de130a08c5d118fd18887b2",
       "finops-lite": "d72649ec07aa57c60a7ea3f8ff2890b8d95c4b93",
       "finops-watchdog": "9bc4e90725969f7775b3aef110b01e10dec4a7e0",
-      "recovery-economics": "9a6c4e1ce34e58af10fc42d44d911338a724dabe"
+      "recovery-economics": "9a6c4e1ce34e58af10fc42d44d911338a724dabe",
+      "saas-cost-analyzer": "a627aff595eb0c0fc44f23a07662cfd82cc98bbe"
     }
   },
   "display": {

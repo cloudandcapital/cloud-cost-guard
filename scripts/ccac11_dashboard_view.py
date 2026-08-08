@@ -32,9 +32,11 @@ APPROVED_RELEASE = {
     },
     "command_center_commit": "b114f776727a070e34c2f0d771165464f2055b93",
     "producer_commits": {
+        "ai-cost-lens": "c4ab27a5c83ca7165de130a08c5d118fd18887b2",
         "finops-lite": "d72649ec07aa57c60a7ea3f8ff2890b8d95c4b93",
         "finops-watchdog": "9bc4e90725969f7775b3aef110b01e10dec4a7e0",
         "recovery-economics": "9a6c4e1ce34e58af10fc42d44d911338a724dabe",
+        "saas-cost-analyzer": "a627aff595eb0c0fc44f23a07662cfd82cc98bbe",
     },
 }
 ALLOWED_BASES = {"observed", "calculated", "estimated", "unknown"}
@@ -60,7 +62,8 @@ UNSUPPORTED = (
     (
         "monthly_opportunity_scalar",
         "period_conversion_forbidden",
-        "The canonical opportunity aggregate is annual and is not normalized.",
+        "The source opportunity is annual, but no canonical opportunity aggregate "
+        "was published; monthly conversion is forbidden.",
     ),
     (
         "tagging_coverage",
@@ -1190,8 +1193,18 @@ def project_dashboard_view(report: Any) -> dict[str, Any]:
                 "opportunities": 1,
                 "opportunity_aggregates": 0,
             },
-            "manifest_sha256": _text(
-                provenance.get("manifest_sha256"), "manifest_sha256", 64
+            "approved_release_provenance": json.loads(
+                json.dumps(APPROVED_RELEASE, sort_keys=True)
+            ),
+            "final_manifest_sha256": _text(
+                PROJECTION_POLICY["manifest"].get("sha256"),
+                "final_manifest_sha256",
+                64,
+            ),
+            "report_provenance_manifest_sha256": _text(
+                provenance.get("manifest_sha256"),
+                "report_provenance_manifest_sha256",
+                64,
             ),
             "artifact_sha256s": {
                 key: _text(value, f"artifact_sha256s.{key}", 64)
@@ -1236,8 +1249,9 @@ def project_dashboard_view(report: Any) -> dict[str, Any]:
             "cross_domain_additivity": "non_additive",
         },
         "saas": {
+            "canonical_scope_total": metric_records["metric.tech-spend.scope.saas"],
             "invoice_metrics": [metric_records[item] for item in saas_invoice_ids],
-            "combined_total": None,
+            "combined_invoice_total": None,
         },
         "findings": finding_records,
         "anomalies": anomalies,

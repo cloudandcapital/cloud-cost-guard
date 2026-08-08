@@ -58,10 +58,9 @@ def validate_policy_artifacts(run_directory: Path) -> None:
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ProjectionError("artifact provenance manifest cannot be read") from exc
     manifest_policy = PROJECTION_POLICY["manifest"]
-    if (
-        len(manifest_bytes) != manifest_policy["size_bytes"]
-        or hashlib.sha256(manifest_bytes).hexdigest() != manifest_policy["sha256"]
-    ):
+    if len(manifest_bytes) != manifest_policy["size_bytes"] or hashlib.sha256(
+        manifest_bytes
+    ).hexdigest() != manifest_policy.get("sha256"):
         raise ProjectionError("artifact provenance manifest differs from policy")
     artifacts = manifest.get("artifacts") if isinstance(manifest, dict) else None
     if not isinstance(artifacts, list):

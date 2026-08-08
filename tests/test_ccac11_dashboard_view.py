@@ -19,6 +19,7 @@ from build_ccac11_dashboard_view import render_view  # noqa: E402
 from build_ccac11_dashboard_view import validate_policy_artifacts
 from ccac11_dashboard_view import SOURCE_REPORT_SHA256  # noqa: E402
 from ccac11_dashboard_view import (
+    APPROVED_RELEASE,
     PROJECTION_POLICY,
     VIEW_SCHEMA,
     ProjectionError,
@@ -83,6 +84,47 @@ class CanonicalProjectionTests(unittest.TestCase):
             )
         )
 
+    def test_complete_approved_release_provenance_is_exact_and_exposed(self) -> None:
+        expected = {
+            "ccac": {
+                "version": "v0.2.0",
+                "wheel_sha256": "bc46f363b1a03c94cf0da75759bccd0271de2c53b1f77a1a7255f9c8e7f768f1",
+            },
+            "command_center_commit": "b114f776727a070e34c2f0d771165464f2055b93",
+            "producer_commits": {
+                "ai-cost-lens": "c4ab27a5c83ca7165de130a08c5d118fd18887b2",
+                "finops-lite": "d72649ec07aa57c60a7ea3f8ff2890b8d95c4b93",
+                "finops-watchdog": "9bc4e90725969f7775b3aef110b01e10dec4a7e0",
+                "recovery-economics": "9a6c4e1ce34e58af10fc42d44d911338a724dabe",
+                "saas-cost-analyzer": "a627aff595eb0c0fc44f23a07662cfd82cc98bbe",
+            },
+        }
+        view = project_dashboard_view(self.report)
+        self.assertEqual(APPROVED_RELEASE, expected)
+        self.assertEqual(PROJECTION_POLICY["approved_release"], expected)
+        self.assertEqual(
+            view["source_metadata"]["approved_release_provenance"], expected
+        )
+        self.assertIsNot(
+            view["source_metadata"]["approved_release_provenance"], APPROVED_RELEASE
+        )
+
+    def test_manifest_hash_lifecycle_is_explicit_and_exact(self) -> None:
+        metadata = project_dashboard_view(self.report)["source_metadata"]
+        self.assertEqual(
+            metadata["final_manifest_sha256"],
+            "1919025af73e9cc4a3b5d29d21f13ad9c391e40533874b0c5cfc0325867eb632",
+        )
+        self.assertEqual(
+            metadata["report_provenance_manifest_sha256"],
+            "a991ba3fbe53c11b9ac9cc347b4b62307fe5de083a90362ae46088c7bc08eeb5",
+        )
+        self.assertNotEqual(
+            metadata["final_manifest_sha256"],
+            metadata["report_provenance_manifest_sha256"],
+        )
+        self.assertNotIn("manifest_sha256", metadata)
+
     def test_distinct_periods_and_no_unsupported_values(self) -> None:
         view = project_dashboard_view(self.report)
         self.assertEqual(view["cloud"]["total"]["trace"]["period"]["end"], "2026-07-22")
@@ -99,12 +141,53 @@ class CanonicalProjectionTests(unittest.TestCase):
             invoice_periods["metric.saas.design-a77de8a6.invoice-cost"]["end"],
             "2026-10-01",
         )
-        self.assertIsNone(view["saas"]["combined_total"])
+        self.assertIsNone(view["saas"]["combined_invoice_total"])
         self.assertNotIn("forecast", view)
         self.assertNotIn("monthly_opportunity", view)
         self.assertNotIn("tagging", view)
         self.assertNotIn("kubernetes", view)
         self.assertEqual(view["opportunity"]["source"]["estimate"]["period"], "annual")
+
+    def test_saas_scope_total_is_canonical_and_invoice_periods_stay_separate(
+        self,
+    ) -> None:
+        view = project_dashboard_view(self.report)
+        saas_scope = view["saas"]["canonical_scope_total"]
+        reconciliation_scope = next(
+            item
+            for item in view["technology_spend"]["scopes"]
+            if item["id"] == "metric.tech-spend.scope.saas"
+        )
+        self.assertIs(saas_scope, reconciliation_scope)
+        self.assertEqual(saas_scope["value"], "736.77")
+        self.assertEqual(saas_scope["trace"]["currency"], "USD")
+        self.assertEqual(
+            saas_scope["trace"]["period"],
+            {"start": "2026-07-01", "end": "2026-07-22", "timezone": "UTC"},
+        )
+        self.assertIsNone(view["saas"]["combined_invoice_total"])
+        invoice_values = [
+            Decimal(item["value"]) for item in view["saas"]["invoice_metrics"]
+        ]
+        self.assertEqual(invoice_values, [Decimal("8640.0"), Decimal("1050.0")])
+        self.assertNotEqual(sum(invoice_values), Decimal(saas_scope["value"]))
+
+    def test_opportunity_wording_distinguishes_source_from_missing_aggregate(
+        self,
+    ) -> None:
+        view = project_dashboard_view(self.report)
+        self.assertEqual(view["opportunity"]["source"]["estimate"]["period"], "annual")
+        self.assertIsNone(view["opportunity"]["annual_aggregate"])
+        unavailable = next(
+            item
+            for item in view["unsupported"]
+            if item["concept"] == "monthly_opportunity_scalar"
+        )
+        self.assertIn("source opportunity is annual", unavailable["explanation"])
+        self.assertIn(
+            "no canonical opportunity aggregate was published",
+            unavailable["explanation"],
+        )
 
     def test_projected_numeric_and_status_records_are_traceable(self) -> None:
         view = project_dashboard_view(self.report)
@@ -152,10 +235,10 @@ class CanonicalProjectionTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(first, GENERATED_PATH.read_bytes())
         self.assertTrue(first.endswith(b"\n"))
-        self.assertEqual(len(first), 153_988)
+        self.assertEqual(len(first), 156_026)
         self.assertEqual(
             hashlib.sha256(first).hexdigest(),
-            "50ba069fb8a1b0848800e2a68a533e2c7969844d3be44ac6fb1a980a7167baeb",
+            "5462769f8316a6009c47eeb8245c367a59418e2fb4bbb8904a15ee6507648d90",
         )
 
     def test_generator_check_mode_does_not_write(self) -> None:
@@ -396,6 +479,50 @@ class SemanticAdversarialProjectionTests(unittest.TestCase):
                 )
                 with self.assertRaisesRegex(ProjectionError, "artifact provenance"):
                     validate_policy_artifacts(run)
+
+    def test_manifest_hash_omission_or_confusion_fails_closed(self) -> None:
+        for value in (
+            None,
+            "1919025af73e9cc4a3b5d29d21f13ad9c391e40533874b0c5cfc0325867eb632",
+        ):
+            with self.subTest(report_provenance=value):
+                changed = deepcopy(self.report)
+                if value is None:
+                    changed["provenance"].pop("manifest_sha256")
+                else:
+                    changed["provenance"]["manifest_sha256"] = value
+                self.assert_projection_error("artifact provenance", changed)
+
+        original_final_hash = PROJECTION_POLICY["manifest"]["sha256"]
+        try:
+            for value in (
+                None,
+                "a991ba3fbe53c11b9ac9cc347b4b62307fe5de083a90362ae46088c7bc08eeb5",
+            ):
+                with self.subTest(final_manifest=value):
+                    if value is None:
+                        PROJECTION_POLICY["manifest"].pop("sha256")
+                    else:
+                        PROJECTION_POLICY["manifest"]["sha256"] = value
+                    with self.assertRaisesRegex(ProjectionError, "manifest differs"):
+                        validate_policy_artifacts(RUN_DIRECTORY)
+                    PROJECTION_POLICY["manifest"]["sha256"] = original_final_hash
+        finally:
+            PROJECTION_POLICY["manifest"]["sha256"] = original_final_hash
+
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory) / "run"
+            shutil.copytree(RUN_DIRECTORY, run)
+            manifest_path = run / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["artifacts"][0][
+                "content_sha256"
+            ] = "a991ba3fbe53c11b9ac9cc347b4b62307fe5de083a90362ae46088c7bc08eeb5"
+            manifest_path.write_text(
+                json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ProjectionError, "manifest differs"):
+                validate_policy_artifacts(run)
 
     def test_relationship_array_reordering_is_accepted(self) -> None:
         expected = project_dashboard_view(self.report)

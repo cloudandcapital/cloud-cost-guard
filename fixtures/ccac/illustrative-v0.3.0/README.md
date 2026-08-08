@@ -4,10 +4,14 @@
 
 The complete seven-file run is immutable. `scripts/validate_ccac11_fixture.py` checks exact filenames, byte sizes, and hashes, then invokes the released `cloudandcapital-ccac` v0.2.0 validator. The wheel is dependency-pinned to SHA-256 `bc46f363b1a03c94cf0da75759bccd0271de2c53b1f77a1a7255f9c8e7f768f1`.
 
-Approved changed producer commits:
+Approved generation revisions:
 
+- AI Cost Lens: `c4ab27a5c83ca7165de130a08c5d118fd18887b2`
 - FinOps Lite: `d72649ec07aa57c60a7ea3f8ff2890b8d95c4b93`
 - FinOps Watchdog: `9bc4e90725969f7775b3aef110b01e10dec4a7e0`
 - Recovery Economics: `9a6c4e1ce34e58af10fc42d44d911338a724dabe`
+- SaaS Cost Analyzer: `a627aff595eb0c0fc44f23a07662cfd82cc98bbe`
+
+These repository revisions record how the approved fixture was generated; they are not fields declared by the trusted report itself.
 
 The generated `ccac-dashboard-view-v1.1.generated.json` is a data-layer artifact only. React, exports, Lumen, and the visible dashboard continue using their existing sources.

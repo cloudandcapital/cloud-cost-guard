@@ -4244,7 +4244,45 @@
     "recoverability_classification": "not_demonstrated"
   },
   "saas": {
-    "combined_total": null,
+    "canonical_scope_total": {
+      "dimensions": {
+        "billing_channel": "saas_invoice_or_entitlement",
+        "cost_basis": "net_cost",
+        "scope": "saas"
+      },
+      "id": "metric.tech-spend.scope.saas",
+      "name": "Canonical SaaS scope spend",
+      "trace": {
+        "additivity": "additive",
+        "basis": "calculated",
+        "canonical_id": "metric.tech-spend.scope.saas",
+        "currency": "USD",
+        "evidence_ids": [
+          "evidence.saas-governance.bundle",
+          "evidence.saas-governance.analysis"
+        ],
+        "formula": "sum rounded application reporting-period net-cost components exactly once",
+        "input_metric_ids": [
+          "metric.saas.crm-9261ceef.period-net-cost",
+          "metric.saas.design-a77de8a6.period-net-cost"
+        ],
+        "period": {
+          "end": "2026-07-22",
+          "start": "2026-07-01",
+          "timezone": "UTC"
+        },
+        "producer": {
+          "name": "saas-cost-analyzer",
+          "version": "0.3.0"
+        },
+        "quality": "valid",
+        "source_artifact": "saas-cost-analyzer.json",
+        "unit": "currency"
+      },
+      "unknown_reason": null,
+      "value": "736.77"
+    },
+    "combined_invoice_total": null,
     "invoice_metrics": [
       {
         "dimensions": {
@@ -4324,6 +4362,20 @@
   },
   "schema": "ccg-dashboard-view/1.1.0",
   "source_metadata": {
+    "approved_release_provenance": {
+      "ccac": {
+        "version": "v0.2.0",
+        "wheel_sha256": "bc46f363b1a03c94cf0da75759bccd0271de2c53b1f77a1a7255f9c8e7f768f1"
+      },
+      "command_center_commit": "b114f776727a070e34c2f0d771165464f2055b93",
+      "producer_commits": {
+        "ai-cost-lens": "c4ab27a5c83ca7165de130a08c5d118fd18887b2",
+        "finops-lite": "d72649ec07aa57c60a7ea3f8ff2890b8d95c4b93",
+        "finops-watchdog": "9bc4e90725969f7775b3aef110b01e10dec4a7e0",
+        "recovery-economics": "9a6c4e1ce34e58af10fc42d44d911338a724dabe",
+        "saas-cost-analyzer": "a627aff595eb0c0fc44f23a07662cfd82cc98bbe"
+      }
+    },
     "artifact_sha256s": {
       "ai-cost-lens": "c4715c88b5d31e5a7b8e9867bd89ede4edeac5491e2b2dc8c20f79b68eb95af4",
       "finops-lite": "0dc4e0d5e3053f03daa773da7bb5c84d3cb8ad8e7f1a52d0e4b4937da722d570",
@@ -4337,7 +4389,8 @@
       "opportunities": 1,
       "opportunity_aggregates": 0
     },
-    "manifest_sha256": "a991ba3fbe53c11b9ac9cc347b4b62307fe5de083a90362ae46088c7bc08eeb5"
+    "final_manifest_sha256": "1919025af73e9cc4a3b5d29d21f13ad9c391e40533874b0c5cfc0325867eb632",
+    "report_provenance_manifest_sha256": "a991ba3fbe53c11b9ac9cc347b4b62307fe5de083a90362ae46088c7bc08eeb5"
   },
   "technology_spend": {
     "reconciliation": {
@@ -4526,7 +4579,7 @@
     },
     {
       "concept": "monthly_opportunity_scalar",
-      "explanation": "The canonical opportunity aggregate is annual and is not normalized.",
+      "explanation": "The source opportunity is annual, but no canonical opportunity aggregate was published; monthly conversion is forbidden.",
       "reason_code": "period_conversion_forbidden"
     },
     {
