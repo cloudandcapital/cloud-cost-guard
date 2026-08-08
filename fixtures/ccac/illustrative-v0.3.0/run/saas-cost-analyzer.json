@@ -1,0 +1,1210 @@
+{
+  "contract": "ccac/1.1.0",
+  "document_type": "tool_result",
+  "producer": {
+    "name": "saas-cost-analyzer",
+    "version": "0.3.0"
+  },
+  "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "generated_at": "2026-08-04T12:00:00Z",
+  "mode": "illustrative",
+  "period": {
+    "start": "2026-07-01",
+    "end": "2026-07-22",
+    "timezone": "UTC"
+  },
+  "inputs": [
+    {
+      "id": "source.saas-governance.bundle",
+      "source_type": "saas_governance_bundle",
+      "source_version": "saas-cost-analyzer/2.0",
+      "adapter_version": "0.3.0",
+      "content_sha256": "efa458192923f5b4c274af8674fc54ce46196ac6b2c5125742716402fe942022",
+      "access": "illustrative_fixture",
+      "data_classification": "public_illustrative",
+      "lossy_mapping": false,
+      "mapping_notes": [
+        "Contracts, invoices, assignment rosters, and activity observations remain separate evidence classes."
+      ]
+    },
+    {
+      "id": "source.saas-governance.analysis",
+      "source_type": "saas_cost_analysis_declaration",
+      "source_version": "saas-cost-analysis/1.0",
+      "adapter_version": "0.3.0",
+      "content_sha256": "18cd7fdf491195b48604f974ba0cb203d85a8598c4a6eb45d053da3d8d28fcf8",
+      "access": "illustrative_fixture",
+      "data_classification": "public_illustrative",
+      "lossy_mapping": false,
+      "mapping_notes": [
+        "Reporting period, accounting basis, completeness, allocation, rounding, and eligibility remain separate from contract and invoice evidence."
+      ]
+    }
+  ],
+  "quality": {
+    "status": "partial",
+    "issues": [
+      {
+        "code": "quality.saas.design-a77de8a6.activity",
+        "severity": "warning",
+        "message": "Illustrative Design Suite has stale or unknown activity evidence.",
+        "source_id": "source.saas-governance.bundle",
+        "field": "applications.assignments.last_activity_at",
+        "row_count": 2
+      },
+      {
+        "code": "quality.saas.design-a77de8a6.roster",
+        "severity": "warning",
+        "message": "Illustrative Design Suite assignment roster is not declared complete.",
+        "source_id": "source.saas-governance.bundle",
+        "field": "applications.assignment_roster_complete",
+        "row_count": null
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "id": "metric.saas.crm-9261ceef.purchased-seats",
+      "name": "Purchased seats",
+      "value": 6,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "observed",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.assigned-seats",
+      "name": "Assigned seats",
+      "value": 4,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "observed",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.active-seats",
+      "name": "Active seats",
+      "value": 3,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "classify assignments using declared inactivity threshold and activity evidence freshness",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.inactive-seats",
+      "name": "Inactive seats",
+      "value": 1,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "classify assignments using declared inactivity threshold and activity evidence freshness",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.unknown-activity-seats",
+      "name": "Seats with unknown activity",
+      "value": 0,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "classify assignments using declared inactivity threshold and activity evidence freshness",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.unassigned-seats",
+      "name": "Unassigned seats",
+      "value": 2,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "purchased_seats - assigned_seats",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.utilization-percentage",
+      "name": "Active-seat utilization percentage",
+      "value": 50.0,
+      "unknown_reason": null,
+      "unit": "percent",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "active_seats / purchased_seats * 100",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.invoice-cost",
+      "name": "Supplied invoice amount",
+      "value": 8640.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "observed",
+      "additivity": "additive",
+      "period": {
+        "start": "2025-12-01",
+        "end": "2026-12-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "sum supplied non-overlapping invoice rows only; invoice ledger completeness is not asserted",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.unit-price",
+      "name": "Contract unit price per purchased seat and billing cadence",
+      "value": 1440.0,
+      "unknown_reason": null,
+      "unit": "currency_per_seat_per_billing_cadence",
+      "currency": "USD",
+      "basis": "observed",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.commitment",
+      "name": "Contract commitment per billing cadence",
+      "value": 8640.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "observed",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.monthly-commitment",
+      "name": "Normalized monthly contractual commitment",
+      "value": 720.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "contract commitment / billing cadence months",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.annualized-commitment",
+      "name": "Annualized contractual commitment",
+      "value": 8640.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "normalized monthly commitment * 12",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.annual-reduction-capacity",
+      "name": "Estimated annual reduction capacity at renewal",
+      "value": 4320.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "estimated",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "owner": "Revenue Operations",
+        "billing_cadence": "annual",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "reviewable_seats * normalized monthly unit price * 12",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.purchased-seats",
+      "name": "Purchased seats",
+      "value": 10,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "observed",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.assigned-seats",
+      "name": "Assigned seats",
+      "value": 2,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "observed",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.active-seats",
+      "name": "Active seats",
+      "value": 0,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "classify assignments using declared inactivity threshold and activity evidence freshness",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.inactive-seats",
+      "name": "Inactive seats",
+      "value": 0,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "classify assignments using declared inactivity threshold and activity evidence freshness",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.unknown-activity-seats",
+      "name": "Seats with unknown activity",
+      "value": 2,
+      "unknown_reason": null,
+      "unit": "seats",
+      "currency": null,
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "classify assignments using declared inactivity threshold and activity evidence freshness",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.unassigned-seats",
+      "name": "Unassigned seats",
+      "value": null,
+      "unknown_reason": "assignment roster is not declared complete",
+      "unit": "seats",
+      "currency": null,
+      "basis": "unknown",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "partial"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.utilization-percentage",
+      "name": "Active-seat utilization percentage",
+      "value": null,
+      "unknown_reason": "utilization requires purchased seats greater than zero, a complete assignment roster, fresh activity evidence, and no unknown activity",
+      "unit": "percent",
+      "currency": null,
+      "basis": "unknown",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "partial"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.invoice-cost",
+      "name": "Supplied invoice amount",
+      "value": 1050.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "observed",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-01",
+        "end": "2026-10-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "sum supplied non-overlapping invoice rows only; invoice ledger completeness is not asserted",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.unit-price",
+      "name": "Contract unit price per purchased seat and billing cadence",
+      "value": 105.0,
+      "unknown_reason": null,
+      "unit": "currency_per_seat_per_billing_cadence",
+      "currency": "USD",
+      "basis": "observed",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.commitment",
+      "name": "Contract commitment per billing cadence",
+      "value": 1050.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "observed",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.monthly-commitment",
+      "name": "Normalized monthly contractual commitment",
+      "value": 350.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "contract commitment / billing cadence months",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.annualized-commitment",
+      "name": "Annualized contractual commitment",
+      "value": 4200.0,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": "normalized monthly commitment * 12",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.annual-reduction-capacity",
+      "name": "Estimated annual reduction capacity at renewal",
+      "value": null,
+      "unknown_reason": "assignment completeness or activity freshness gate failed",
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "unknown",
+      "additivity": "non_additive",
+      "period": {
+        "start": "2026-07-31",
+        "end": "2026-08-01",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas_application",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "owner": "Design",
+        "billing_cadence": "quarterly",
+        "contract_evidence_status": "user_supplied"
+      },
+      "formula": null,
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "quality_status": "partial"
+    },
+    {
+      "id": "metric.saas.crm-9261ceef.period-net-cost",
+      "name": "Illustrative CRM reporting-period net cost",
+      "value": 497.1,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-01",
+        "end": "2026-07-22",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas",
+        "application_id": "crm",
+        "application": "Illustrative CRM",
+        "vendor": "illustrative-crm-vendor",
+        "billing_provider": "illustrative-crm-vendor",
+        "billing_channel": "saas_invoice_or_entitlement",
+        "technology_scope": "saas",
+        "service_period_start": "2025-12-01",
+        "service_period_end": "2026-12-01",
+        "overlap_start": "2026-07-01",
+        "overlap_end": "2026-07-22",
+        "commitment_amount": "8640",
+        "charge_id": "charge.crm.annual-2025-12",
+        "overlap_days": "21",
+        "service_period_days": "365",
+        "cost_basis": "net_cost"
+      },
+      "formula": "contract commitment * overlapping calendar days / service-period calendar days; round half up to currency minor unit",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle",
+        "evidence.saas-governance.analysis"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.saas.design-a77de8a6.period-net-cost",
+      "name": "Illustrative Design Suite reporting-period net cost",
+      "value": 239.67,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-01",
+        "end": "2026-07-22",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas",
+        "application_id": "design",
+        "application": "Illustrative Design Suite",
+        "vendor": "illustrative-design-vendor",
+        "billing_provider": "illustrative-design-vendor",
+        "billing_channel": "saas_invoice_or_entitlement",
+        "technology_scope": "saas",
+        "service_period_start": "2026-07-01",
+        "service_period_end": "2026-10-01",
+        "overlap_start": "2026-07-01",
+        "overlap_end": "2026-07-22",
+        "commitment_amount": "1050",
+        "charge_id": "charge.design.2026-q3",
+        "overlap_days": "21",
+        "service_period_days": "92",
+        "cost_basis": "net_cost"
+      },
+      "formula": "contract commitment * overlapping calendar days / service-period calendar days; round half up to currency minor unit",
+      "input_metric_ids": [],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle",
+        "evidence.saas-governance.analysis"
+      ],
+      "quality_status": "valid"
+    },
+    {
+      "id": "metric.tech-spend.scope.saas",
+      "name": "Canonical SaaS scope spend",
+      "value": 736.77,
+      "unknown_reason": null,
+      "unit": "currency",
+      "currency": "USD",
+      "basis": "calculated",
+      "additivity": "additive",
+      "period": {
+        "start": "2026-07-01",
+        "end": "2026-07-22",
+        "timezone": "UTC"
+      },
+      "dimensions": {
+        "scope": "saas",
+        "billing_channel": "saas_invoice_or_entitlement",
+        "cost_basis": "net_cost"
+      },
+      "formula": "sum rounded application reporting-period net-cost components exactly once",
+      "input_metric_ids": [
+        "metric.saas.crm-9261ceef.period-net-cost",
+        "metric.saas.design-a77de8a6.period-net-cost"
+      ],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle",
+        "evidence.saas-governance.analysis"
+      ],
+      "quality_status": "valid",
+      "accounting_boundary": {
+        "relationship": "canonical_scope_spend",
+        "scope": "saas",
+        "canonical_owner": "saas-cost-analyzer",
+        "source_channel": "saas_invoice_or_entitlement",
+        "cost_basis": "net_cost",
+        "coverage": "complete",
+        "total_eligible": true,
+        "eligibility_reason": "Eligible only for the complete deterministic illustrative SaaS scenario declared by the bundled governance and analysis fixtures.",
+        "currency_minor_unit": 0.01,
+        "allocation_of_metric_id": null,
+        "component_treatments": {
+          "credits": "not_applicable",
+          "taxes": "not_applicable",
+          "adjustments": "not_applicable",
+          "shared_services": "not_applicable"
+        },
+        "inclusion_rules": [
+          "Include explicitly classified saas_invoice_or_entitlement application commitments allocated to the reporting-period overlap."
+        ],
+        "exclusion_rules": [
+          "Exclude direct-AI vendor and cloud-provider billing.",
+          "Exclude invoice totals, annualized commitments, renewal exposure, and estimated renewal-reduction capacity."
+        ],
+        "cross_scope_treatments": {
+          "direct_ai_vendor": "excluded",
+          "provider_billed_ai": "excluded"
+        },
+        "overlap": {
+          "disposition": "resolved",
+          "treatment": "Each application charge has one explicit half-open service period and enters the canonical scope once."
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding.saas.design-a77de8a6.activity-evidence",
+      "finding_type": "data_quality",
+      "title": "Activity evidence needs review for Illustrative Design Suite",
+      "description": "Unknown or stale activity is not classified as unused and creates no savings claim.",
+      "severity": "medium",
+      "status": "open",
+      "metric_ids": [
+        "metric.saas.design-a77de8a6.unknown-activity-seats"
+      ],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "last_observed_at": "2026-08-04T12:00:00Z"
+    },
+    {
+      "id": "finding.saas.design-a77de8a6.assignment-roster",
+      "finding_type": "data_quality",
+      "title": "Assignment roster is incomplete for Illustrative Design Suite",
+      "description": "Unassigned seats cannot be calculated until roster completeness is established.",
+      "severity": "medium",
+      "status": "open",
+      "metric_ids": [
+        "metric.saas.design-a77de8a6.unassigned-seats"
+      ],
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "first_observed_at": "2026-08-04T12:00:00Z",
+      "last_observed_at": "2026-08-04T12:00:00Z"
+    }
+  ],
+  "opportunities": [
+    {
+      "id": "opportunity.saas.crm-9261ceef.renewal-seat-review",
+      "producer": {
+        "name": "saas-cost-analyzer",
+        "version": "0.3.0"
+      },
+      "opportunity_type": "saas_reclaim",
+      "title": "Review 3 Illustrative CRM seats by the open notice deadline",
+      "scope": {
+        "application_id": "crm",
+        "renewal_date": "2026-11-30",
+        "notice_deadline": "2026-10-01",
+        "notice_window_status": "open",
+        "contract_evidence_status": "user_supplied",
+        "reviewable_seats": 3
+      },
+      "estimate": {
+        "basis": "estimated",
+        "period": "annual",
+        "low": 0,
+        "expected": 4320.0,
+        "high": 4320.0,
+        "currency": "USD",
+        "formula": "0 lower bound; modeled upper capacity = reviewable seats * normalized monthly unit price * 12; realization only after approved renewal change and invoice verification"
+      },
+      "confidence": "low",
+      "evidence_ids": [
+        "evidence.saas-governance.bundle"
+      ],
+      "related_finding_ids": [],
+      "related_opportunity_ids": [],
+      "overlap": {
+        "disposition": "none_known",
+        "group_id": "overlap.saas.crm-9261ceef.renewal-seat-review",
+        "reason": "Inactive assigned and unassigned seat populations are disjoint; this opportunity combines them once for this application renewal."
+      },
+      "review": {
+        "required": true,
+        "approval_required": true,
+        "rollback_plan_required": true,
+        "verification_required": true,
+        "non_mutating_review_steps": [
+          "Confirm the notice window remains open through 2026-10-01 for the stated renewal.",
+          "Confirm the users and entitlements with the application owner.",
+          "Confirm contractual reduction rights and notice deadline.",
+          "Approve the renewal change outside this tool.",
+          "Verify realized savings against later invoices."
+        ]
+      },
+      "status": "identified"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence.saas-governance.bundle",
+      "kind": "other",
+      "source_ids": [
+        "source.saas-governance.bundle"
+      ],
+      "description": "Strict SaaS governance bundle containing separately declared evidence ledgers.",
+      "locator": "json:applications",
+      "observed_at": "2026-08-04T12:00:00Z",
+      "content_sha256": "efa458192923f5b4c274af8674fc54ce46196ac6b2c5125742716402fe942022"
+    },
+    {
+      "id": "evidence.saas-governance.analysis",
+      "kind": "contract",
+      "source_ids": [
+        "source.saas-governance.analysis"
+      ],
+      "description": "The bundled fixture is the complete illustrative SaaS application set for this scenario and reporting window; absent applications have zero illustrative charges.",
+      "locator": "json:period,completeness,eligibility",
+      "observed_at": "2026-08-04T12:00:00Z",
+      "content_sha256": "18cd7fdf491195b48604f974ba0cb203d85a8598c4a6eb45d053da3d8d28fcf8"
+    }
+  ],
+  "extensions": {
+    "saas_cost_analyzer": {
+      "contract": "saas-cost-analyzer/2.0",
+      "analysis": {
+        "schema_version": "saas-cost-analyzer/2.0",
+        "mode": "illustrative",
+        "as_of": "2026-07-31",
+        "currency": "USD",
+        "inactivity_days": 45,
+        "activity_freshness_days": 7,
+        "applications": [
+          {
+            "id": "crm",
+            "name": "Illustrative CRM",
+            "owner": "Revenue Operations",
+            "purchased_seats": 6,
+            "assigned_seats": 4,
+            "unassigned_seats": 2,
+            "active_seats": 3,
+            "inactive_seats": 1,
+            "unknown_activity_seats": 0,
+            "activity_evidence_fresh": true,
+            "assignment_roster_complete": true,
+            "utilization_percentage": 50.0,
+            "supplied_invoice_amount": 8640.0,
+            "invoice_count": 1,
+            "invoice_completeness": "not_asserted",
+            "billing_cadence": "annual",
+            "cadence_months": 12,
+            "unit_price": 1440.0,
+            "unit_price_monthly": 120.0,
+            "commitment": 8640.0,
+            "monthly_commitment": 720.0,
+            "annualized_commitment": 8640.0,
+            "renewal_exposure": 8640.0,
+            "renewal_date": "2026-11-30",
+            "notice_deadline": "2026-10-01",
+            "days_to_notice_deadline": 62,
+            "notice_window_status": "open",
+            "contract_evidence_status": "user_supplied",
+            "reviewable_seats": 3,
+            "estimated_monthly_reduction_capacity_at_renewal": 360.0,
+            "estimated_annual_reduction_capacity_at_renewal": 4320.0,
+            "eligible_annual_reduction_capacity_at_renewal": 4320.0,
+            "blocked_annual_reduction_capacity_at_renewal": 0.0,
+            "reconciliation": {
+              "assigned_seats": 4,
+              "classified_assigned_seats": 4,
+              "assigned_difference": 0,
+              "purchased_seats": 6,
+              "assigned_plus_unassigned_seats": 6,
+              "normalized_monthly_commitment": 720.0,
+              "normalized_annual_commitment": 8640.0,
+              "status": "passed"
+            }
+          },
+          {
+            "id": "design",
+            "name": "Illustrative Design Suite",
+            "owner": "Design",
+            "purchased_seats": 10,
+            "assigned_seats": 2,
+            "unassigned_seats": null,
+            "active_seats": 0,
+            "inactive_seats": 0,
+            "unknown_activity_seats": 2,
+            "activity_evidence_fresh": false,
+            "assignment_roster_complete": false,
+            "utilization_percentage": null,
+            "supplied_invoice_amount": 1050.0,
+            "invoice_count": 1,
+            "invoice_completeness": "not_asserted",
+            "billing_cadence": "quarterly",
+            "cadence_months": 3,
+            "unit_price": 105.0,
+            "unit_price_monthly": 35.0,
+            "commitment": 1050.0,
+            "monthly_commitment": 350.0,
+            "annualized_commitment": 4200.0,
+            "renewal_exposure": 4200.0,
+            "renewal_date": "2027-01-31",
+            "notice_deadline": "2027-01-01",
+            "days_to_notice_deadline": 154,
+            "notice_window_status": "open",
+            "contract_evidence_status": "user_supplied",
+            "reviewable_seats": null,
+            "estimated_monthly_reduction_capacity_at_renewal": null,
+            "estimated_annual_reduction_capacity_at_renewal": null,
+            "eligible_annual_reduction_capacity_at_renewal": null,
+            "blocked_annual_reduction_capacity_at_renewal": null,
+            "reconciliation": {
+              "assigned_seats": 2,
+              "classified_assigned_seats": 2,
+              "assigned_difference": 0,
+              "purchased_seats": 10,
+              "assigned_plus_unassigned_seats": null,
+              "normalized_monthly_commitment": 350.0,
+              "normalized_annual_commitment": 4200.0,
+              "status": "passed"
+            }
+          }
+        ]
+      },
+      "reconciliation": {
+        "purchased_seats": 16,
+        "assigned_seats": 6,
+        "classified_assigned_seats": 6,
+        "supplied_invoice_amount": 9690.0,
+        "invoice_completeness": "not_asserted",
+        "normalized_monthly_commitment": 1070.0,
+        "annualized_commitment": 12840.0,
+        "total_modeled_review_capacity": 4320.0,
+        "open_notice_window_eligible_capacity": 4320.0,
+        "blocked_notice_window_capacity": 0,
+        "opportunity_expected_total": 4320.0,
+        "eligible_capacity_to_opportunity_difference": 0.0,
+        "modeled_capacity_balance_difference": 0.0,
+        "status": "passed"
+      },
+      "accounting_boundary": "Supplied invoice rows are observed but completeness is not asserted; commitment is contractual; renewal capacity is estimated and non-additive until verified after implementation.",
+      "period_cost_reconciliation": {
+        "allocation_convention": "calendar_day_overlap_half_open",
+        "rounding_convention": "currency_minor_unit_half_up",
+        "net_cost_definition": "Illustrative contract commitments contain no modeled credits, taxes, adjustments, or shared-service allocations; reporting-period net cost is the calendar-day overlap allocation of each included commitment.",
+        "component_metric_ids": [
+          "metric.saas.crm-9261ceef.period-net-cost",
+          "metric.saas.design-a77de8a6.period-net-cost"
+        ],
+        "component_total": 736.77,
+        "canonical_scope_total": 736.77,
+        "difference": 0.0,
+        "status": "passed"
+      }
+    }
+  }
+}

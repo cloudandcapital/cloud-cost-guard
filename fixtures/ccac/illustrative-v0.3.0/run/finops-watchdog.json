@@ -1,0 +1,417 @@
+{
+  "contract": "ccac/1.1.0",
+  "document_type": "tool_result",
+  "evidence": [
+    {
+      "content_sha256": "6c1873d3715693054cb8d2577e588ad6a8084611a160e24503386a7460efe0ce",
+      "description": "Robust trailing median and MAD analysis of FinOps Lite daily observed metrics.",
+      "id": "evidence.finops-watchdog.input-result",
+      "kind": "formula",
+      "locator": "ccac:metrics[dimensions.date]",
+      "observed_at": "2026-08-04T12:00:00Z",
+      "source_ids": [
+        "source.finops-watchdog.finops-lite-result"
+      ]
+    }
+  ],
+  "extensions": {
+    "finops_watchdog": {
+      "anomalies_detected": 2,
+      "detector": "trailing_median_mad",
+      "insufficient_history_series": [],
+      "lifecycle_default": "open",
+      "min_amount": 10.0,
+      "min_percent": 20.0,
+      "organizational_coverage": "partial",
+      "series_evaluated": 2,
+      "threshold": 3.0,
+      "total_eligible": false,
+      "upstream": {
+        "content_sha256": "6c1873d3715693054cb8d2577e588ad6a8084611a160e24503386a7460efe0ce",
+        "contract": "ccac/1.1.0",
+        "evidence_ids": [
+          "evidence.finops-lite.cost-summary"
+        ],
+        "producer": {
+          "name": "finops-lite",
+          "version": "0.4.0"
+        }
+      },
+      "window_days": 14
+    }
+  },
+  "findings": [
+    {
+      "description": "Observed 122.5 USD; trailing median 70.7 USD; observed excess 51.8 USD. This is an anomaly impact, not a savings estimate or root-cause claim.",
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "finding_type": "anomaly",
+      "first_observed_at": "2026-07-21T00:00:00Z",
+      "id": "finding.anomaly.provider-aws-scope-cloud-service-amazone-b105271d",
+      "last_observed_at": "2026-07-21T23:59:59Z",
+      "metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score"
+      ],
+      "severity": "critical",
+      "status": "open",
+      "title": "Spend Increase detected for provider=aws, scope=cloud, service=AmazonEC2"
+    },
+    {
+      "description": "Observed 52.5 USD; trailing median 30.3 USD; observed excess 22.2 USD. This is an anomaly impact, not a savings estimate or root-cause claim.",
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "finding_type": "anomaly",
+      "first_observed_at": "2026-07-21T00:00:00Z",
+      "id": "finding.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717",
+      "last_observed_at": "2026-07-21T23:59:59Z",
+      "metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score"
+      ],
+      "severity": "critical",
+      "status": "open",
+      "title": "Spend Increase detected for provider=aws, scope=cloud, service=AmazonS3"
+    }
+  ],
+  "generated_at": "2026-08-04T12:00:00Z",
+  "inputs": [
+    {
+      "access": "illustrative_fixture",
+      "adapter_version": "0.5.0",
+      "content_sha256": "6c1873d3715693054cb8d2577e588ad6a8084611a160e24503386a7460efe0ce",
+      "data_classification": "public_illustrative",
+      "id": "source.finops-watchdog.finops-lite-result",
+      "lossy_mapping": false,
+      "mapping_notes": [
+        "Consumes observed additive one-day currency metrics; no service attribution is inferred from period totals."
+      ],
+      "source_type": "ccac_tool_result",
+      "source_version": "ccac/1.1.0"
+    }
+  ],
+  "metrics": [
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": "USD",
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonEC2"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": null,
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+      "input_metric_ids": [],
+      "name": "Observed cost",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 122.5
+    },
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonEC2"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "median of the prior 14 daily observed costs",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected",
+      "input_metric_ids": [],
+      "name": "Trailing median expected cost",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 70.7
+    },
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonEC2"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "observed cost - trailing median expected cost",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.impact",
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+      ],
+      "name": "Observed anomaly cost impact",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 51.8
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "calculated",
+      "currency": null,
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonEC2"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "(observed cost - expected cost) / expected cost * 100; new spend is represented as 100",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.change-percent",
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+      ],
+      "name": "Observed cost change percentage",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "percent",
+      "unknown_reason": null,
+      "value": 73.2673
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "calculated",
+      "currency": null,
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonEC2"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "(observed cost - trailing median) / (1.4826 * median absolute deviation)",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.robust-score",
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazone-b105271d.expected"
+      ],
+      "name": "Robust anomaly score",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "score",
+      "unknown_reason": null,
+      "value": 49.9123
+    },
+    {
+      "additivity": "additive",
+      "basis": "observed",
+      "currency": "USD",
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonS3"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": null,
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+      "input_metric_ids": [],
+      "name": "Observed cost",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 52.5
+    },
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonS3"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "median of the prior 14 daily observed costs",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected",
+      "input_metric_ids": [],
+      "name": "Trailing median expected cost",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 30.3
+    },
+    {
+      "additivity": "additive",
+      "basis": "calculated",
+      "currency": "USD",
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonS3"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "observed cost - trailing median expected cost",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.impact",
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+      ],
+      "name": "Observed anomaly cost impact",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "currency",
+      "unknown_reason": null,
+      "value": 22.2
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "calculated",
+      "currency": null,
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonS3"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "(observed cost - expected cost) / expected cost * 100; new spend is represented as 100",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.change-percent",
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+      ],
+      "name": "Observed cost change percentage",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "percent",
+      "unknown_reason": null,
+      "value": 73.2673
+    },
+    {
+      "additivity": "non_additive",
+      "basis": "calculated",
+      "currency": null,
+      "dimensions": {
+        "anomaly_type": "spend_increase",
+        "date": "2026-07-21",
+        "provider": "aws",
+        "scope": "cloud",
+        "service": "AmazonS3"
+      },
+      "evidence_ids": [
+        "evidence.finops-watchdog.input-result"
+      ],
+      "formula": "(observed cost - trailing median) / (1.4826 * median absolute deviation)",
+      "id": "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.robust-score",
+      "input_metric_ids": [
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.observed",
+        "metric.anomaly.provider-aws-scope-cloud-service-amazons-0a7ea717.expected"
+      ],
+      "name": "Robust anomaly score",
+      "period": {
+        "end": "2026-07-22",
+        "start": "2026-07-21",
+        "timezone": "UTC"
+      },
+      "quality_status": "valid",
+      "unit": "score",
+      "unknown_reason": null,
+      "value": 49.9123
+    }
+  ],
+  "mode": "illustrative",
+  "opportunities": [],
+  "period": {
+    "end": "2026-07-22",
+    "start": "2026-07-01",
+    "timezone": "UTC"
+  },
+  "producer": {
+    "name": "finops-watchdog",
+    "version": "0.5.0"
+  },
+  "quality": {
+    "issues": [],
+    "status": "valid"
+  },
+  "run_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+}
