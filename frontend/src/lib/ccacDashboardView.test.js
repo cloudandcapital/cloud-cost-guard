@@ -375,6 +375,7 @@ test("owns the generated import without crossing the dashboard or Lumen boundari
     const source = fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
     expect(source).not.toContain("ccacDashboardView");
   }
-  expect(fs.readFileSync(path.resolve(__dirname, "../../../api/ask-claude.js"), "utf8"))
-    .toContain("frontend/src/data/report.json");
+  const lumenApi = fs.readFileSync(path.resolve(__dirname, "../../../api/ask-claude.js"), "utf8");
+  expect(lumenApi).toContain("frontend/src/lib/lumenContextPortable");
+  expect(lumenApi).not.toMatch(/frontend\/src\/data\/report\.json|TRUSTED_REPORT|getCloudCapitalReport/);
 });

@@ -144,10 +144,10 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
     await page.getByRole("button", { name: "Hide review plan" }).click();
   });
 
-  test("keeps Lumen visibly isolated on its existing grounding", async ({ page }) => {
+  test("grounds Lumen visibly in the validated CCAC 1.1 report", async ({ page }) => {
     await page.getByTestId("lumen-trigger").click();
     const lumen = page.getByRole("dialog", { name: "Lumen assistant" }); await expect(lumen).toBeVisible();
-    await expect(lumen).toContainText("Grounded only in this illustrative report");
+    await expect(lumen).toContainText("Lumen explains the validated CCAC 1.1 illustrative report");
     await lumen.getByTitle("Close").click();
   });
 });

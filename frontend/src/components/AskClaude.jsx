@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { parseLumenMessage } from "../lib/lumenMessage";
-import { getCloudCapitalReport } from "../lib/report";
 import { buildPresetLumenResponse, getLumenFooterLabel, SAMPLE_QUESTIONS } from "../lib/lumenPresets";
-import { normalizeLumenDisplayText } from "../lib/reportTrust";
 
 const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
 
@@ -26,7 +24,7 @@ const renderRuns = (runs, keyPrefix) => runs.map((run, index) => (
     : <React.Fragment key={`${keyPrefix}-${index}`}>{run.text}</React.Fragment>
 ));
 
-const renderMessage = (text) => parseLumenMessage(normalizeLumenDisplayText(text)).map((block, index) => {
+const renderMessage = (text) => parseLumenMessage(text).map((block, index) => {
   if (block.type === "heading") {
     return <h3 className={`lumen-heading lumen-heading--${block.level}`} key={`heading-${index}`}>{renderRuns(block.runs, `heading-${index}`)}</h3>;
   }
@@ -64,7 +62,6 @@ const AskClaude = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const report = getCloudCapitalReport();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,7 +81,7 @@ const AskClaude = () => {
     setInput("");
     setError(null);
 
-    const presetReply = buildPresetLumenResponse(trimmed, report);
+    const presetReply = buildPresetLumenResponse(trimmed);
     if (presetReply) {
       setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
       return;
@@ -196,7 +193,7 @@ const AskClaude = () => {
           {messages.length === 0 && !loading && (
             <div className="ask-claude-chips">
               <p style={{ fontSize: 12, color: "#7A6B5D", textAlign: "center", marginBottom: 10 }}>
-                Grounded only in this illustrative report; Lumen cannot access customer accounts or external resources.
+                Lumen explains the validated CCAC 1.1 illustrative report. It cannot access customer accounts or external resources.
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {SAMPLE_QUESTIONS.map((q, i) => (
