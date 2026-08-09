@@ -6,6 +6,10 @@ const TAB_CASES = [
   ["Kubernetes", "Kubernetes cost and utilization"], ["Overview", "Reconciliation"],
   ["AI Spend", "Canonical direct-AI scope"], ["SaaS", "Canonical SaaS scope"],
 ];
+const modelFindingCount = 10;
+const openTab = async (page, tab) => page.viewportSize().width < 768
+  ? page.getByTestId("mobile-section-select").selectOption({ label: tab })
+  : page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
 
 test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
   let consoleProblems;
@@ -18,6 +22,7 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
   test.afterEach(async () => expect(consoleProblems).toEqual([]));
 
   test("uses canonical values, preserves navigation, and renders the trusted donut", async ({ page }) => {
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.getByTestId("dashboard-header")).toContainText("Canonical technology spend decision support");
     await expect(page.getByTestId("canonical-export-disabled")).toBeDisabled();
     await expect(page.getByRole("button", { name: "Refresh" })).toBeVisible();
@@ -30,36 +35,39 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
     const donut = page.getByTestId("scope-donut-card");
     await expect(donut.locator(".recharts-pie-sector")).toHaveCount(3);
     await expectRenderedSvgGeometry(donut, ".recharts-pie-sector path", 3);
-    expect(await page.getByTestId("primary-tabs").getByRole("tab").allTextContents()).toEqual(PRIMARY_TABS);
+    const navigationLabels = page.viewportSize().width < 768
+      ? await page.getByTestId("mobile-section-select").locator("option").allTextContents()
+      : await page.getByTestId("primary-tabs").getByRole("tab").allTextContents();
+    expect(navigationLabels).toEqual(PRIMARY_TABS);
     await expectNoBrokenDisplayValues(page);
   });
 
   for (const [tab, text] of TAB_CASES) test(`opens the ${tab} tab`, async ({ page }) => {
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
+    await openTab(page, tab);
     await expect(page.getByText(text, { exact: true }).first()).toBeVisible();
     await expectNoBrokenDisplayValues(page);
   });
 
   test("preserves zero overflow for every primary tab", async ({ page }) => {
     for (const [tab] of TAB_CASES) {
-      await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
+      await openTab(page, tab);
       await expectExactPageOverflow(page, 0);
     }
   });
 
-  test("preserves the constrained mobile five-plus-two tab grid", async ({ page }, testInfo) => {
+  test("keeps all mobile destinations discoverable in a labeled selector", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile-390x844", "Approved mobile-only behavior");
-    const layout = await page.getByTestId("primary-tabs").evaluate((list) => ({
-      height: list.getBoundingClientRect().height,
-      columns: getComputedStyle(list).gridTemplateColumns.split(" ").length,
-      tops: [...list.querySelectorAll('[role="tab"]')].map((tab) => tab.getBoundingClientRect().top),
-    }));
-    expect(layout.height).toBe(38); expect(layout.columns).toBe(5);
-    expect(new Set(layout.tops.slice(0, 5)).size).toBe(1); expect(new Set(layout.tops.slice(5)).size).toBe(1);
+    const selector = page.getByTestId("mobile-section-select");
+    await expect(selector).toBeVisible();
+    expect(await selector.locator("option").allTextContents()).toEqual(PRIMARY_TABS);
+    for (const [tab] of TAB_CASES) {
+      await selector.selectOption({ label: tab });
+      await expect(selector).toHaveValue(tab.toLowerCase().replace(" ", "-"));
+    }
   });
 
   test("shows AWS canonical charts and honest Azure/GCP unavailable states", async ({ page }) => {
-    await page.getByRole("tab", { name: "Clouds", exact: true }).click();
+    await openTab(page, "Clouds");
     await expectRenderedSvgGeometry(page.getByText("Canonical daily Cloud spend").locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]'), "path.recharts-line-curve");
     for (const provider of ["AZURE", "GCP"]) {
       await page.getByRole("button", { name: provider, exact: true }).click();
@@ -69,11 +77,11 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
   });
 
   test("keeps Kubernetes unavailable and AI/SaaS boundaries explicit", async ({ page }) => {
-    await page.getByRole("tab", { name: "Kubernetes", exact: true }).click();
+    await openTab(page, "Kubernetes");
     await expect(page.getByText("No canonical Kubernetes metric exists.", { exact: true })).toBeVisible();
-    await page.getByRole("tab", { name: "AI Spend", exact: true }).click();
+    await openTab(page, "AI Spend");
     await expect(page.getByText("Non-additive; includes provider-billed AI already represented in Cloud", { exact: true })).toBeVisible();
-    await page.getByRole("tab", { name: "SaaS", exact: true }).click();
+    await openTab(page, "SaaS");
     await expect(page.getByText("$8,640.00", { exact: true })).toBeVisible();
     await expect(page.getByText("$1,050.00", { exact: true })).toBeVisible();
   });
@@ -90,7 +98,9 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
   });
 
   test("opens and closes canonical finding methodology", async ({ page }) => {
-    await page.getByRole("button", { name: "View Details & Methodology" }).first().click();
+    const methodologyButtons = page.getByRole("button", { name: "Methodology" });
+    expect(await methodologyButtons.count()).toBe(modelFindingCount);
+    await methodologyButtons.first().click();
     const dialog = page.getByTestId("finding-modal"); await expect(dialog).toBeVisible();
     await expect(dialog).toContainText("Canonical context"); await expect(dialog).toContainText("Evidence");
     await dialog.getByLabel("Close").click(); await expect(dialog).toBeHidden();

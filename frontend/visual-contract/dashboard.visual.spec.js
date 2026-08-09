@@ -16,7 +16,8 @@ test.describe("approved visual contract", () => {
 
   for (const [slug, tab] of TAB_CASES) {
     test(`${tab} full-page`, async ({ page }) => {
-      await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
+      if (page.viewportSize().width < 768) await page.getByTestId("mobile-section-select").selectOption({ label: tab });
+      else await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
       await waitForChartsStable(page);
       await expect(page).toHaveScreenshot(`${slug}-full-page.png`, { fullPage: true });
     });
@@ -36,7 +37,9 @@ test.describe("approved visual contract", () => {
   });
 
   test("finding modal targeted", async ({ page }) => {
-    await page.getByRole("button", { name: "View Details & Methodology" }).first().click();
+    const methodologyButtons = page.getByRole("button", { name: "Methodology" });
+    expect(await methodologyButtons.count()).toBe(10);
+    await methodologyButtons.first().click();
     await expect(page.getByTestId("finding-modal")).toHaveScreenshot("finding-modal.png");
   });
 
