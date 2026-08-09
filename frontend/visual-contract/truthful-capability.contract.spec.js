@@ -20,7 +20,8 @@ test.describe("truthful canonical capability claims", () => {
   });
 
   test("does not fabricate provider data", async ({ page }) => {
-    await page.getByRole("tab", { name: "Clouds", exact: true }).click();
+    if (page.viewportSize().width < 768) await page.getByTestId("mobile-section-select").selectOption({ label: "Clouds" });
+    else await page.getByRole("tab", { name: "Clouds", exact: true }).click();
     for (const provider of ["AZURE", "GCP"]) {
       await page.getByRole("button", { name: provider, exact: true }).click();
       await expect(page.getByText(`No ${provider} ingestion is represented in this trusted report.`, { exact: true })).toBeVisible();

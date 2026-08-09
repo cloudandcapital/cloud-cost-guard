@@ -38,7 +38,7 @@ async function expectDashboardFonts(page) {
     return {
       loadedFaces,
       interAvailable: document.fonts.check("400 16px Inter"),
-      playfairAvailable: document.fonts.check('600 16px "Playfair Display"'),
+      playfairAvailable: document.fonts.check('700 16px "Playfair Display"'),
       bodyFamily: getComputedStyle(document.body).fontFamily,
       brandFamily: getComputedStyle(document.querySelector(".brand-title")).fontFamily,
     };

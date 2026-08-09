@@ -37,6 +37,7 @@ module.exports = defineConfig({
   },
   projects: [
     { name: "desktop-1440x1000", use: { viewport: { width: 1440, height: 1000 } } },
+    { name: "tablet-768x1024", testIgnore: /dashboard\.visual\.spec\.js/, use: { viewport: { width: 768, height: 1024 } } },
     { name: "mobile-390x844", use: { viewport: { width: 390, height: 844 } } },
   ],
   webServer: {
