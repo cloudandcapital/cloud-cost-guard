@@ -15,7 +15,7 @@ test.describe("truthful canonical capability claims", () => {
   test("states the exact source and refresh boundary without overflow", async ({ page }) => {
     const disclosure = page.getByTestId("capability-disclosure");
     await expect(disclosure).toContainText(DISCLOSURE); await expect(disclosure).toContainText(REFRESH);
-    await expect(disclosure).toContainText("Lumen remains on separate illustrative grounding");
+    await expect(disclosure).toContainText("Lumen explains this same validated CCAC 1.1 illustrative report");
     await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
   });
 
@@ -29,11 +29,11 @@ test.describe("truthful canonical capability claims", () => {
     await expectNoBrokenDisplayValues(page); await expectExactPageOverflow(page);
   });
 
-  test("preserves Refresh and the separate Lumen boundary", async ({ page }) => {
+  test("preserves Refresh and the unified canonical Lumen boundary", async ({ page }) => {
     await page.getByRole("button", { name: "Refresh", exact: true }).click();
     await expect(page.getByTestId("capability-disclosure")).toContainText(REFRESH);
     await page.getByTestId("lumen-trigger").click();
-    await expect(page.getByRole("dialog", { name: "Lumen assistant" })).toContainText("Grounded only in this illustrative report");
+    await expect(page.getByRole("dialog", { name: "Lumen assistant" })).toContainText("Lumen explains the validated CCAC 1.1 illustrative report");
     await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
   });
 });
