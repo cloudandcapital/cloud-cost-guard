@@ -3,14 +3,16 @@ import "./App.css";
 import logo from "./assets/cloud-and-capital-icon.png";
 import AskClaude from "./components/AskClaude";
 import { getCcac11PresentationModel } from "./lib/ccac11PresentationModel";
+import { buildCanonicalExportFiles, downloadCanonicalExport } from "./lib/canonicalExport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Badge } from "./components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Alert, AlertDescription } from "./components/ui/alert";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Activity, AlertTriangle, Bot, Calendar, CheckCircle, ChevronRight, Cloud, Download, Eye, Info, Layers, PieChart as PieIcon, ShieldCheck, X } from "lucide-react";
+import { Activity, AlertTriangle, Bot, Calendar, CheckCircle, ChevronDown, ChevronRight, Cloud, Download, Eye, FileJson, FileText, Info, Layers, PieChart as PieIcon, ShieldCheck, X } from "lucide-react";
 
 const money = (value, digits = 2) => new Intl.NumberFormat("en-US", {
   style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits,
@@ -82,6 +84,7 @@ function Dashboard() {
   const [finding, setFinding] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("findings");
+  const [exportError, setExportError] = useState("");
   const tabRail = useRef(null);
   useEffect(() => {
     const rail = tabRail.current;
@@ -115,6 +118,15 @@ function Dashboard() {
   }));
   const topAnomaly = model.anomalies[0];
   const unsupported = (key) => model.unsupported[key]?.explanation || unavailable;
+  const handleExport = (kind) => {
+    setExportError("");
+    try {
+      const files = buildCanonicalExportFiles();
+      downloadCanonicalExport(files[kind]);
+    } catch {
+      setExportError("Canonical export could not be generated safely. No file was downloaded.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light" data-testid="approved-dashboard" data-view-schema={model.schema}>
@@ -124,10 +136,19 @@ function Dashboard() {
             <img src={logo} alt="Cloud & Capital" className="brand-logo" />
             <div className="leading-tight"><h1 className="brand-title">Cloud+ Cost Guard</h1><p className="brand-deck">Canonical technology spend decision support <span>· Illustrative</span></p></div>
           </div>
-          <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
-            <div className="btn-brand-outline rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs text-brand-muted"><Calendar className="h-4 w-4 mr-2" />21-day report</div>
-            <Button variant="outline" disabled title="Canonical export support is a separate roadmap phase" className="btn-brand-outline rounded-2xl px-2 sm:px-4 text-xs" data-testid="canonical-export-disabled"><Download className="h-4 w-4 mr-2" />Export</Button>
-            <Button onClick={() => setRevision((value) => value + 1)} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs"><Activity className="h-4 w-4 mr-2" />Refresh</Button>
+          <div className="header-actions">
+            <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
+              <div className="btn-brand-outline rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs text-brand-muted"><Calendar className="h-4 w-4 mr-2" />21-day report</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button variant="outline" className="btn-brand-outline rounded-2xl px-2 sm:px-4 text-xs" data-testid="canonical-export-trigger" aria-label="Export canonical report"><Download className="h-4 w-4 mr-2" />Export<ChevronDown className="h-3 w-3 ml-1" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="export-menu" data-testid="canonical-export-menu">
+                  <DropdownMenuItem onSelect={() => handleExport("html")} className="export-menu-item" data-testid="canonical-export-html"><FileText /><span><strong>Canonical executive report</strong><small>Self-contained printable HTML</small></span></DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleExport("json")} className="export-menu-item" data-testid="canonical-export-json"><FileJson /><span><strong>Canonical evidence package</strong><small>Deterministic machine-readable JSON</small></span></DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={() => setRevision((value) => value + 1)} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs"><Activity className="h-4 w-4 mr-2" />Refresh</Button>
+            </div>
+            {exportError && <p className="export-error" role="alert" data-testid="canonical-export-error">{exportError}</p>}
           </div>
         </div>
       </header>

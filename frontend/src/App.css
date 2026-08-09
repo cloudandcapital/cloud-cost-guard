@@ -683,3 +683,14 @@ h1{ font-weight:600; } h2{ font-weight:600; }
   flex-shrink: 0;
   letter-spacing: 0.01em;
 }
+
+.header-actions{ display:flex; flex-direction:column; align-items:stretch; gap:6px; }
+.export-menu{ width:min(340px,calc(100vw - 24px)); border-color:var(--brand-line); background:#fffdfb; padding:6px; }
+.export-menu-item{ align-items:flex-start; gap:10px; border-radius:9px; padding:10px; color:var(--brand-ink); cursor:pointer; }
+.export-menu-item:focus{ background:#f3ebe3; }
+.export-menu-item > svg{ margin-top:2px; color:var(--brand-accent); }
+.export-menu-item span{ display:flex; min-width:0; flex-direction:column; gap:2px; }
+.export-menu-item strong{ font-size:13px; line-height:1.25; }
+.export-menu-item small{ color:var(--brand-muted); font-size:11px; line-height:1.35; }
+.export-error{ max-width:360px; margin:0; color:#991b1b; font-size:11px; line-height:1.35; text-align:right; }
+@media(max-width:639px){ .export-error{ max-width:none; text-align:left; } }
