@@ -310,7 +310,7 @@ h1{ font-weight:600; } h2{ font-weight:600; }
 .unavailable-content{ display:flex; gap:9px; padding:12px !important; }
 .unavailable-content > svg{ flex:0 0 auto; margin-top:2px; color:#9a8878; }
 .signal-grid{ display:grid; grid-template-columns:minmax(0,1fr); }
-.tab-shell{ position:sticky; top:69px; z-index:15; padding:8px 0; background:linear-gradient(var(--brand-bg) 70%,transparent); }
+.tab-shell{ position:sticky; top:0; z-index:15; padding:8px 0; background:linear-gradient(var(--brand-bg) 70%,transparent); }
 .mobile-section-nav{ display:none; }
 .section-heading{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
 .section-heading h2,.section-title{ margin:3px 0 0; font-family:"Playfair Display",Georgia,serif; font-size:25px; font-weight:700; }

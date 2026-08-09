@@ -24,4 +24,28 @@ test.describe("mobile canonical cutover", () => {
       await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
     }
   });
+
+  test("keeps Lumen clear of sticky navigation and critical review controls", async ({ page }) => {
+    const lumen = page.getByTestId("lumen-trigger");
+    const selector = page.getByTestId("mobile-section-select");
+    const reviewPlan = page.getByRole("button", { name: "Review plan" });
+    const methodologyButtons = page.getByRole("button", { name: "Methodology" });
+    expect(await methodologyButtons.count()).toBe(10);
+
+    for (const control of [selector, reviewPlan, methodologyButtons.first()]) {
+      await control.evaluate((element) => element.scrollIntoView({ block: "center" }));
+      const overlaps = await page.evaluate(() => {
+        const trigger = document.querySelector('[data-testid="lumen-trigger"]')?.getBoundingClientRect();
+        const candidates = [
+          document.querySelector('[data-testid="mobile-section-select"]'),
+          [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Review plan"),
+          [...document.querySelectorAll("button")].find((button) => button.textContent?.includes("Methodology")),
+        ].filter(Boolean).map((element) => element.getBoundingClientRect());
+        if (!trigger) return true;
+        return candidates.some((box) => trigger.left < box.right && trigger.right > box.left && trigger.top < box.bottom && trigger.bottom > box.top);
+      });
+      expect(overlaps).toBe(false);
+      await expectExactPageOverflow(page);
+    }
+  });
 });

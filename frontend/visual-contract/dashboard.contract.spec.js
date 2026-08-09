@@ -55,6 +55,34 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
     }
   });
 
+  test("pins desktop and tablet navigation to the viewport top without obscuring content", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === "mobile-390x844", "Desktop and tablet sticky-navigation contract");
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const shell = page.locator(".tab-shell");
+    await shell.evaluate((element) => window.scrollTo({ top: element.offsetTop + 1, behavior: "auto" }));
+    await expect.poll(async () => shell.evaluate((element) => Math.round(element.getBoundingClientRect().top))).toBe(0);
+    const shellBox = await shell.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { bottom: box.bottom, top: box.top };
+    });
+    const activePanelBox = await page.getByRole("tabpanel", { name: "Findings" }).evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { top: box.top };
+    });
+    expect(shellBox.top).toBe(0);
+    expect(activePanelBox.top).toBeGreaterThanOrEqual(shellBox.bottom);
+
+    for (const [tab, expectedText] of TAB_CASES) {
+      if (tab !== "Findings") {
+        const trigger = page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true });
+        await trigger.evaluate((element) => element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 })));
+        await expect(trigger).toHaveAttribute("data-state", "active");
+      }
+      await expect(page.getByText(expectedText, { exact: true }).first()).toBeVisible();
+      await expectExactPageOverflow(page, 0);
+    }
+  });
+
   test("keeps all mobile destinations discoverable in a labeled selector", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile-390x844", "Approved mobile-only behavior");
     const selector = page.getByTestId("mobile-section-select");
