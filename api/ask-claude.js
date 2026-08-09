@@ -1,4 +1,5 @@
-const { buildCanonicalLumenContext } = require("../frontend/src/lib/lumenContextPortable");
+const generatedView = require("../frontend/src/data/ccac-dashboard-view-v1.1.generated.json");
+const canonicalContextModule = import("../frontend/src/lib/lumenContextPortable.mjs");
 
 const LUMEN_SYSTEM = [
   "You are Lumen, the read-only FinOps analyst inside Cloud Cost Guard by Cloud & Capital.",
@@ -105,7 +106,7 @@ function safeContent(text, stopReason) {
   return { content: [{ type: "text", text }], stop_reason: stopReason };
 }
 
-function createHandler({ fetchImpl = global.fetch, buildContext = buildCanonicalLumenContext } = {}) {
+function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
   return async function handler(req, res) {
     res.setHeader("Cache-Control", "private, no-store");
     if (req.method === "OPTIONS") return res.status(200).end();
@@ -126,7 +127,9 @@ function createHandler({ fetchImpl = global.fetch, buildContext = buildCanonical
 
     let context;
     try {
-      context = buildContext();
+      context = buildContext
+        ? await buildContext()
+        : (await canonicalContextModule).buildCanonicalLumenContext(generatedView);
     } catch {
       return res.status(503).json({ error: PUBLIC_ERROR });
     }

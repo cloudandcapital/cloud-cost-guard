@@ -43,7 +43,7 @@ describe("unified canonical Lumen grounding", () => {
       "src/components/AskClaude.jsx",
       "src/lib/lumenPresets.js",
       "src/lib/lumenContext.js",
-      "src/lib/lumenContextPortable.js",
+      "src/lib/lumenContextPortable.mjs",
       "../api/ask-claude.js",
     ];
     for (const file of files) {

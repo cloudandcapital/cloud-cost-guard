@@ -1,5 +1,3 @@
-const generatedView = require("../data/ccac-dashboard-view-v1.1.generated.json");
-
 const CCAC11_VIEW_SCHEMA = "ccg-dashboard-view/1.1.0";
 const SOURCE_REPORT_SHA256 = "5479da098b31fdf630fe3a0edc3ac67d30848185cecc61b640d998461b2f6b41";
 const FINAL_MANIFEST_SHA256 = "1919025af73e9cc4a3b5d29d21f13ad9c391e40533874b0c5cfc0325867eb632";
@@ -72,7 +70,7 @@ const finding = (record, id) => {
 };
 const unique = (records) => { const ids = new Set(); records.forEach(({ id } = {}) => { if (!id || ids.has(id)) fail("canonical IDs are missing or duplicated"); ids.add(id); }); };
 
-function createCcac11PresentationModel(view = generatedView) {
+function createCcac11PresentationModel(view) {
   object(view, "view");
   if (view.schema !== CCAC11_VIEW_SCHEMA) fail("schema mismatch");
   const identity = object(view.identity, "identity");
@@ -157,9 +155,9 @@ function createCcac11PresentationModel(view = generatedView) {
   return { schema: view.schema, identity, sourceMetadata: metadata, producers, total, reconciliation, scopes, scopeById, cloud: { total: scopes[0], daily: cloudDaily, services: cloudServices, comparison: cloudComparison }, ai: { directScope: scopes[1], domainTotal: aiDomainTotal, costMetrics: aiCostMetrics, crossDomainAdditivity: view.ai.cross_domain_additivity }, saas: { scope: scopes[2], invoices }, findings, anomalies, resilience: { classification: view.resilience.recoverability_classification, findings: resilienceFindingRaw, modeled: modeledResilience, observed: observedResilience }, opportunity: view.opportunity, unsupported };
 }
 
-function getCcac11PresentationModel() { return createCcac11PresentationModel(generatedView); }
+function getCcac11PresentationModel(view) { return createCcac11PresentationModel(view); }
 
-module.exports = {
+export {
   CCAC11_VIEW_SCHEMA,
   SOURCE_REPORT_SHA256,
   FINAL_MANIFEST_SHA256,
