@@ -79,4 +79,40 @@ describe("CCAC 1.1 React presentation model", () => {
     mutate(view);
     expect(() => createCcac11PresentationModel(view)).toThrow(CanonicalViewError);
   });
+
+  const producerNames = ["ai-cost-lens", "finops-lite", "finops-watchdog", "recovery-economics", "saas-cost-analyzer"];
+  test.each([
+    ...producerNames.map((name) => [`${name} commit`, (view) => { view.source_metadata.approved_release_provenance.producer_commits[name] = "0".repeat(40); }]),
+    ...producerNames.map((name) => [`${name} artifact hash`, (view) => { view.source_metadata.artifact_sha256s[name] = "0".repeat(64); }]),
+    ["producer name", (view) => { view.producers[0].name = "substituted-producer"; }],
+    ["producer version", (view) => { view.producers[0].version = "9.9.9"; }],
+    ["contract identity", (view) => { view.identity.contract = "ccac/1.0.0"; }],
+    ["report identity", (view) => { view.identity.report_id = "report.substituted"; }],
+    ["reporting period", (view) => { view.identity.report_period.end = "2026-07-23"; }],
+    ["catalog count", (view) => { view.source_metadata.catalog_counts.metrics += 1; }],
+    ["cloud daily ID", (view) => { view.cloud.daily[0].id = "metric.cloud.day.substituted.cost"; view.cloud.daily[0].trace.canonical_id = view.cloud.daily[0].id; }],
+    ["cloud service ID", (view) => { view.cloud.services[0].id = "metric.cloud.service.substituted.cost"; view.cloud.services[0].trace.canonical_id = view.cloud.services[0].id; }],
+    ["cloud comparison ID", (view) => { view.cloud.comparison[0].id = "metric.cloud.substituted"; view.cloud.comparison[0].trace.canonical_id = view.cloud.comparison[0].id; }],
+    ["AI metric ID", (view) => { view.ai.metrics[0].id = "metric.ai.substituted"; view.ai.metrics[0].trace.canonical_id = view.ai.metrics[0].id; }],
+    ["SaaS invoice ID", (view) => { view.saas.invoice_metrics[0].id = "metric.saas.substituted.invoice-cost"; view.saas.invoice_metrics[0].trace.canonical_id = view.saas.invoice_metrics[0].id; }],
+    ["SaaS invoice period", (view) => { view.saas.invoice_metrics[0].trace.period.end = "2026-12-02"; }],
+    ["finding ID", (view) => { view.findings[7].id = "finding.allocation.substituted"; view.findings[7].trace.canonical_id = view.findings[7].id; }],
+    ["anomaly finding ID", (view) => { view.anomalies[0].finding.id = "finding.anomaly.substituted"; view.anomalies[0].finding.trace.canonical_id = view.anomalies[0].finding.id; }],
+    ["anomaly metric ID", (view) => { view.anomalies[0].impact.id = "metric.anomaly.substituted.impact"; view.anomalies[0].impact.trace.canonical_id = view.anomalies[0].impact.id; }],
+    ["resilience finding ID", (view) => { view.resilience.findings[0].id = "finding.resilience-gap.substituted"; view.resilience.findings[0].trace.canonical_id = view.resilience.findings[0].id; }],
+    ["resilience metric ID", (view) => { view.resilience.modeled_metrics[0].id = "metric.resilience.substituted"; view.resilience.modeled_metrics[0].trace.canonical_id = view.resilience.modeled_metrics[0].id; }],
+    ["duplicate ID across collections", (view) => { view.cloud.services[0].id = view.cloud.daily[0].id; view.cloud.services[0].trace.canonical_id = view.cloud.daily[0].id; }],
+    ["Cloud alias value", (view) => { view.cloud.total.value = "1.0"; }],
+    ["Cloud alias trace", (view) => { view.cloud.total.trace.basis = "estimated"; }],
+    ["SaaS alias value", (view) => { view.saas.canonical_scope_total.value = "1.0"; }],
+    ["SaaS alias trace", (view) => { view.saas.canonical_scope_total.trace.source_artifact = "substituted.json"; }],
+    ["missing unsupported concept", (view) => { view.unsupported.pop(); }],
+    ["duplicate unsupported concept", (view) => { view.unsupported[1].concept = view.unsupported[0].concept; }],
+    ["extra unsupported concept", (view) => { view.unsupported.push({ concept: "extra", reason_code: "missing_canonical_metric", explanation: "extra" }); }],
+    ["unsupported reason code", (view) => { view.unsupported[0].reason_code = "changed"; }],
+  ])("fails closed for integrity mutation: %s", (_label, mutate) => {
+    const view = clone();
+    mutate(view);
+    expect(() => createCcac11PresentationModel(view)).toThrow(CanonicalViewError);
+  });
 });
