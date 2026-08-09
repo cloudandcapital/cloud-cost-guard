@@ -129,13 +129,23 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
     await expect(page.getByTestId("executive-summary")).toContainText("$2,939.0525");
   });
 
-  test("opens and closes canonical finding methodology", async ({ page }) => {
+  test("keeps canonical finding methodology keyboard-modal and restores focus", async ({ page }) => {
     const methodologyButtons = page.getByRole("button", { name: "Methodology" });
     expect(await methodologyButtons.count()).toBe(modelFindingCount);
-    await methodologyButtons.first().click();
+    const trigger = methodologyButtons.first();
+    await trigger.click();
     const dialog = page.getByTestId("finding-modal"); await expect(dialog).toBeVisible();
     await expect(dialog).toContainText("Canonical context"); await expect(dialog).toContainText("Evidence");
-    await dialog.getByLabel("Close").click(); await expect(dialog).toBeHidden();
+    const closeButtons = dialog.getByRole("button", { name: "Close" });
+    await expect(closeButtons).toHaveCount(2);
+    await expect(closeButtons.first()).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(closeButtons.last()).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(closeButtons.first()).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
   });
 
   test("expands and collapses the truthful review plan", async ({ page }) => {

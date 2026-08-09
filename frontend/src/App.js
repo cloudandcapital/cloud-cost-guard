@@ -55,13 +55,51 @@ const FindingCard = ({ finding, onDetails }) => (
 const ResponsiveTable = ({ children, label }) => <div className="table-scroll" role="region" aria-label={label} tabIndex="0">{children}</div>;
 
 const FindingModal = ({ finding, onClose }) => {
+  const modalRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!finding) return undefined;
+    previousFocusRef.current = document.activeElement;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = [...modalRef.current.querySelectorAll("button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])")];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [finding]);
+
   if (!finding) return null;
   return (
     <div className="modal-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="modal-card" role="dialog" aria-modal="true" aria-label={finding.title} data-testid="finding-modal">
+      <div ref={modalRef} className="modal-card" role="dialog" aria-modal="true" aria-label={finding.title} data-testid="finding-modal">
         <div className="modal-header">
           <h3 className="font-brand-serif text-xl font-semibold">{finding.title}</h3>
-          <button onClick={onClose} aria-label="Close"><X className="h-5 w-5" /></button>
+          <button ref={closeButtonRef} onClick={onClose} aria-label="Close"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-2 gap-3">
