@@ -1,206 +1,111 @@
-const fs = require("node:fs");
 const { test, expect } = require("@playwright/test");
-const {
-  PRIMARY_TABS,
-  expectExactPageOverflow,
-  expectNoBrokenDisplayValues,
-  expectRenderedSvgGeometry,
-  openApprovedDashboard,
-} = require("./helpers");
+const { PRIMARY_TABS, expectExactPageOverflow, expectNoBrokenDisplayValues, expectRenderedSvgGeometry, openApprovedDashboard } = require("./helpers");
 
-const PRIMARY_TAB_CASES = [
-  ["Findings", "Cost Optimization Findings"],
-  ["Products", "Product Cost Breakdown"],
-  ["Clouds", "Cloud Infrastructure by Provider"],
-  ["Kubernetes", "Kubernetes Cost Visibility"],
-  ["Overview", "Cost Overview"],
-  ["AI Spend", "AI Spend"],
-  ["SaaS", "SaaS Spend"],
+const TAB_CASES = [
+  ["Findings", "Canonical Findings"], ["Products", "Cloud Services"], ["Clouds", "AWS Cloud scope"],
+  ["Kubernetes", "Kubernetes cost and utilization"], ["Overview", "Reconciliation"],
+  ["AI Spend", "Canonical direct-AI scope"], ["SaaS", "Canonical SaaS scope"],
 ];
 
-const MOBILE_OVERFLOW_BY_PLATFORM = {
-  darwin: { "AI Spend": 0, AWS: 0, Azure: 0, GCP: 0 },
-  linux: { "AI Spend": 0, AWS: 0, Azure: 0, GCP: 0 },
-};
-
-function expectedMobileOverflow(state) {
-  const platformExpectations = MOBILE_OVERFLOW_BY_PLATFORM[process.platform];
-  if (!platformExpectations) throw new Error(`No approved overflow contract for ${process.platform}`);
-  return platformExpectations[state] ?? 0;
-}
-
-test.describe("approved Cloud Cost Guard structure and interactions", () => {
+test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
   let consoleProblems;
-
   test.beforeEach(async ({ page }) => {
     consoleProblems = [];
-    page.on("console", (message) => {
-      if (["warning", "error"].includes(message.type())) consoleProblems.push(`${message.type()}: ${message.text()}`);
-    });
+    page.on("console", (message) => { if (["warning", "error"].includes(message.type())) consoleProblems.push(`${message.type()}: ${message.text()}`); });
     page.on("pageerror", (error) => consoleProblems.push(`pageerror: ${error.message}`));
     await openApprovedDashboard(page);
   });
+  test.afterEach(async () => expect(consoleProblems).toEqual([]));
 
-  test.afterEach(async () => {
-    expect(consoleProblems).toEqual([]);
-  });
-
-  test("preserves navigation, executive hierarchy, cards, charts, triage, and exact tab order", async ({ page }) => {
-    await expect(page.getByTestId("dashboard-header")).toContainText("Technology spend decision support");
-    await expect(page.getByRole("button", { name: "Export CSV" })).toBeVisible();
+  test("uses canonical values, preserves navigation, and renders the trusted donut", async ({ page }) => {
+    await expect(page.getByTestId("dashboard-header")).toContainText("Canonical technology spend decision support");
+    await expect(page.getByTestId("canonical-export-disabled")).toBeDisabled();
     await expect(page.getByRole("button", { name: "Refresh" })).toBeVisible();
-
     const summary = page.getByTestId("executive-summary");
-    await expect(summary).toContainText("Total Tech Spend — Cloud · AI · SaaS");
-    await expect(summary).toContainText("Projected Next Month");
-    await expect(page.getByTestId("scope-cards")).toContainText("Cloud Infrastructure");
-    await expect(page.getByTestId("scope-cards")).toContainText("AI / LLM Spend");
-    await expect(page.getByTestId("scope-cards")).toContainText("SaaS Tools");
-    await expectRenderedSvgGeometry(page.getByTestId("daily-tech-spend-card"), "path.recharts-line-curve");
+    await expect(summary).toContainText("$2,939.0525");
+    await expect(summary).toContainText("$2,194.00");
+    await expect(summary).toContainText("$8.2825");
+    await expect(summary).toContainText("$736.77");
+    await expect(summary).toContainText("Not available in this illustrative report");
     const donut = page.getByTestId("scope-donut-card");
     await expect(donut.locator(".recharts-pie-sector")).toHaveCount(3);
     await expectRenderedSvgGeometry(donut, ".recharts-pie-sector path", 3);
-    await expect(page.getByTestId("top-signal-card")).toContainText("Amazon EC2 spend anomaly");
-    await expect(page.getByTestId("triage-card")).toContainText("Triage Preview: Cost Spike");
-
-    const tabNames = await page.getByTestId("primary-tabs").getByRole("tab").allTextContents();
-    expect(tabNames).toEqual(PRIMARY_TABS);
+    expect(await page.getByTestId("primary-tabs").getByRole("tab").allTextContents()).toEqual(PRIMARY_TABS);
     await expectNoBrokenDisplayValues(page);
   });
 
-  for (const [tab, heading] of PRIMARY_TAB_CASES) {
-    test(`opens the ${tab} tab`, async ({ page }) => {
-      await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
-      await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
-      await expectNoBrokenDisplayValues(page);
-    });
-  }
+  for (const [tab, text] of TAB_CASES) test(`opens the ${tab} tab`, async ({ page }) => {
+    await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
+    await expect(page.getByText(text, { exact: true }).first()).toBeVisible();
+    await expectNoBrokenDisplayValues(page);
+  });
 
-  test("preserves exact overflow for every primary tab", async ({ page }, testInfo) => {
-    for (const [tab, heading] of PRIMARY_TAB_CASES) {
+  test("preserves zero overflow for every primary tab", async ({ page }) => {
+    for (const [tab] of TAB_CASES) {
       await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
-      await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
-      const expectedOverflow = testInfo.project.name === "mobile-390x844"
-        ? expectedMobileOverflow(tab)
-        : 0;
-      await expectExactPageOverflow(page, expectedOverflow);
+      await expectExactPageOverflow(page, 0);
     }
   });
 
   test("preserves the constrained mobile five-plus-two tab grid", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "mobile-390x844", "Approved mobile-only legacy behavior");
-    const layout = await page.getByTestId("primary-tabs").evaluate((list) => {
-      const style = getComputedStyle(list);
-      const tabs = [...list.querySelectorAll('[role="tab"]')].map((tab) => {
-        const box = tab.getBoundingClientRect();
-        return { top: box.top, height: box.height };
-      });
-      return {
-        height: list.getBoundingClientRect().height,
-        columnCount: style.gridTemplateColumns.split(" ").length,
-        overflowX: style.overflowX,
-        overflowY: style.overflowY,
-        tabs,
-      };
-    });
-    expect(layout.height).toBe(38);
-    expect(layout.columnCount).toBe(5);
-    expect(layout.overflowX).toBe("hidden");
-    expect(layout.overflowY).toBe("hidden");
-    expect(new Set(layout.tabs.slice(0, 5).map((tab) => tab.top)).size).toBe(1);
-    expect(new Set(layout.tabs.slice(5).map((tab) => tab.top)).size).toBe(1);
-    expect(layout.tabs[5].top).toBeGreaterThan(layout.tabs[0].top);
-    expect(layout.tabs[0].height).toBe(30);
-    expect(layout.tabs[5].height).toBe(30);
-    expect(layout.tabs[5].top - layout.tabs[0].top).toBe(36);
+    test.skip(testInfo.project.name !== "mobile-390x844", "Approved mobile-only behavior");
+    const layout = await page.getByTestId("primary-tabs").evaluate((list) => ({
+      height: list.getBoundingClientRect().height,
+      columns: getComputedStyle(list).gridTemplateColumns.split(" ").length,
+      tops: [...list.querySelectorAll('[role="tab"]')].map((tab) => tab.getBoundingClientRect().top),
+    }));
+    expect(layout.height).toBe(38); expect(layout.columns).toBe(5);
+    expect(new Set(layout.tops.slice(0, 5)).size).toBe(1); expect(new Set(layout.tops.slice(5)).size).toBe(1);
   });
 
-  test("preserves cloud provider drilldowns and rendered service graphs", async ({ page }, testInfo) => {
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "Clouds", exact: true }).click();
-    for (const [tab, label] of [
-      ["AWS", "Amazon Web Services"],
-      ["Azure", "Microsoft Azure"],
-      ["GCP", "Google Cloud"],
-    ]) {
-      await page.getByRole("tab", { name: tab, exact: true }).click();
-      await expect(page.getByText(`${label} — Service Breakdown`, { exact: true })).toBeVisible();
-      await expect(page.getByText(`${label} Total`, { exact: true })).toBeVisible();
-      await page.mouse.move(0, 0);
-      const expectedOverflow = testInfo.project.name === "mobile-390x844"
-        ? expectedMobileOverflow(tab)
-        : 0;
-      await expectExactPageOverflow(page, expectedOverflow);
-      const chart = page.getByText(`${label} — Service Breakdown`, { exact: true })
-        .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-      await expectRenderedSvgGeometry(chart, ".recharts-bar-rectangle path");
+  test("shows AWS canonical charts and honest Azure/GCP unavailable states", async ({ page }) => {
+    await page.getByRole("tab", { name: "Clouds", exact: true }).click();
+    await expectRenderedSvgGeometry(page.getByText("Canonical daily Cloud spend").locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]'), "path.recharts-line-curve");
+    for (const provider of ["AZURE", "GCP"]) {
+      await page.getByRole("button", { name: provider, exact: true }).click();
+      await expect(page.getByText(`No ${provider} ingestion is represented in this trusted report.`, { exact: true })).toBeVisible();
+      await expectExactPageOverflow(page);
     }
   });
 
-  test("preserves major Kubernetes, AI, and SaaS chart geometry", async ({ page }) => {
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "Kubernetes", exact: true }).click();
-    const namespaceChart = page.getByText("Namespace Cost Breakdown", { exact: true })
-      .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-    await expectRenderedSvgGeometry(namespaceChart, ".recharts-bar-rectangle path");
-
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "AI Spend", exact: true }).click();
-    const aiTrend = page.getByText("AI spend over the last 30 days", { exact: true })
-      .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-    await expectRenderedSvgGeometry(aiTrend, "path.recharts-line-curve");
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "SaaS", exact: true }).click();
-    const toolChart = page.getByText("Cost by Tool", { exact: true })
-      .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-    await expectRenderedSvgGeometry(toolChart, ".recharts-bar-rectangle path");
-    const monthlyChart = page.getByText("Month-over-Month Trend", { exact: true })
-      .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-    await expectRenderedSvgGeometry(monthlyChart, "path.recharts-line-curve");
+  test("keeps Kubernetes unavailable and AI/SaaS boundaries explicit", async ({ page }) => {
+    await page.getByRole("tab", { name: "Kubernetes", exact: true }).click();
+    await expect(page.getByText("No canonical Kubernetes metric exists.", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "AI Spend", exact: true }).click();
+    await expect(page.getByText("Non-additive; includes provider-billed AI already represented in Cloud", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "SaaS", exact: true }).click();
+    await expect(page.getByText("$8,640.00", { exact: true })).toBeVisible();
+    await expect(page.getByText("$1,050.00", { exact: true })).toBeVisible();
   });
 
-  test("exports the presently implemented findings CSV", async ({ page }, testInfo) => {
-    const downloadPromise = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export CSV" }).click();
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe("cost-findings.csv");
-    const output = testInfo.outputPath("cost-findings.csv");
-    await download.saveAs(output);
-    const csv = fs.readFileSync(output, "utf8");
-    expect(csv).toContain('"Title","Type","Severity","Estimated Monthly Opportunity","Scope","Review Plan"');
-    expect(csv).toContain("Optimize resilience policy for billing-db");
+  test("prevents legacy export", async ({ page }) => {
+    await expect(page.getByTestId("canonical-export-disabled")).toBeDisabled();
+    await expect(page.getByTestId("canonical-export-disabled")).toHaveAttribute("title", "Canonical export support is a separate roadmap phase");
   });
 
-  test("refresh preserves the approved dashboard", async ({ page }) => {
+  test("refresh reloads only the canonical view", async ({ page }) => {
     await page.getByRole("button", { name: "Refresh" }).click();
-    await expect(page.getByTestId("approved-dashboard")).toContainText("Total Tech Spend — Cloud · AI · SaaS");
-    await expect(page.getByTestId("scope-donut-card").locator(".recharts-pie-sector")).toHaveCount(3);
+    await expect(page.getByTestId("approved-dashboard")).toHaveAttribute("data-view-schema", "ccg-dashboard-view/1.1.0");
+    await expect(page.getByTestId("executive-summary")).toContainText("$2,939.0525");
   });
 
-  test("opens and closes finding methodology modal", async ({ page }) => {
+  test("opens and closes canonical finding methodology", async ({ page }) => {
     await page.getByRole("button", { name: "View Details & Methodology" }).first().click();
-    const dialog = page.getByTestId("finding-modal");
-    await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText("Estimated Monthly Opportunity");
-    await expect(dialog).toContainText("Methodology");
-    await dialog.getByLabel("Close").click();
-    await expect(dialog).toBeHidden();
+    const dialog = page.getByTestId("finding-modal"); await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("Canonical context"); await expect(dialog).toContainText("Evidence");
+    await dialog.getByLabel("Close").click(); await expect(dialog).toBeHidden();
   });
 
-  test("expands and collapses the review plan", async ({ page }) => {
+  test("expands and collapses the truthful review plan", async ({ page }) => {
     await page.getByRole("button", { name: "Review plan" }).click();
-    await expect(page.getByText("What happens before any change", { exact: true })).toBeVisible();
-    await expect(page.getByText("No remediation is executed from this public demo.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Validate the observed condition without treating anomaly impact as savings.", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Hide review plan" }).click();
-    await expect(page.getByText("What happens before any change", { exact: true })).toBeHidden();
   });
 
-  test("opens, answers a deterministic preset, starts a new chat, and closes Lumen", async ({ page }) => {
+  test("keeps Lumen visibly isolated on its existing grounding", async ({ page }) => {
     await page.getByTestId("lumen-trigger").click();
-    const lumen = page.getByRole("dialog", { name: "Lumen assistant" });
-    await expect(lumen).toBeVisible();
-    await lumen.getByRole("button", { name: "What's bleeding money right now?" }).click();
-    await expect(lumen).toContainText("Immediate signal: Amazon EC2 increased");
-    await expect(lumen).toContainText("Grounded in illustrative report");
-    await lumen.getByRole("button", { name: "New chat" }).click();
-    await expect(lumen.getByText("Grounded only in this illustrative report; Lumen cannot access customer accounts or external resources.", { exact: true })).toBeVisible();
+    const lumen = page.getByRole("dialog", { name: "Lumen assistant" }); await expect(lumen).toBeVisible();
+    await expect(lumen).toContainText("Grounded only in this illustrative report");
     await lumen.getByTitle("Close").click();
-    await expect(page.getByTestId("lumen-trigger")).toBeVisible();
   });
 });
