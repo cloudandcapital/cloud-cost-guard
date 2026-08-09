@@ -55,7 +55,9 @@ test.describe("canonical CCAC 1.1 client-side downloads", () => {
     expect(evidence.saas.combined_invoice_total).toBeNull();
     expect(evidence.resilience.recoverability).toBe("not_demonstrated");
     expect(evidence.provenance.producers).toHaveLength(5);
-    expect(evidence.unavailable.map(({ concept }) => concept)).toEqual(expect.arrayContaining(["azure_canonical_data", "gcp_canonical_data", "kubernetes_cost_or_utilization", "next_month_forecast", "tagging_coverage", "combined_daily_technology_spend", "combined_invoices"]));
+    expect(evidence.canonical_unsupported.map(({ concept }) => concept)).toEqual(expect.arrayContaining(["kubernetes_cost_or_utilization", "next_month_forecast", "tagging_coverage", "combined_daily_technology_spend"]));
+    expect(evidence.presentation_unavailable.map(({ concept }) => concept)).toEqual(["azure_canonical_data", "gcp_canonical_data", "combined_invoices"]);
+    expect(evidence).not.toHaveProperty("unavailable");
     expect(json.bytes.toString("utf8")).not.toContain("33479.45");
     expect(await expectExactPageOverflow(page)).toEqual(expect.objectContaining({ scrollWidth: expect.any(Number) }));
 

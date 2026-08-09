@@ -121,7 +121,7 @@ function Dashboard() {
   const handleExport = (kind) => {
     setExportError("");
     try {
-      const files = buildCanonicalExportFiles(model);
+      const files = buildCanonicalExportFiles();
       downloadCanonicalExport(files[kind]);
     } catch {
       setExportError("Canonical export could not be generated safely. No file was downloaded.");
