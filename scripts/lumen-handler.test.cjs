@@ -1,10 +1,14 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const generatedView = require("../frontend/src/data/ccac-dashboard-view-v1.1.generated.json");
-const { buildCanonicalLumenContext } = require("../frontend/src/lib/lumenContextPortable");
+let buildCanonicalLumenContext;
 const { _internals } = require("../api/ask-claude.js");
 
 const originalKey = process.env.ANTHROPIC_API_KEY;
+test.before(async () => {
+  const portable = await import("../frontend/src/lib/lumenContextPortable.mjs");
+  buildCanonicalLumenContext = (view = generatedView) => portable.buildCanonicalLumenContext(view);
+});
 test.afterEach(() => {
   _internals.ipRequests.clear();
   if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY;

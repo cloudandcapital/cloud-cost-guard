@@ -70,7 +70,8 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "validate:data": "node ../scripts/validate-report.cjs",
-    "test:api": "node --test ../scripts/lumen-handler.test.cjs"
+    "test:api": "node --test ../scripts/lumen-handler.test.cjs",
+    "test:production-mount": "node --test ../scripts/production-mount.test.cjs"
   },
 
   "browserslist": {

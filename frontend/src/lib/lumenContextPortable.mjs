@@ -1,7 +1,4 @@
-const {
-  createCcac11PresentationModel,
-  getCcac11PresentationModel,
-} = require("./ccac11PresentationModelPortable");
+import { createCcac11PresentationModel } from "./ccac11PresentationModelPortable.mjs";
 
 const PRESENTATION_UNAVAILABLE = [
   { concept: "azure_canonical_data", explanation: "No Azure ingestion is represented in this trusted report.", reason_code: "not_represented_in_validated_report" },
@@ -49,9 +46,7 @@ const compactFinding = (record) => ({
 });
 
 function buildCanonicalLumenContext(view) {
-  const model = view === undefined
-    ? getCcac11PresentationModel()
-    : createCcac11PresentationModel(view);
+  const model = createCcac11PresentationModel(view);
 
   return stable({
     disclosure: {
@@ -116,7 +111,7 @@ function serializeCanonicalLumenContext(view) {
   return JSON.stringify(buildCanonicalLumenContext(view));
 }
 
-module.exports = {
+export {
   PRESENTATION_UNAVAILABLE,
   buildCanonicalLumenContext,
   serializeCanonicalLumenContext,
