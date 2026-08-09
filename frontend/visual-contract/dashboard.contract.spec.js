@@ -24,7 +24,7 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
   test("uses canonical values, preserves navigation, and renders the trusted donut", async ({ page }) => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.getByTestId("dashboard-header")).toContainText("Canonical technology spend decision support");
-    await expect(page.getByTestId("canonical-export-disabled")).toBeDisabled();
+    await expect(page.getByTestId("canonical-export-trigger")).toBeEnabled();
     await expect(page.getByRole("button", { name: "Refresh" })).toBeVisible();
     const summary = page.getByTestId("executive-summary");
     await expect(summary).toContainText("$2,939.0525");
@@ -114,9 +114,13 @@ test.describe("canonical CCAC 1.1 dashboard structure and interactions", () => {
     await expect(page.getByText("$1,050.00", { exact: true })).toBeVisible();
   });
 
-  test("prevents legacy export", async ({ page }) => {
-    await expect(page.getByTestId("canonical-export-disabled")).toBeDisabled();
-    await expect(page.getByTestId("canonical-export-disabled")).toHaveAttribute("title", "Canonical export support is a separate roadmap phase");
+  test("offers canonical exports without exposing a legacy fallback", async ({ page }) => {
+    const trigger = page.getByTestId("canonical-export-trigger");
+    await expect(trigger).toBeEnabled();
+    await trigger.click();
+    await expect(page.getByTestId("canonical-export-html")).toContainText("Self-contained printable HTML");
+    await expect(page.getByTestId("canonical-export-json")).toContainText("Deterministic machine-readable JSON");
+    await expect(page.getByText("Legacy export", { exact: true })).toHaveCount(0);
   });
 
   test("refresh reloads only the canonical view", async ({ page }) => {

@@ -31,6 +31,12 @@ test.describe("approved visual contract", () => {
     await expect(page.getByTestId("scope-donut-card")).toHaveScreenshot("scope-donut.png");
   });
 
+  test("canonical export menu open", async ({ page }) => {
+    await page.getByTestId("canonical-export-trigger").click();
+    await expect(page.getByTestId("canonical-export-menu")).toBeVisible();
+    await expect(page).toHaveScreenshot("canonical-export-menu-open.png");
+  });
+
   test("expanded triage targeted", async ({ page }) => {
     await page.getByRole("button", { name: "Review plan" }).click();
     await expect(page.getByTestId("triage-card")).toHaveScreenshot("triage-expanded.png");
