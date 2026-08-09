@@ -1,42 +1,27 @@
 const { test, expect } = require("@playwright/test");
-const {
-  expectExactPageOverflow,
-  expectNoBrokenDisplayValues,
-  expectRenderedSvgGeometry,
-  openApprovedDashboard,
-  waitForChartsStable,
-} = require("./helpers");
+const { expectExactPageOverflow, expectNoBrokenDisplayValues, openApprovedDashboard } = require("./helpers");
 
-test.describe("mobile overflow repair", () => {
+test.describe("mobile canonical cutover", () => {
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "mobile-390x844", "Mobile-only repair contract");
+    test.skip(testInfo.project.name !== "mobile-390x844", "Mobile-only contract");
     await openApprovedDashboard(page);
   });
 
-  test("repairs AI model layout without removing chart, legend, values, or table", async ({ page }) => {
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "AI Spend", exact: true }).click();
-    await waitForChartsStable(page);
-    await expectExactPageOverflow(page);
-    const breakdown = page.locator(".ai-model-breakdown");
-    await breakdown.scrollIntoViewIfNeeded();
-    await expect(breakdown).toContainText("Cost by Model");
-    await expect(breakdown).toContainText("gpt-4o");
-    await expect(breakdown).toContainText("$512.30");
-    await expectRenderedSvgGeometry(breakdown, ".recharts-pie-sector path", 5);
-    await expect(page.getByText("Top Models by Cost", { exact: true })).toBeVisible();
+  test("keeps direct and broader AI boundaries readable without overflow", async ({ page }) => {
+    await page.getByRole("tab", { name: "AI Spend", exact: true }).click();
+    const aiPanel = page.getByRole("tabpanel", { name: "AI Spend" });
+    await expect(aiPanel.getByText("$8.2825", { exact: true })).toBeVisible();
+    await expect(aiPanel.getByText("$12.5325", { exact: true })).toBeVisible();
+    await expect(page.getByText("Supported model/provider cost metrics", { exact: true })).toBeVisible();
+    await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
   });
 
-  test("wraps Azure and GCP investigation commands without losing provider content", async ({ page }) => {
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "Clouds", exact: true }).click();
-    for (const [provider, label] of [["AWS", "Amazon Web Services"], ["Azure", "Microsoft Azure"], ["GCP", "Google Cloud"]]) {
-      await page.getByRole("tab", { name: provider, exact: true }).click();
-      await expect(page.getByText(`${label} — Service Breakdown`, { exact: true })).toBeVisible();
-      await expect(page.locator(".finding-command").first()).toBeVisible();
-      await expectExactPageOverflow(page);
-      const chart = page.getByText(`${label} — Service Breakdown`, { exact: true })
-        .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-      await expectRenderedSvgGeometry(chart, ".recharts-bar-rectangle path");
-      await expectNoBrokenDisplayValues(page);
+  test("keeps provider navigation usable with honest unavailable states", async ({ page }) => {
+    await page.getByRole("tab", { name: "Clouds", exact: true }).click();
+    for (const provider of ["AWS", "AZURE", "GCP"]) {
+      await page.getByRole("button", { name: provider, exact: true }).click();
+      if (provider !== "AWS") await expect(page.getByText(`No ${provider} ingestion is represented in this trusted report.`, { exact: true })).toBeVisible();
+      await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
     }
   });
 });

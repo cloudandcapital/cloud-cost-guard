@@ -176,13 +176,43 @@ h1{ font-weight:600; } h2{ font-weight:600; }
 /* Use the same serif as the header title when needed */
 .font-brand-serif{ font-family: "Playfair Display", Georgia, "Times New Roman", serif; }
 
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(47, 42, 36, 0.52);
+}
+.modal-card{
+  width: min(672px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border: 1px solid #E7DCCF;
+  border-radius: 16px;
+  background: #FFFFFF;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-header{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 /* -------------------------------------------------- */
 /* Tabs                                               */
 /* -------------------------------------------------- */
 .ccg-tabs{
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  height: 38px;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  height: 38px !important;
   align-items: center;
   gap: 6px;
   padding: 2px;
@@ -212,10 +242,11 @@ h1{ font-weight:600; } h2{ font-weight:600; }
   box-shadow: inset 0 0 0 2px #8B6F47;
 }
 @media (min-width: 768px){
-  .ccg-tabs{ height: 40px; padding: 2px; }
+  .ccg-tabs{ height: 40px !important; padding: 2px; }
 }
 
 @media (max-width: 767px){
+  .ccg-tabs{ grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .ai-model-breakdown__content{ gap: 12px; }
   .ai-model-breakdown__chart{
     flex: 1 1 55%;

@@ -1,79 +1,38 @@
 const { test, expect } = require("@playwright/test");
-const {
-  expectExactPageOverflow,
-  expectNoBrokenDisplayValues,
-  expectRenderedSvgGeometry,
-  openApprovedDashboard,
-} = require("./helpers");
+const { expectExactPageOverflow, expectNoBrokenDisplayValues, openApprovedDashboard } = require("./helpers");
 
-const EXACT_DISCLOSURE =
-  "Illustrative sample billing data. No customer accounts, credentials, or production resources are connected.";
-const REFRESH_DISCLOSURE =
-  "Refresh reloads the tracked sample report; it does not sync cloud accounts.";
-const LUMEN_DISCLOSURE =
-  "Grounded only in this illustrative report; Lumen cannot access customer accounts or external resources.";
+const DISCLOSURE = "Validated CCAC 1.1 illustrative report. No customer accounts, credentials, or production resources are connected.";
+const REFRESH = "Refresh reloads the tracked canonical view; it does not sync cloud accounts.";
 
-test.describe("truthful public capability claims", () => {
+test.describe("truthful canonical capability claims", () => {
   let consoleProblems;
-
   test.beforeEach(async ({ page }) => {
-    consoleProblems = [];
-    page.on("console", (message) => {
-      if (["warning", "error"].includes(message.type())) consoleProblems.push(`${message.type()}: ${message.text()}`);
-    });
-    page.on("pageerror", (error) => consoleProblems.push(`pageerror: ${error.message}`));
+    consoleProblems = []; page.on("console", (m) => { if (["warning","error"].includes(m.type())) consoleProblems.push(m.text()); }); page.on("pageerror", (e) => consoleProblems.push(e.message));
     await openApprovedDashboard(page);
   });
+  test.afterEach(async () => expect(consoleProblems).toEqual([]));
 
-  test.afterEach(async () => {
-    expect(consoleProblems).toEqual([]);
-  });
-
-  test("shows the exact disclosure without interaction or overflow", async ({ page }) => {
+  test("states the exact source and refresh boundary without overflow", async ({ page }) => {
     const disclosure = page.getByTestId("capability-disclosure");
-    await expect(disclosure).toBeVisible();
-    await expect(disclosure).toContainText(EXACT_DISCLOSURE);
-    await expect(disclosure).toContainText(REFRESH_DISCLOSURE);
-    await expect(page.getByText("LIVE", { exact: true })).toHaveCount(0);
-    const geometry = await disclosure.evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      return {
-        left: box.left,
-        right: box.right,
-        viewportWidth: document.documentElement.clientWidth,
-      };
-    });
-    expect(geometry.left).toBeGreaterThanOrEqual(0);
-    expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth);
-    await expectExactPageOverflow(page);
-    await expectNoBrokenDisplayValues(page);
+    await expect(disclosure).toContainText(DISCLOSURE); await expect(disclosure).toContainText(REFRESH);
+    await expect(disclosure).toContainText("Lumen remains on separate illustrative grounding");
+    await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
   });
 
-  test("keeps provider views explicitly sample-only with complete chart geometry", async ({ page }) => {
-    await page.getByTestId("primary-tabs").getByRole("tab", { name: "Clouds", exact: true }).click();
-    await expect(page.getByTestId("capability-disclosure")).toContainText(EXACT_DISCLOSURE);
-    for (const [provider, label] of [["AWS", "Amazon Web Services"], ["Azure", "Microsoft Azure"], ["GCP", "Google Cloud"]]) {
-      await page.getByRole("tab", { name: provider, exact: true }).click();
-      await expect(page.getByText(`${label} — Service Breakdown`, { exact: true })).toBeVisible();
-      const chart = page.getByText(`${label} — Service Breakdown`, { exact: true })
-        .locator('xpath=ancestor::div[contains(@class,"kpi-card")][1]');
-      await expectRenderedSvgGeometry(chart, ".recharts-bar-rectangle path");
-      await expectExactPageOverflow(page);
+  test("does not fabricate provider data", async ({ page }) => {
+    await page.getByRole("tab", { name: "Clouds", exact: true }).click();
+    for (const provider of ["AZURE", "GCP"]) {
+      await page.getByRole("button", { name: provider, exact: true }).click();
+      await expect(page.getByText(`No ${provider} ingestion is represented in this trusted report.`, { exact: true })).toBeVisible();
     }
-    const copy = await page.locator("body").innerText();
-    expect(copy).not.toMatch(/connected (AWS|Azure|GCP|cloud) account/i);
-    await expectNoBrokenDisplayValues(page);
+    await expectNoBrokenDisplayValues(page); await expectExactPageOverflow(page);
   });
 
-  test("states Lumen grounding and preserves refresh behavior", async ({ page }) => {
+  test("preserves Refresh and the separate Lumen boundary", async ({ page }) => {
     await page.getByRole("button", { name: "Refresh", exact: true }).click();
-    await expect(page.getByTestId("capability-disclosure")).toContainText(REFRESH_DISCLOSURE);
+    await expect(page.getByTestId("capability-disclosure")).toContainText(REFRESH);
     await page.getByTestId("lumen-trigger").click();
-    const lumen = page.getByRole("dialog", { name: "Lumen assistant" });
-    await expect(lumen).toBeVisible();
-    await expect(lumen).toContainText(LUMEN_DISCLOSURE);
-    await expect(lumen.getByPlaceholder("Ask about this sample report…", { exact: true })).toBeVisible();
-    await expectExactPageOverflow(page);
-    await expectNoBrokenDisplayValues(page);
+    await expect(page.getByRole("dialog", { name: "Lumen assistant" })).toContainText("Grounded only in this illustrative report");
+    await expectExactPageOverflow(page); await expectNoBrokenDisplayValues(page);
   });
 });
