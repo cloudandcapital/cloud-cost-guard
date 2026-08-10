@@ -1,15 +1,14 @@
 # Cloud Cost Guard
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Multi-cloud](https://img.shields.io/badge/cloud-AWS%20%7C%20Azure%20%7C%20GCP-orange)](https://github.com/cloudandcapital/cloud-cost-guard)
-[![Kubernetes](https://img.shields.io/badge/K8s-cost%20visibility-326CE5)](https://github.com/cloudandcapital/cloud-cost-guard)
-[![SaaS](https://img.shields.io/badge/SaaS-spend%20tracking-blueviolet)](https://github.com/cloudandcapital/cloud-cost-guard)
-[![AI for FinOps](https://img.shields.io/badge/AI-Lumen%20%2B%20MCP-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![CCAC](https://img.shields.io/badge/CCAC-1.1-6b8f71)](https://github.com/cloudandcapital/cloud-capital-analysis-contract)
+[![Read only](https://img.shields.io/badge/actions-read--only-8B6F47)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![AI for FinOps](https://img.shields.io/badge/AI-Lumen-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
 [![Demo data](https://img.shields.io/badge/data-illustrative%20demo-8B6F47)](https://github.com/cloudandcapital/cloud-cost-guard)
 
-**A finance-first decision dashboard for cloud, Kubernetes, AI, and SaaS spend, with Lumen and MCP support.**
+**A finance-first, read-only decision dashboard for validated Cloud, direct-AI, and SaaS spend, with explicit coverage boundaries and canonical Lumen explanations.**
 
-[**Live Demo →**](https://guard.cloudandcapital.com) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
+[**Live Demo →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
 ---
 
@@ -18,14 +17,14 @@
 The public application uses one deterministic tracked sample report so every total, period, chart, and finding can be inspected. Refresh reloads that tracked report; it does not synchronize a cloud account or billing export.
 
 **Features:**
-- Multi-cloud cost dashboard — AWS, Azure, GCP with per-cloud service breakdowns
-- Kubernetes visibility with namespace spend, node pool efficiency, and an explicit non-additive cloud allocation treatment
-- AI spend visibility by provider and model
-- SaaS spend and license utilization visibility
-- Lumen analysis grounded in the trusted illustrative report
-- MCP tools for local exploration in compatible AI assistants
-- Reviewable findings with evidence, confidence, risk, read-only investigation commands, and estimated opportunities
-- Reference billing connectors for AWS, Azure, GCP, and Kubernetes development
+- Exact, reconciled Technology Spend across canonical Cloud, direct-AI, and SaaS scopes
+- AWS service and daily Cloud evidence; Azure, GCP, and Kubernetes remain explicitly unavailable in the validated report
+- Direct-AI detail plus a separately labeled, non-additive broader-AI analysis
+- Same-period SaaS scope with annual and quarterly invoice evidence kept separate
+- Reviewable diagnostic findings with producer, quality, evidence, and methodology traceability
+- Deterministic HTML and JSON canonical exports generated locally in the browser
+- Lumen presets and free-form explanations grounded in the same validated CCAC 1.1 presentation model
+- Explicit unsupported registries, read-only triage, and human-review requirements
 
 ---
 
@@ -33,7 +32,7 @@ The public application uses one deterministic tracked sample report so every tot
 
 | Tool | Role |
 |------|------|
-| **Cloud Cost Guard** | Dashboard — unified view of all spend scopes |
+| **Cloud Cost Guard** | Read-only presentation, canonical exports, and Lumen explanations |
 | [FinOps Lite](https://github.com/cloudandcapital/finops-lite) | Cost pull — AWS/Azure/GCP with FOCUS 2026 export |
 | [FinOps Watchdog](https://github.com/cloudandcapital/finops-watchdog) | Anomaly detection — baseline-aware spend spikes |
 | [Recovery Economics](https://github.com/cloudandcapital/recovery-economics) | Resilience modeling — backup and restore costs |
@@ -76,9 +75,9 @@ The example values are safe development defaults or unmistakable placeholders, n
 
 ---
 
-## MCP Server (Claude Code / Cursor)
+## Reference MCP Server (Separate Demo Path)
 
-Cloud Cost Guard ships an MCP server that exposes Lumen's FinOps tools directly inside your AI coding assistant.
+Cloud Cost Guard includes a reference MCP server for local exploration in compatible AI assistants. It is not the grounding path used by the public dashboard or its production Lumen API, and its synthetic helper dataset must not be mixed with the validated CCAC 1.1 presentation model.
 
 ```bash
 pip install mcp
