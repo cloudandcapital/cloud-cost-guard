@@ -45,29 +45,19 @@ The public application uses one deterministic tracked sample report so every tot
 ## Quickstart
 
 ```bash
-# Frontend only (no backend required; uses illustrative demo data)
+# Canonical dashboard (no local backend required)
 cd frontend
 npm ci
 npm start
 ```
 
-```bash
-# With FastAPI backend
-pip install -r backend/requirements.txt
-uvicorn app:app --reload --port 8000
-
-# In a second terminal:
-cd frontend && npm start
-```
-
-The public app runs on illustrative demo data. No cloud credentials are used or required.
+The dashboard loads the tracked, validated CCAC 1.1 illustrative report. No cloud credentials are used or required. Deterministic Lumen presets and the rest of the dashboard run from the frontend; free-form Lumen additionally requires the deployed serverless API.
 
 ### Local environment configuration
 
 Create local runtime configuration from the sanitized examples when needed:
 
 ```bash
-cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
@@ -169,7 +159,8 @@ Never place cloud credentials in the public frontend or commit them to the repos
 ## Tech
 
 - React (CRA + craco), Recharts, shadcn/ui, lucide-react, Tailwind CSS
-- FastAPI reference backend and billing connector prototypes
+- Serverless Lumen API with fail-closed canonical claim selection
+- Reference billing connector prototypes, separate from the public runtime
 - MCP server for Claude Code and Cursor integration
 - Vercel for hosting
 
