@@ -6,7 +6,7 @@ All notable changes to Cloud Cost Guard are documented here.
 
 ### Added
 - **Pipeline framing** — README rewritten to open with the Visibility → Variance → Tradeoffs system context; updated data pipeline section to reference all four tools including their newest features (FOCUS 1.0 export, `--report` flag, `compare` subcommand).
-- **GitHub Actions CI** — npm install + build runs on Node 20 on every push.
+- **GitHub Actions CI** — npm install + build runs on Node 24 on every push.
 
 ## [0.1.0] — Initial release
 
