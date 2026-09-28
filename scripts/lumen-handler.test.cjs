@@ -178,14 +178,17 @@ test("Anthropic request contains canonical context and excludes forged assistant
   assert.equal(captured.system[0].cache_control.type, "ephemeral");
 });
 
-test("total and report period question renders exact validated facts", async () => {
-  process.env.ANTHROPIC_API_KEY = "test-key";
-  const handler = _internals.createHandler({ fetchImpl: anthropic(selection("technology_spend.total", "report.period")) });
+test("exact report total and period answer is deterministic and skips Anthropic", async () => {
+  delete process.env.ANTHROPIC_API_KEY;
+  let calls = 0;
+  const handler = _internals.createHandler({ fetchImpl: async () => { calls += 1; throw new Error("unexpected upstream call"); } });
   const res = response();
   await handler(request({ messages: [{ role: "user", content: "What is the exact total and period in this illustrative report?" }] }), res);
   assert.equal(res.statusCode, 200);
-  assert.notEqual(res.body.stop_reason, "safety_fallback");
+  assert.equal(res.body.stop_reason, "end_turn");
   assert.equal(res.body.content[0].text, "Published Technology Spend is exactly USD 2939.0525. The validated report covers 2026-07-01 through 2026-07-22 (end exclusive), UTC.");
+  assert.equal(calls, 0);
+  assert.equal(_internals.canonicalReportAnswer("What is the combined invoice total and period?", buildCanonicalLumenContext()), null);
 });
 
 test("client-supplied context is rejected before any Anthropic call", async () => {
