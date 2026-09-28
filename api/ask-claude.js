@@ -58,6 +58,7 @@ function buildLumenClaimCatalog(context) {
   const unavailable = (concept, label) => `${label} is unavailable. ${unsupported[concept].explanation} Reason: ${unsupported[concept].reason_code}.`;
   return Object.freeze({
     "technology_spend.total": `Published Technology Spend is exactly USD ${context.technology_spend.total.value}.`,
+    "report.period": `The validated report covers ${context.identity.report_period.start} through ${context.identity.report_period.end} (end exclusive), ${context.identity.report_period.timezone}.`,
     "technology_spend.scopes": `Cloud is USD ${scope.cloud.value}, direct AI is USD ${scope.direct_ai.value}, and SaaS is USD ${scope.saas.value}.`,
     "technology_spend.reconciliation": `Reconciliation ${context.technology_spend.reconciliation.status} with exact difference USD ${context.technology_spend.reconciliation.difference}.`,
     "anomaly.primary_diagnostic": `The primary anomaly has expected cost USD ${anomaly.expected.value}, observed cost USD ${anomaly.observed.value}, and diagnostic impact USD ${anomaly.impact.value}. The impact is not savings, avoidable cost, waste, or a realized result.`,
