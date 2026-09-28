@@ -46,6 +46,7 @@ test("server context is built from the authoritative CCAC 1.1 selector", () => {
   assert.equal(context.identity.contract, "ccac/1.1.0");
   assert.equal(context.identity.source_report_sha256, "5479da098b31fdf630fe3a0edc3ac67d30848185cecc61b640d998461b2f6b41");
   assert.equal(context.technology_spend.total.value, "2939.0525");
+  assert.deepEqual(context.identity.report_period, { start: "2026-07-01", end: "2026-07-22", timezone: "UTC" });
   assert.deepEqual(context.technology_spend.scopes.map(({ value }) => value), ["2194.0", "8.2825", "736.77"]);
   assert.equal(context.ai.broader_domain_total.value, "12.5325");
   assert.equal(context.ai.broader_domain_additivity, "non_additive");
@@ -141,6 +142,7 @@ test("rejects malformed selections, unknown IDs, duplicate IDs, extra keys, bloc
 test("approved positive classifications remain available as deterministic catalog claims", () => {
   const catalog = _internals.buildLumenClaimCatalog(buildCanonicalLumenContext());
   assert.match(catalog["technology_spend.total"], /USD 2939\.0525/);
+  assert.equal(catalog["report.period"], "The validated report covers 2026-07-01 through 2026-07-22 (end exclusive), UTC.");
   assert.match(catalog["anomaly.primary_diagnostic"], /diagnostic impact USD 51\.8.*not savings, avoidable cost, waste, or a realized result/);
   assert.match(catalog["ai.direct_and_broader"], /USD 8\.2825.*USD 12\.5325.*non-additive/);
   assert.match(catalog["saas.separate_invoices"], /annual.*USD 8640\.0.*quarterly.*USD 1050\.0.*periods remain separate/);
@@ -174,6 +176,16 @@ test("Anthropic request contains canonical context and excludes forged assistant
   assert.match(prompt, /review\.human_boundary/);
   assert.doesNotMatch(prompt, /USD 9999|33479\.45|projected_next_month/);
   assert.equal(captured.system[0].cache_control.type, "ephemeral");
+});
+
+test("total and report period question renders exact validated facts", async () => {
+  process.env.ANTHROPIC_API_KEY = "test-key";
+  const handler = _internals.createHandler({ fetchImpl: anthropic(selection("technology_spend.total", "report.period")) });
+  const res = response();
+  await handler(request({ messages: [{ role: "user", content: "What is the exact total and period in this illustrative report?" }] }), res);
+  assert.equal(res.statusCode, 200);
+  assert.notEqual(res.body.stop_reason, "safety_fallback");
+  assert.equal(res.body.content[0].text, "Published Technology Spend is exactly USD 2939.0525. The validated report covers 2026-07-01 through 2026-07-22 (end exclusive), UTC.");
 });
 
 test("client-supplied context is rejected before any Anthropic call", async () => {
