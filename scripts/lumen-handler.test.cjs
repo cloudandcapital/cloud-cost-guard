@@ -278,6 +278,7 @@ test("unsafe Claude output returns the documented grounded fallback", async () =
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.stop_reason, "safety_fallback");
   assert.equal(res.body.source, "safety_fallback");
+  assert.equal(res.headers["X-Lumen-Fallback-Reason"], "malformed_structure");
   assert.equal(res.body.content[0].text, _internals.SAFETY_FALLBACK);
   assert.doesNotMatch(res.body.content[0].text, /9999|raw|exception/i);
 });
