@@ -213,6 +213,26 @@ test("action capability questions get a direct read-only answer without Anthropi
   assert.equal(_internals.canonicalReportAnswer("What should I review before canceling a subscription?", buildCanonicalLumenContext()), null);
 });
 
+test("a bounded EC2 anomaly evidence question returns the canonical finding without upstream", async () => {
+  delete process.env.ANTHROPIC_API_KEY;
+  let calls = 0;
+  const handler = _internals.createHandler({ fetchImpl: async () => { calls += 1; throw new Error("unexpected upstream call"); } });
+  for (const question of ["Explain the EC2 anomaly and its evidence.", "What is the AmazonEC2 finding?"]) {
+    const res = response();
+    await handler(request({ messages: [{ role: "user", content: question }] }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.source, "deterministic");
+    assert.match(res.body.content[0].text, /USD 70\.7.*USD 122\.5.*USD 51\.8/);
+    assert.match(res.body.content[0].text, /finding\.anomaly\./);
+    assert.match(res.body.content[0].text, /evidence\.finops-watchdog\.input-result.*finops-watchdog\.json/);
+    assert.match(res.body.content[0].text, /not savings.*not its root cause/);
+  }
+  assert.equal(calls, 0);
+  for (const question of ["Why did the EC2 anomaly happen?", "What savings will the EC2 anomaly deliver?", "Explain the EC2 forecast evidence."]) {
+    assert.equal(_internals.canonicalReportAnswer(question, buildCanonicalLumenContext()), null);
+  }
+});
+
 test("client-supplied context is rejected before any Anthropic call", async () => {
   process.env.ANTHROPIC_API_KEY = "test-key";
   let calls = 0;

@@ -25,7 +25,7 @@ const MAX_MESSAGES = 20;
 const ipRequests = new Map();
 
 const RATE_LIMIT_MESSAGE = "Cloud Cost Guard's public demo is limited to 10 Lumen questions per hour. Please come back soon.";
-const SAFETY_FALLBACK = "I couldn't return that explanation because it introduced a claim outside the validated CCAC 1.1 report. The report remains illustrative and read-only; ask me to explain a specific canonical finding, metric, or unavailable boundary.";
+const SAFETY_FALLBACK = "I couldn't safely validate that explanation against the CCAC 1.1 report. The report remains illustrative and read-only; try a specific canonical finding, metric, or unavailable boundary.";
 const PUBLIC_ERROR = "Lumen is temporarily unavailable.";
 
 function checkRateLimit(ip) {
@@ -53,6 +53,7 @@ function sanitizeMessages(messages) {
 function buildLumenClaimCatalog(context) {
   const scope = Object.fromEntries(context.technology_spend.scopes.map((item) => [item.dimensions.scope, item]));
   const anomaly = context.anomalies[0];
+  const anomalyFinding = context.findings.find((finding) => finding.id === anomaly.finding_id);
   const [annualInvoice, quarterlyInvoice] = context.saas.invoice_metrics;
   const unsupported = Object.fromEntries(context.canonical_unsupported.map((item) => [item.concept, item]));
   const unavailable = (concept, label) => `${label} is unavailable. ${unsupported[concept].explanation} Reason: ${unsupported[concept].reason_code}.`;
@@ -62,6 +63,7 @@ function buildLumenClaimCatalog(context) {
     "technology_spend.scopes": `Cloud is USD ${scope.cloud.value}, direct AI is USD ${scope.direct_ai.value}, and SaaS is USD ${scope.saas.value}.`,
     "technology_spend.reconciliation": `Reconciliation ${context.technology_spend.reconciliation.status} with exact difference USD ${context.technology_spend.reconciliation.difference}.`,
     "anomaly.primary_diagnostic": `The primary anomaly has expected cost USD ${anomaly.expected.value}, observed cost USD ${anomaly.observed.value}, and diagnostic impact USD ${anomaly.impact.value}. The impact is not savings, avoidable cost, waste, or a realized result.`,
+    "anomaly.primary_evidence": `The ${anomalyFinding.title} finding is dated ${anomaly.observed.dimensions.date}. Canonical finding ID: ${anomalyFinding.id}. Evidence ID: ${anomalyFinding.evidence_ids.join(", ")}. Producer: ${anomalyFinding.producer.name} ${anomalyFinding.producer.version}; source artifact: ${anomalyFinding.trace.source_artifact}. The expected cost uses ${anomaly.expected.trace.formula}. This evidence identifies a spend increase, not its root cause.`,
     "ai.direct_and_broader": `Direct AI is USD ${context.ai.direct_scope.value}. Broader AI is USD ${context.ai.broader_domain_total.value} and is explicitly non-additive. ROI and business-value evidence are unavailable.`,
     "saas.separate_invoices": `The annual SaaS invoice is USD ${annualInvoice.value}; the quarterly SaaS invoice is USD ${quarterlyInvoice.value}. Their periods remain separate and no combined invoice total is published.`,
     "forecast.unavailable": unavailable("next_month_forecast", "No canonical forecast"),
@@ -109,6 +111,12 @@ function canonicalReportAnswer(question, context) {
   const claims = buildLumenClaimCatalog(context);
   if (normalized === "what is the exact total and period in this illustrative report") {
     return `${claims["technology_spend.total"]} ${claims["report.period"]}`;
+  }
+  if (/^(?:explain|describe|show|what is|what's|tell me about)\b/.test(normalized)
+    && /\b(?:ec2|amazonec2)\b/.test(normalized)
+    && /\b(?:anomaly|finding|evidence)\b/.test(normalized)
+    && !/\b(?:forecast|predict|next month|save|savings|cut|cancel|resize|why|cause)\b/.test(normalized)) {
+    return `${claims["anomaly.primary_diagnostic"]} ${claims["anomaly.primary_evidence"]}`;
   }
   if (/^(?:can|could|will|would) (?:you|lumen) (?:please )?(?:cancel|terminate|delete|resize|shut down|stop|change|modify)\b/.test(normalized)
     && /\b(?:saas|subscription|license|ec2|instance|resource|cloud account)\b/.test(normalized)) {

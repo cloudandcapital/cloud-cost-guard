@@ -14,6 +14,8 @@ describe("validated CCAC 1.1 Lumen preset responses", () => {
   });
 
   test("labels deterministic and Claude responses accurately", () => {
+    expect(getLumenFooterLabel([])).toBe("Validated CCAC 1.1 illustrative report");
+    expect(getLumenFooterLabel([{ role: "user", content: "Question" }])).toBe("Validated CCAC 1.1 illustrative report");
     expect(getLumenFooterLabel([{ role: "assistant", source: "preset" }])).toBe("Deterministic · Validated CCAC 1.1");
     expect(getLumenFooterLabel([{ role: "assistant", source: "deterministic" }])).toBe("Deterministic · Validated CCAC 1.1");
     expect(getLumenFooterLabel([{ role: "assistant", source: "claude" }])).toBe("Claude explanation · Validated CCAC 1.1");
