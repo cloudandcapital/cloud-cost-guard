@@ -98,8 +98,6 @@ function inspectLumenOutput(data, context) {
   if (!Array.isArray(data.content) || data.content.length !== 1 || data.content[0]?.type !== "text" || typeof data.content[0].text !== "string") {
     return { safe: false, reason: "unexpected_content" };
   }
-  const expectedUpstreamKeys = new Set(["content", "stop_reason", "stop_sequence", "id", "type", "role", "model", "usage"]);
-  if (Object.keys(data).some((key) => !expectedUpstreamKeys.has(key))) return { safe: false, reason: "unexpected_metadata" };
   if (data.stop_sequence != null || (data.stop_reason && data.stop_reason !== "end_turn")) return { safe: false, reason: "incomplete_or_refused" };
   let selection;
   try {
@@ -193,7 +191,6 @@ function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
       if (!response.ok) return res.status(response.status >= 400 && response.status < 500 ? response.status : 503).json({ error: PUBLIC_ERROR });
       const data = await response.json();
       const inspection = inspectLumenOutput(data, context);
-      if (!inspection.safe) res.setHeader("X-Lumen-Fallback-Reason", inspection.reason);
       return res.status(200).json(inspection.safe ? safeContent(inspection.text, data.stop_reason || "end_turn", "claude") : safeContent(SAFETY_FALLBACK, "safety_fallback", "safety_fallback"));
     } catch {
       return res.status(500).json({ error: PUBLIC_ERROR });

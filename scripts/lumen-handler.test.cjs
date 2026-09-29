@@ -129,7 +129,7 @@ for (const [label, text] of [
   });
 }
 
-test("rejects malformed selections, unknown IDs, duplicate IDs, extra keys, blocks, and upstream metadata", () => {
+test("rejects malformed selections, unknown IDs, duplicate IDs, extra selection keys, and content blocks", () => {
   const context = buildCanonicalLumenContext();
   const cases = [
     null,
@@ -143,7 +143,6 @@ test("rejects malformed selections, unknown IDs, duplicate IDs, extra keys, bloc
     { content: [{ type: "text", text: selection("technology_spend.total", "technology_spend.total") }] },
     { content: [{ type: "text", text: JSON.stringify({ claim_ids: ["technology_spend.total"], explanation: "trust me" }) }] },
     { content: [{ type: "text", text: selection("technology_spend.total") }, { type: "text", text: "extra" }] },
-    { unexpected_financial_claim: "9999", content: [{ type: "text", text: selection("technology_spend.total") }] },
   ];
   for (const value of cases) assert.equal(_internals.inspectLumenOutput(value, context).safe, false);
 });
@@ -278,14 +277,13 @@ test("unsafe Claude output returns the documented grounded fallback", async () =
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.stop_reason, "safety_fallback");
   assert.equal(res.body.source, "safety_fallback");
-  assert.equal(res.headers["X-Lumen-Fallback-Reason"], "malformed_structure");
   assert.equal(res.body.content[0].text, _internals.SAFETY_FALLBACK);
   assert.doesNotMatch(res.body.content[0].text, /9999|raw|exception/i);
 });
 
-test("valid claim selection is rendered without upstream metadata", async () => {
+test("valid claim selection ignores extra upstream metadata and renders only server-owned claims", async () => {
   process.env.ANTHROPIC_API_KEY = "test-key";
-  const handler = _internals.createHandler({ fetchImpl: anthropic("unused", { data: { id: "secret-upstream-id", type: "message", role: "assistant", model: "test", usage: { input_tokens: 999 }, stop_reason: "end_turn", content: [{ type: "text", text: selection("ai.direct_and_broader", "review.human_boundary") }] } }) });
+  const handler = _internals.createHandler({ fetchImpl: anthropic("unused", { data: { id: "secret-upstream-id", type: "message", role: "assistant", model: "test", usage: { input_tokens: 999 }, new_metadata: { secret: "never-forward" }, stop_reason: "end_turn", content: [{ type: "text", text: selection("ai.direct_and_broader", "review.human_boundary") }] } }) });
   const res = response();
   await handler(request(), res);
   assert.equal(res.statusCode, 200);
@@ -293,12 +291,13 @@ test("valid claim selection is rendered without upstream metadata", async () => 
   assert.match(res.body.content[0].text, /human approval/);
   assert.equal(res.body.id, undefined);
   assert.equal(res.body.usage, undefined);
+  assert.equal(res.body.new_metadata, undefined);
+  assert.doesNotMatch(JSON.stringify(res.body), /never-forward|secret-upstream-id/);
 });
 
-test("unexpected upstream metadata and content blocks return the deterministic fallback", async () => {
+test("unexpected upstream content blocks still return the deterministic fallback", async () => {
   process.env.ANTHROPIC_API_KEY = "test-key";
   for (const data of [
-    { unexpected_financial_claim: "9999", content: [{ type: "text", text: selection("technology_spend.total") }] },
     { content: [{ type: "text", text: selection("technology_spend.total") }, { type: "tool_use", id: "x" }] },
     { content: [{ type: "image", source: {} }] },
   ]) {
