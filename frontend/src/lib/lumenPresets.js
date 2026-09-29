@@ -51,7 +51,9 @@ export function getLumenFooterLabel(messages) {
     .slice()
     .reverse()
     .find((message) => message.role === "assistant");
-  return lastAssistant?.source === "preset"
-    ? "Deterministic · Validated CCAC 1.1"
-    : "Claude explanation · Validated CCAC 1.1";
+  if (lastAssistant?.source === "preset" || lastAssistant?.source === "deterministic") {
+    return "Deterministic · Validated CCAC 1.1";
+  }
+  if (lastAssistant?.source === "safety_fallback") return "Validated safety response · CCAC 1.1";
+  return "Claude explanation · Validated CCAC 1.1";
 }

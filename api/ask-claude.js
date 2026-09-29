@@ -72,6 +72,7 @@ function buildLumenClaimCatalog(context) {
     "savings.unavailable": `${unsupported.verified_savings.explanation} ${unsupported.realized_savings.explanation}`,
     "recoverability.not_demonstrated": `Recoverability is ${context.resilience.recoverability.replaceAll("_", " ")}. Modeled resilience and observed restore-test evidence remain separate.`,
     "review.human_boundary": "A review recommendation must retain ownership validation, human approval, rollback planning, and post-change verification. Lumen cannot perform or confirm external changes.",
+    "action.read_only": "I cannot cancel SaaS subscriptions, resize EC2 instances, or make external changes. This illustrative report has no customer account access. I can explain its evidence for human review; any external change requires ownership validation, approval, rollback planning, and post-change verification.",
     "source.illustrative": "This is a validated CCAC 1.1 illustrative report. No customer accounts, credentials, external resources, or live billing systems are connected.",
   });
 }
@@ -105,13 +106,19 @@ function inspectLumenOutput(data, context) {
 
 function canonicalReportAnswer(question, context) {
   const normalized = question.trim().toLowerCase().replace(/[?.!]+$/, "");
-  if (normalized !== "what is the exact total and period in this illustrative report") return null;
   const claims = buildLumenClaimCatalog(context);
-  return `${claims["technology_spend.total"]} ${claims["report.period"]}`;
+  if (normalized === "what is the exact total and period in this illustrative report") {
+    return `${claims["technology_spend.total"]} ${claims["report.period"]}`;
+  }
+  if (/^(?:can|could|will|would) (?:you|lumen) (?:please )?(?:cancel|terminate|delete|resize|shut down|stop|change|modify)\b/.test(normalized)
+    && /\b(?:saas|subscription|license|ec2|instance|resource|cloud account)\b/.test(normalized)) {
+    return claims["action.read_only"];
+  }
+  return null;
 }
 
-function safeContent(text, stopReason) {
-  return { content: [{ type: "text", text }], stop_reason: stopReason };
+function safeContent(text, stopReason, source) {
+  return { content: [{ type: "text", text }], stop_reason: stopReason, source };
 }
 
 function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
@@ -142,7 +149,7 @@ function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
       return res.status(503).json({ error: PUBLIC_ERROR });
     }
     const canonicalAnswer = canonicalReportAnswer(safeMessages.at(-1).content, context);
-    if (canonicalAnswer) return res.status(200).json(safeContent(canonicalAnswer, "end_turn"));
+    if (canonicalAnswer) return res.status(200).json(safeContent(canonicalAnswer, "end_turn", "deterministic"));
     if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: PUBLIC_ERROR });
 
     const claimCatalog = buildLumenClaimCatalog(context);
@@ -162,7 +169,7 @@ function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
       if (!response.ok) return res.status(response.status >= 400 && response.status < 500 ? response.status : 503).json({ error: PUBLIC_ERROR });
       const data = await response.json();
       const inspection = inspectLumenOutput(data, context);
-      return res.status(200).json(inspection.safe ? safeContent(inspection.text, data.stop_reason || "end_turn") : safeContent(SAFETY_FALLBACK, "safety_fallback"));
+      return res.status(200).json(inspection.safe ? safeContent(inspection.text, data.stop_reason || "end_turn", "claude") : safeContent(SAFETY_FALLBACK, "safety_fallback", "safety_fallback"));
     } catch {
       return res.status(500).json({ error: PUBLIC_ERROR });
     }

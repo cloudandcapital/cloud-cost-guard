@@ -60,10 +60,17 @@ const presentationUnavailable = [
   { concept: "combined_invoices", explanation: "Annual and quarterly invoice records cover incompatible periods; no canonical combined invoice metric exists.", reason_code: "missing_canonical_metric" },
 ];
 
+// The August 4 source report predates Lumen's grounding in this dashboard.
+// Keep its hash and fixture intact, but do not present that old status as current.
+const supersededLumenDisclosure = "Cloud Cost Guard is not connected, and Lumen is not grounded in this report.";
+
 const assembleCanonicalEvidencePackage = (model) => {
   return stable({
     schema: EXPORT_SCHEMA,
-    identity: canonical(model.identity),
+    identity: canonical({
+      ...model.identity,
+      disclosures: model.identity.disclosures.filter((item) => item !== supersededLumenDisclosure),
+    }),
     disclosures: [
       "Illustrative data only; no customer systems, accounts, credentials, or production resources are connected.",
       "This package was generated client-side from the validated CCAC 1.1 presentation model and was not uploaded or transmitted.",
@@ -77,6 +84,7 @@ const assembleCanonicalEvidencePackage = (model) => {
       run_id: model.identity.run_id,
       generated_at: model.identity.generated_at,
       source_report_sha256: model.identity.source_report_sha256,
+      disclosure_projection: "The source report's generation-time Lumen status is omitted from current export disclosures; its source hash is unchanged.",
       source_metadata: canonical(model.sourceMetadata),
       producers: canonical(model.producers),
     },
