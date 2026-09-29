@@ -186,9 +186,31 @@ test("exact report total and period answer is deterministic and skips Anthropic"
   await handler(request({ messages: [{ role: "user", content: "What is the exact total and period in this illustrative report?" }] }), res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.stop_reason, "end_turn");
+  assert.equal(res.body.source, "deterministic");
   assert.equal(res.body.content[0].text, "Published Technology Spend is exactly USD 2939.0525. The validated report covers 2026-07-01 through 2026-07-22 (end exclusive), UTC.");
   assert.equal(calls, 0);
   assert.equal(_internals.canonicalReportAnswer("What is the combined invoice total and period?", buildCanonicalLumenContext()), null);
+});
+
+test("action capability questions get a direct read-only answer without Anthropic", async () => {
+  delete process.env.ANTHROPIC_API_KEY;
+  let calls = 0;
+  const handler = _internals.createHandler({ fetchImpl: async () => { calls += 1; throw new Error("unexpected upstream call"); } });
+  for (const question of [
+    "Can you cancel my SaaS subscriptions or resize an EC2 instance for me?",
+    "Could you resize an EC2 instance?",
+    "Will Lumen cancel a subscription?",
+  ]) {
+    const res = response();
+    await handler(request({ messages: [{ role: "user", content: question }] }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.source, "deterministic");
+    assert.match(res.body.content[0].text, /cannot cancel SaaS subscriptions, resize EC2 instances, or make external changes/);
+    assert.match(res.body.content[0].text, /approval, rollback planning, and post-change verification/);
+    assert.doesNotMatch(res.body.content[0].text, /USD 51\.8|realized savings/);
+  }
+  assert.equal(calls, 0);
+  assert.equal(_internals.canonicalReportAnswer("What should I review before canceling a subscription?", buildCanonicalLumenContext()), null);
 });
 
 test("client-supplied context is rejected before any Anthropic call", async () => {
@@ -221,6 +243,7 @@ test("unsafe Claude output returns the documented grounded fallback", async () =
   await handler(request(), res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.stop_reason, "safety_fallback");
+  assert.equal(res.body.source, "safety_fallback");
   assert.equal(res.body.content[0].text, _internals.SAFETY_FALLBACK);
   assert.doesNotMatch(res.body.content[0].text, /9999|raw|exception/i);
 });

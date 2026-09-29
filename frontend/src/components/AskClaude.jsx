@@ -109,7 +109,7 @@ const AskClaude = () => {
         ? data.content.find((b) => b.type === "text")
         : null;
       const reply = textBlock?.text || "(No response)";
-      setMessages([...nextMessages, { role: "assistant", content: reply, source: "claude" }]);
+      setMessages([...nextMessages, { role: "assistant", content: reply, source: data.source }]);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {

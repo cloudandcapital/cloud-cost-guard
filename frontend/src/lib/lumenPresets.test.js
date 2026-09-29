@@ -15,7 +15,9 @@ describe("validated CCAC 1.1 Lumen preset responses", () => {
 
   test("labels deterministic and Claude responses accurately", () => {
     expect(getLumenFooterLabel([{ role: "assistant", source: "preset" }])).toBe("Deterministic · Validated CCAC 1.1");
+    expect(getLumenFooterLabel([{ role: "assistant", source: "deterministic" }])).toBe("Deterministic · Validated CCAC 1.1");
     expect(getLumenFooterLabel([{ role: "assistant", source: "claude" }])).toBe("Claude explanation · Validated CCAC 1.1");
+    expect(getLumenFooterLabel([{ role: "assistant", source: "safety_fallback" }])).toBe("Validated safety response · CCAC 1.1");
   });
 
   test.each(SAMPLE_QUESTIONS)("%s contains no legacy or unsafe capability language", (question) => {

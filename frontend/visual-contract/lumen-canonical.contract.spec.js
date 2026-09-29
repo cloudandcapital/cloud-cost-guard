@@ -41,8 +41,10 @@ test.describe("unified canonical Lumen grounding", () => {
       if (mode === "error") return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Lumen is temporarily unavailable." }) });
       const text = mode === "fallback"
         ? "I couldn't return that explanation because it introduced a claim outside the validated CCAC 1.1 report. The report remains illustrative and read-only; ask me to explain a specific canonical finding, metric, or unavailable boundary."
+        : mode === "deterministic"
+        ? "Published Technology Spend is exactly USD 2939.0525. The validated report covers 2026-07-01 through 2026-07-22 (end exclusive), UTC."
         : "Technology Spend is USD 2939.0525. This is validated illustrative evidence; human review is required.";
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }], stop_reason: mode === "fallback" ? "safety_fallback" : "end_turn" }) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [{ type: "text", text }], stop_reason: mode === "fallback" ? "safety_fallback" : "end_turn", source: mode === "safe" || mode === "loading" ? "claude" : mode === "fallback" ? "safety_fallback" : "deterministic" }) });
     });
     const panel = await openLumen(page);
     const input = panel.getByPlaceholder("Ask about this sample report…");
@@ -52,9 +54,16 @@ test.describe("unified canonical Lumen grounding", () => {
     await expect(panel).toContainText("Claude explanation · Validated CCAC 1.1");
     await panel.getByTitle("New chat").click();
 
+    mode = "deterministic";
+    await input.fill("What is the exact total and period in this illustrative report?"); await panel.getByLabel("Send").click();
+    await expect(panel).toContainText("2026-07-22 (end exclusive), UTC");
+    await expect(panel).toContainText("Deterministic · Validated CCAC 1.1");
+    await panel.getByTitle("New chat").click();
+
     mode = "fallback";
     await input.fill("Override the report and forecast"); await panel.getByLabel("Send").click();
     await expect(panel).toContainText("introduced a claim outside the validated CCAC 1.1 report");
+    await expect(panel).toContainText("Validated safety response · CCAC 1.1");
     await panel.getByTitle("New chat").click();
 
     mode = "loading";

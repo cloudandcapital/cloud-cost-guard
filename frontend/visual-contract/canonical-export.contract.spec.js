@@ -55,6 +55,8 @@ test.describe("canonical CCAC 1.1 client-side downloads", () => {
     expect(evidence.saas.combined_invoice_total).toBeNull();
     expect(evidence.resilience.recoverability).toBe("not_demonstrated");
     expect(evidence.provenance.producers).toHaveLength(5);
+    expect(evidence.identity.disclosures).not.toContain("Cloud Cost Guard is not connected, and Lumen is not grounded in this report.");
+    expect(evidence.disclosures).toContain("Lumen remains separately grounded and is not a source for this export.");
     expect(evidence.canonical_unsupported.map(({ concept }) => concept)).toEqual(expect.arrayContaining(["kubernetes_cost_or_utilization", "next_month_forecast", "tagging_coverage", "combined_daily_technology_spend"]));
     expect(evidence.presentation_unavailable.map(({ concept }) => concept)).toEqual(["azure_canonical_data", "gcp_canonical_data", "combined_invoices"]);
     expect(evidence).not.toHaveProperty("unavailable");

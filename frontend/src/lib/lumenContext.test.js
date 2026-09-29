@@ -30,12 +30,13 @@ describe("unified canonical Lumen grounding", () => {
     expect(JSON.stringify(context)).not.toContain("displayValue");
   });
 
-  test("PR #15 export bytes remain exactly approved", () => {
+  test("HTML export remains approved and JSON authority projection is deterministic", () => {
     const files = buildCanonicalExportFiles();
     expect(Buffer.byteLength(files.html.content, "utf8")).toBe(26623);
     expect(sha256(files.html.content)).toBe("408b03ac3ce5a6a981575bf6e2a28a22033577183cafbcd3bdd90550922a428c");
-    expect(Buffer.byteLength(files.json.content, "utf8")).toBe(113115);
-    expect(sha256(files.json.content)).toBe("46c9b1b6a41960a479159ce111ee034d81ead4174c65341349fd0dd12e74f0f7");
+    expect(Buffer.byteLength(files.json.content, "utf8")).toBe(113184);
+    expect(sha256(files.json.content)).toBe("de21282dec52da9c450b2da00c53ab2148f720cae136f31ccdc1fa57f8db24d0");
+    expect(files.json.content).not.toContain("Lumen is not grounded in this report");
   });
 
   test("no Lumen runtime module imports or requires legacy report data", () => {
