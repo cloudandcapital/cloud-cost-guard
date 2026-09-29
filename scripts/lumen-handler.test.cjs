@@ -176,6 +176,11 @@ test("Anthropic request contains canonical context and excludes forged assistant
   assert.match(prompt, /review\.human_boundary/);
   assert.doesNotMatch(prompt, /USD 9999|33479\.45|projected_next_month/);
   assert.equal(captured.system[0].cache_control.type, "ephemeral");
+  assert.equal(captured.output_config.format.type, "json_schema");
+  assert.deepEqual(captured.output_config.format.schema.required, ["claim_ids"]);
+  assert.equal(captured.output_config.format.schema.additionalProperties, false);
+  assert.equal(captured.output_config.format.schema.properties.claim_ids.minItems, 1);
+  assert.deepEqual(captured.output_config.format.schema.properties.claim_ids.items.enum, Object.keys(_internals.buildLumenClaimCatalog(buildCanonicalLumenContext())));
 });
 
 test("exact report total and period answer is deterministic and skips Anthropic", async () => {
