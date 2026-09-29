@@ -193,6 +193,7 @@ function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
       if (!response.ok) return res.status(response.status >= 400 && response.status < 500 ? response.status : 503).json({ error: PUBLIC_ERROR });
       const data = await response.json();
       const inspection = inspectLumenOutput(data, context);
+      if (!inspection.safe) res.setHeader("X-Lumen-Fallback-Reason", inspection.reason);
       return res.status(200).json(inspection.safe ? safeContent(inspection.text, data.stop_reason || "end_turn", "claude") : safeContent(SAFETY_FALLBACK, "safety_fallback", "safety_fallback"));
     } catch {
       return res.status(500).json({ error: PUBLIC_ERROR });
