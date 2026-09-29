@@ -154,7 +154,7 @@ test("approved positive classifications remain available as deterministic catalo
   assert.match(catalog["anomaly.primary_diagnostic"], /diagnostic impact USD 51\.8.*not savings, avoidable cost, waste, or a realized result/);
   assert.match(catalog["ai.direct_and_broader"], /USD 8\.2825.*USD 12\.5325.*non-additive/);
   assert.match(catalog["saas.separate_invoices"], /annual.*USD 8640\.0.*quarterly.*USD 1050\.0.*periods remain separate/);
-  assert.match(catalog["forecast.unavailable"], /No canonical forecast.*unavailable/);
+  assert.match(catalog["forecast.unavailable"], /^Next-month forecast is unavailable\. No canonical forecast metric exists\. Reason: missing_canonical_metric\.$/);
   assert.match(catalog["tagging.unavailable"], /Tagging coverage is unavailable/);
   assert.match(catalog["recoverability.not_demonstrated"], /Recoverability is not demonstrated/);
   assert.match(catalog["review.human_boundary"], /ownership validation, human approval, rollback planning, and post-change verification/);

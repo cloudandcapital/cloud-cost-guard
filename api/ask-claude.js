@@ -66,7 +66,7 @@ function buildLumenClaimCatalog(context) {
     "anomaly.primary_evidence": `The ${anomalyFinding.title} finding is dated ${anomaly.observed.dimensions.date}. Canonical finding ID: ${anomalyFinding.id}. Evidence ID: ${anomalyFinding.evidence_ids.join(", ")}. Producer: ${anomalyFinding.producer.name} ${anomalyFinding.producer.version}; source artifact: ${anomalyFinding.trace.source_artifact}. The expected cost uses ${anomaly.expected.trace.formula}. This evidence identifies a spend increase, not its root cause.`,
     "ai.direct_and_broader": `Direct AI is USD ${context.ai.direct_scope.value}. Broader AI is USD ${context.ai.broader_domain_total.value} and is explicitly non-additive. ROI and business-value evidence are unavailable.`,
     "saas.separate_invoices": `The annual SaaS invoice is USD ${annualInvoice.value}; the quarterly SaaS invoice is USD ${quarterlyInvoice.value}. Their periods remain separate and no combined invoice total is published.`,
-    "forecast.unavailable": unavailable("next_month_forecast", "No canonical forecast"),
+    "forecast.unavailable": unavailable("next_month_forecast", "Next-month forecast"),
     "tagging.unavailable": unavailable("tagging_coverage", "Tagging coverage"),
     "kubernetes.unavailable": unavailable("kubernetes_cost_or_utilization", "Kubernetes cost and utilization"),
     "azure.unavailable": "Azure financial data is unavailable in this illustrative report.",
