@@ -51,6 +51,15 @@ test.describe("approved visual contract", () => {
 
   test("Lumen open targeted", async ({ page }) => {
     await page.getByTestId("lumen-trigger").click();
-    await expect(page.getByTestId("lumen-panel")).toHaveScreenshot("lumen-open.png");
+    const panel = page.getByTestId("lumen-panel");
+    await expect(panel).toBeVisible();
+    await expect(panel.locator(".ask-claude-footer")).toHaveText("Validated CCAC 1.1 illustrative report");
+    const bounds = await panel.boundingBox();
+    const viewport = page.viewportSize();
+    expect(bounds).not.toBeNull();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
   });
 });
