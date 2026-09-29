@@ -98,8 +98,9 @@ function inspectLumenOutput(data, context) {
   if (!Array.isArray(data.content) || data.content.length !== 1 || data.content[0]?.type !== "text" || typeof data.content[0].text !== "string") {
     return { safe: false, reason: "unexpected_content" };
   }
-  const expectedUpstreamKeys = new Set(["content", "stop_reason", "id", "type", "role", "model", "usage"]);
+  const expectedUpstreamKeys = new Set(["content", "stop_reason", "stop_sequence", "id", "type", "role", "model", "usage"]);
   if (Object.keys(data).some((key) => !expectedUpstreamKeys.has(key))) return { safe: false, reason: "unexpected_metadata" };
+  if (data.stop_sequence != null || (data.stop_reason && data.stop_reason !== "end_turn")) return { safe: false, reason: "incomplete_or_refused" };
   let selection;
   try {
     selection = JSON.parse(data.content[0].text);
