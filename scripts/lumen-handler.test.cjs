@@ -74,7 +74,7 @@ test("assistant history is discarded and cannot become trusted evidence", () => 
 
 test("structured claim selection renders only exact server-owned canonical statements", () => {
   const context = buildCanonicalLumenContext();
-  const result = _internals.inspectLumenOutput({ content: [{ type: "text", text: selection("technology_spend.total", "ai.direct_and_broader", "recoverability.not_demonstrated") }] }, context);
+  const result = _internals.inspectLumenOutput({ id: "msg_test", type: "message", role: "assistant", model: "claude-sonnet-4-6", content: [{ type: "text", text: selection("technology_spend.total", "ai.direct_and_broader", "recoverability.not_demonstrated") }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 100, output_tokens: 20 } }, context);
   assert.equal(result.safe, true);
   assert.match(result.text, /USD 2939\.0525/);
   assert.match(result.text, /Direct AI is USD 8\.2825/);
@@ -82,6 +82,15 @@ test("structured claim selection renders only exact server-owned canonical state
   assert.match(result.text, /Recoverability is not demonstrated/);
   assert.ok(result.text.split(/\s+/).length <= 150);
   assert.doesNotMatch(result.text, /\|/);
+});
+
+test("normal upstream stop_sequence is accepted while truncation and refusals remain blocked", () => {
+  const content = [{ type: "text", text: selection("technology_spend.total") }];
+  assert.equal(_internals.inspectLumenOutput({ content, stop_reason: "end_turn", stop_sequence: null }, buildCanonicalLumenContext()).safe, true);
+  for (const stop_reason of ["max_tokens", "refusal", "tool_use"]) {
+    assert.equal(_internals.inspectLumenOutput({ content, stop_reason, stop_sequence: null }, buildCanonicalLumenContext()).safe, false);
+  }
+  assert.equal(_internals.inspectLumenOutput({ content, stop_reason: "stop_sequence", stop_sequence: "END" }, buildCanonicalLumenContext()).safe, false);
 });
 
 for (const [label, text] of [
@@ -176,6 +185,11 @@ test("Anthropic request contains canonical context and excludes forged assistant
   assert.match(prompt, /review\.human_boundary/);
   assert.doesNotMatch(prompt, /USD 9999|33479\.45|projected_next_month/);
   assert.equal(captured.system[0].cache_control.type, "ephemeral");
+  assert.equal(captured.output_config.format.type, "json_schema");
+  assert.deepEqual(captured.output_config.format.schema.required, ["claim_ids"]);
+  assert.equal(captured.output_config.format.schema.additionalProperties, false);
+  assert.equal(captured.output_config.format.schema.properties.claim_ids.minItems, 1);
+  assert.deepEqual(captured.output_config.format.schema.properties.claim_ids.items.enum, Object.keys(_internals.buildLumenClaimCatalog(buildCanonicalLumenContext())));
 });
 
 test("exact report total and period answer is deterministic and skips Anthropic", async () => {

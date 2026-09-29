@@ -79,13 +79,28 @@ function buildLumenClaimCatalog(context) {
   });
 }
 
+function claimSelectionFormat(catalog) {
+  return {
+    type: "json_schema",
+    schema: {
+      type: "object",
+      properties: {
+        claim_ids: { type: "array", minItems: 1, items: { type: "string", enum: Object.keys(catalog) } },
+      },
+      required: ["claim_ids"],
+      additionalProperties: false,
+    },
+  };
+}
+
 function inspectLumenOutput(data, context) {
   if (!data || typeof data !== "object" || Array.isArray(data)) return { safe: false, reason: "non_object_output" };
   if (!Array.isArray(data.content) || data.content.length !== 1 || data.content[0]?.type !== "text" || typeof data.content[0].text !== "string") {
     return { safe: false, reason: "unexpected_content" };
   }
-  const expectedUpstreamKeys = new Set(["content", "stop_reason", "id", "type", "role", "model", "usage"]);
+  const expectedUpstreamKeys = new Set(["content", "stop_reason", "stop_sequence", "id", "type", "role", "model", "usage"]);
   if (Object.keys(data).some((key) => !expectedUpstreamKeys.has(key))) return { safe: false, reason: "unexpected_metadata" };
+  if (data.stop_sequence != null || (data.stop_reason && data.stop_reason !== "end_turn")) return { safe: false, reason: "incomplete_or_refused" };
   let selection;
   try {
     selection = JSON.parse(data.content[0].text);
@@ -164,6 +179,7 @@ function createHandler({ fetchImpl = global.fetch, buildContext } = {}) {
     const requestBody = {
       model: "claude-sonnet-4-6",
       max_tokens: 500,
+      output_config: { format: claimSelectionFormat(claimCatalog) },
       system: [{ type: "text", text: LUMEN_SYSTEM + JSON.stringify({ context, claim_catalog: claimCatalog }), cache_control: { type: "ephemeral" } }],
       messages: safeMessages,
     };
@@ -194,6 +210,7 @@ module.exports._internals = {
   checkRateLimit,
   sanitizeMessages,
   buildLumenClaimCatalog,
+  claimSelectionFormat,
   canonicalReportAnswer,
   inspectLumenOutput,
   createHandler,
