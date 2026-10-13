@@ -30,6 +30,7 @@ test.describe("unified canonical Lumen grounding", () => {
       for (const text of expected) await expect(panel).toContainText(text);
       const announcement = panel.getByRole("status");
       await expect(announcement).toContainText("Lumen answer:");
+      await expect(announcement).not.toContainText("**");
       for (const text of expected) await expect(announcement).toContainText(text);
       await panel.getByTitle("New chat").click();
       await expect(announcement).toBeEmpty();
