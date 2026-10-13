@@ -34,6 +34,19 @@ test.describe("unified canonical Lumen grounding", () => {
     await expectExactPageOverflow(page);
   });
 
+  test("names the Lumen question and contains keyboard focus", async ({ page }) => {
+    const panel = await openLumen(page);
+    const input = panel.getByRole("textbox", { name: "Ask Lumen about this sample report" });
+    await expect(input).toBeFocused();
+    await input.press("Tab");
+    await expect(panel.getByRole("button", { name: "Close" })).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(input).toBeFocused();
+    await input.press("Escape");
+    await expect(panel).toHaveCount(0);
+    await expect(page.getByTestId("lumen-trigger")).toBeFocused();
+  });
+
   test("renders safe free-form, safety-fallback, loading, and public error states", async ({ page }) => {
     let mode = "safe";
     await page.route("**/api/ask-claude", async (route) => {
