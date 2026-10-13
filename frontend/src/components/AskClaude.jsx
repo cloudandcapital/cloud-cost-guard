@@ -62,6 +62,9 @@ const AskClaude = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const panelRef = useRef(null);
+  const triggerRef = useRef(null);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,6 +72,8 @@ const AskClaude = () => {
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
+    else if (wasOpenRef.current) triggerRef.current?.focus();
+    wasOpenRef.current = open;
   }, [open]);
 
   const sendMessage = async (text) => {
@@ -124,6 +129,28 @@ const AskClaude = () => {
     }
   };
 
+  const handlePanelKeyDown = (e) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      setOpen(false);
+      return;
+    }
+    if (e.key !== "Tab") return;
+
+    const focusable = [...panelRef.current.querySelectorAll("button:not([disabled]), input:not([disabled])")]
+      .filter((element) => element.getClientRects().length > 0);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   if (!LUMEN_ENABLED) {
     return (
       <p className="ask-claude-unavailable">Lumen unavailable</p>
@@ -134,7 +161,7 @@ const AskClaude = () => {
     <>
       {/* Floating trigger button */}
       {!open && (
-        <button className="ask-claude-btn" onClick={() => setOpen(true)} aria-label="Open Lumen" data-testid="lumen-trigger">
+        <button ref={triggerRef} className="ask-claude-btn" onClick={() => setOpen(true)} aria-label="Open Lumen" data-testid="lumen-trigger">
           <span className="ask-claude-sparkle" aria-hidden="true">✦</span>
           Lumen
         </button>
@@ -150,10 +177,13 @@ const AskClaude = () => {
       )}
 
       {/* Slide-in panel */}
-      <div
-        className={`ask-claude-panel${open ? " ask-claude-panel--open" : ""}`}
+      {open && <div
+        ref={panelRef}
+        className="ask-claude-panel ask-claude-panel--open"
         role="dialog"
         aria-label="Lumen assistant"
+        aria-modal="true"
+        onKeyDown={handlePanelKeyDown}
         data-testid="lumen-panel"
       >
         {/* Header */}
@@ -238,6 +268,7 @@ const AskClaude = () => {
             type="text"
             className="ask-claude-input"
             placeholder="Ask about this sample report…"
+            aria-label="Ask Lumen about this sample report"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -257,7 +288,7 @@ const AskClaude = () => {
         <div className="ask-claude-footer">
           {getLumenFooterLabel(messages)}
         </div>
-      </div>
+      </div>}
     </>
   );
 };
