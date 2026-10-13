@@ -54,6 +54,15 @@ const renderMessage = (text) => parseLumenMessage(text).map((block, index) => {
   return <p className="lumen-paragraph" key={`paragraph-${index}`}>{renderRuns(block.runs, `paragraph-${index}`)}</p>;
 });
 
+const toSpokenText = (text) => {
+  const flattenRuns = (runs) => runs.map((run) => run.text).join("");
+  return parseLumenMessage(text).flatMap((block) => {
+    if (block.type === "list") return block.items.map(flattenRuns);
+    if (block.type === "table") return block.rows.map((row) => row.map((field) => `${flattenRuns(field.label)}: ${flattenRuns(field.value)}`).join(", "));
+    return [flattenRuns(block.runs)];
+  }).join(" ");
+};
+
 const AskClaude = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -91,7 +100,7 @@ const AskClaude = () => {
     const presetReply = buildPresetLumenResponse(trimmed);
     if (presetReply) {
       setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
-      setAnnouncement(`Lumen answer: ${presetReply}`);
+      setAnnouncement(`Lumen answer: ${toSpokenText(presetReply)}`);
       return;
     }
 
@@ -119,7 +128,7 @@ const AskClaude = () => {
         : null;
       const reply = textBlock?.text || "(No response)";
       setMessages([...nextMessages, { role: "assistant", content: reply, source: data.source }]);
-      setAnnouncement(`Lumen answer: ${reply}`);
+      setAnnouncement(`Lumen answer: ${toSpokenText(reply)}`);
     } catch (err) {
       const message = err.message || "Something went wrong. Please try again.";
       setError(message);
