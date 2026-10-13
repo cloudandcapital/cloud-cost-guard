@@ -60,6 +60,7 @@ const AskClaude = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [announcement, setAnnouncement] = useState("");
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const panelRef = useRef(null);
@@ -85,14 +86,17 @@ const AskClaude = () => {
     setMessages(nextMessages);
     setInput("");
     setError(null);
+    setAnnouncement("");
 
     const presetReply = buildPresetLumenResponse(trimmed);
     if (presetReply) {
       setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
+      setAnnouncement(`Lumen answer: ${presetReply}`);
       return;
     }
 
     setLoading(true);
+    setAnnouncement("Lumen is preparing an answer.");
 
     try {
       const res = await fetch("/api/ask-claude", {
@@ -115,8 +119,11 @@ const AskClaude = () => {
         : null;
       const reply = textBlock?.text || "(No response)";
       setMessages([...nextMessages, { role: "assistant", content: reply, source: data.source }]);
+      setAnnouncement(`Lumen answer: ${reply}`);
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      const message = err.message || "Something went wrong. Please try again.";
+      setError(message);
+      setAnnouncement(`Lumen error: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -199,7 +206,7 @@ const AskClaude = () => {
             {messages.length > 0 && (
               <button
                 className="ask-claude-icon-btn"
-                onClick={() => setMessages([])}
+                onClick={() => { setMessages([]); setAnnouncement(""); }}
                 title="New chat"
                 style={{ fontSize: 10, padding: "3px 7px", borderRadius: 4, color: "#9B8E83" }}
               >
@@ -214,6 +221,17 @@ const AskClaude = () => {
               <CloseIcon />
             </button>
           </div>
+        </div>
+
+        {/* Persistent live region announces new responses without moving keyboard focus. */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="lumen-announcement"
+          style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}
+        >
+          {announcement}
         </div>
 
         {/* Messages area */}
