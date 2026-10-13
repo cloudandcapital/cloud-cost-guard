@@ -28,7 +28,11 @@ test.describe("unified canonical Lumen grounding", () => {
     for (const [question, expected] of cases) {
       await panel.getByRole("button", { name: question, exact: true }).click();
       for (const text of expected) await expect(panel).toContainText(text);
+      const announcement = panel.getByRole("status");
+      await expect(announcement).toContainText("Lumen answer:");
+      for (const text of expected) await expect(announcement).toContainText(text);
       await panel.getByTitle("New chat").click();
+      await expect(announcement).toBeEmpty();
       await expect(panel.getByRole("button", { name: question, exact: true })).toBeVisible();
     }
     await expectExactPageOverflow(page);
@@ -65,6 +69,7 @@ test.describe("unified canonical Lumen grounding", () => {
 
     await input.fill("Explain the validated total"); await panel.getByLabel("Send").click();
     await expect(panel).toContainText("Technology Spend is USD 2939.0525");
+    await expect(panel.getByRole("status")).toContainText("Lumen answer: Technology Spend is USD 2939.0525");
     await expect(panel).toContainText("Claude explanation · Validated CCAC 1.1");
     await panel.getByTitle("New chat").click();
 
@@ -83,12 +88,14 @@ test.describe("unified canonical Lumen grounding", () => {
     mode = "loading";
     await input.fill("Explain provenance"); await panel.getByLabel("Send").click();
     await expect(panel.locator(".ask-claude-typing")).toBeVisible();
+    await expect(panel.getByRole("status")).toHaveText("Lumen is preparing an answer.");
     await expect(panel).toContainText("Technology Spend is USD 2939.0525");
     await panel.getByTitle("New chat").click();
 
     mode = "error";
     await input.fill("Explain the source hash"); await panel.getByLabel("Send").click();
     await expect(panel).toContainText("Lumen is temporarily unavailable.");
+    await expect(panel.getByRole("status")).toHaveText("Lumen error: Lumen is temporarily unavailable.");
     await expectExactPageOverflow(page);
   });
 });
