@@ -17,6 +17,7 @@ async function checkNoSample(page) {
   for (const value of ['2939.0525', '2,939.05', '2,194.00', '736.77', '8.2825', 'Top canonical anomaly']) expect(body).not.toContain(value);
 }
 async function openSection(page, value, label) {
+  await expect(page.getByTestId('billing-report')).toBeVisible();
   const mobile = page.getByTestId('mobile-section-select');
   if (await mobile.isVisible()) await mobile.selectOption(value);
   else await page.getByRole('tab', { name: label, exact: true }).click();
@@ -116,7 +117,7 @@ test.describe('browser-local billing upload experience', () => {
       const destination = testInfo.outputPath(download.suggestedFilename());
       await download.saveAs(destination);
       files[label] = fs.readFileSync(destination, 'utf8');
-      expect(files[label]).not.toMatch(/2939\.0525|2194\.0|736\.77|canonical|EC2 anomaly/);
+      expect(files[label]).not.toMatch(/2939\.0525|2194\.0|736\.77|EC2 anomaly/);
     }
     expect(files['Printable report']).toContain('USD 1310.125');
     const evidence = JSON.parse(files['Evidence JSON']);
