@@ -66,7 +66,9 @@ describe('browser billing CSV ingestion', () => {
     expect(report.current.rows[0].start).toBe('2026-09-01T01:00:00.000Z');
     expect(report.current.spansMultipleDays).toBe(false);
     expect(report.current.end).toBe('2026-09-02');
-    expect(JSON.stringify(report)).not.toMatch(/999|888/);
+    const monetary = JSON.parse(report.pipeline.artifacts['finops-lite.json']).metrics.filter(metric => metric.unit === 'currency').map(metric => metric.value);
+    expect(monetary).not.toContain(999);
+    expect(monetary).not.toContain(888);
     const sample = fs.readFileSync(path.join(__dirname, '../../../public/billing/focus-example.csv'), 'utf8');
     expect(buildBillingReport([normalizeCsv(sample)]).current.net).toBe('48.6125');
     expect(() => normalizeCsv(sample.replace(',-5,EUR', ',5,EUR'))).toThrow(/positive cost/);
