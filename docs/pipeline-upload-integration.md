@@ -54,7 +54,7 @@ never borrows example claims or invokes the sample-only Anthropic API.
 
 ## Review and verification
 
-Companion draft PRs own the new adapters:
+The adapters were reviewed and merged in:
 
 - [FinOps Lite #19](https://github.com/cloudandcapital/finops-lite/pull/19)
 - [Watchdog #8](https://github.com/cloudandcapital/finops-watchdog/pull/8)
@@ -76,6 +76,5 @@ invalid files, credits, currency, duplicates, replacement/clear, worker
 cancellation, switching examples, and desktop/mobile layout. The approved
 illustrative run retains its original exact pins and validation/grounding tests.
 
-Keep all changes in draft until review and Diana's release approval. Coordinate
-Guard's production release with the homepage's 'Upload your cloud billing export'
-promise; do not merge or publish either half independently.
+The public billing upload uses these pinned revisions. Review their source hashes
+and the production upload flow again whenever the vendor snapshots change.
