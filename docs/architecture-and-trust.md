@@ -1,6 +1,6 @@
 # Architecture and trust boundaries
 
-Cloud Cost Guard is the read-only presentation layer for a deterministic Technology Spend evidence pipeline. The public application uses a tracked illustrative dataset; it does not connect to customer accounts, credentials, production resources, or live billing systems.
+Cloud Cost Guard has a browser-local billing CSV review and a separate optional CCAC illustrative dashboard. Neither connects to cloud accounts, credentials, production resources, or live billing systems. The [billing upload architecture and rules](billing-upload.md) describe the main flow. The sections below describe the preserved CCAC example only.
 
 ## System architecture
 
@@ -71,7 +71,7 @@ Arbitrary prose, numbers, Markdown, malformed structures, unknown or duplicate I
 
 Lumen may not invent or calculate financial values, forecast, extrapolate, annualize, reclassify anomaly impact as savings, combine invoices, claim demonstrated recoverability, or claim an external action. All proposed investigations remain read-only. Human approval, rollback planning, and later verification are required before any real change.
 
-## Current limitations
+## CCAC example limitations
 
 - All published data is illustrative.
 - No customer credentials, accounts, production resources, or live ingestion are connected.
@@ -80,7 +80,7 @@ Lumen may not invent or calculate financial values, forecast, extrapolate, annua
 - No automated remediation, external action, or realized-savings verification exists.
 - Reference connectors and the reference MCP server are development surfaces, not the public dashboard's trusted runtime path.
 
-Supporting real customer data safely would require isolated tenant storage, short-lived least-privilege identities, encrypted ingestion, pagination and normalization controls, schema and quality validation, immutable provenance, retention and deletion policies, authorization, audit logging, secret rotation, monitoring, incident response, and a reviewed deployment boundary.
+Adding hosted account ingestion and durable customer storage would require isolated tenant storage, short-lived least-privilege identities, encrypted ingestion, pagination and normalization controls, schema and quality validation, immutable provenance, retention and deletion policies, authorization, audit logging, secret rotation, monitoring, incident response, and a reviewed deployment boundary.
 
 New financial capabilities would also require producer-level canonical metrics, CCAC contract support, deterministic Command Center policies, adversarial fixtures, reconciliation rules, and explicit presentation approval.
 

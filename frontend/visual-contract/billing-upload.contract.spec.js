@@ -1,0 +1,189 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { test, expect } = require('@playwright/test');
+const { expectExactPageOverflow, expectNoBrokenDisplayValues } = require('./helpers');
+
+const csv = (name) => path.resolve(__dirname, `../public/billing/${name}-example.csv`);
+const payload = (text, name = 'billing.csv') => ({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
+const one = (amount = '7.25', currency = 'USD', service = 'Only my service') => `Date,Service,Cost,Currency\n2026-10-01,${service},${amount},${currency}`;
+async function analyze(page, comparison = false) {
+  await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(csv('current'));
+  if (comparison) await page.getByLabel('Previous billing CSV files', { exact: true }).setInputFiles(csv('previous'));
+  await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+  await expect(page.getByTestId('billing-report')).toBeVisible();
+}
+async function checkNoSample(page) {
+  const body = await page.locator('body').innerText();
+  for (const value of ['2939.0525', '2,939.05', '2,194.00', '736.77', '8.2825', 'Top canonical anomaly']) expect(body).not.toContain(value);
+}
+
+test.describe('browser-local billing upload experience', () => {
+  let problems;
+  test.beforeEach(async ({ page }) => {
+    problems = [];
+    page.on('pageerror', (error) => problems.push(error.message));
+    page.on('console', (message) => { if (['error', 'warning'].includes(message.type())) problems.push(message.text()); });
+    await page.goto('/');
+  });
+  test.afterEach(async ({ page }) => {
+    await expectNoBrokenDisplayValues(page);
+    await expectExactPageOverflow(page);
+    expect(problems).toEqual([]);
+  });
+
+  test('starts with upload instructions, working templates and an optional example', async ({ page }, testInfo) => {
+    await expect(page.getByTestId('billing-upload')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+    await checkNoSample(page);
+    const template = await page.request.get('/billing/template.csv');
+    expect(template.status()).toBe(200);
+    expect(await template.text()).toContain('Date,Service,Cost,Currency');
+    await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
+    await expect(page.getByText('Get your billing records', { exact: true })).toBeVisible();
+    await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-upload.png', { fullPage: true });
+  });
+
+  test('reconciles current spending, negative adjustments, services, charts and missing baseline', async ({ page }, testInfo) => {
+    await analyze(page);
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+    await expect(page.getByTestId('billing-charges')).toHaveText('$1,362.38');
+    await expect(page.getByTestId('billing-credits')).toHaveText('-$52.25');
+    await expect(page.getByTestId('billing-comparison')).toContainText('Add an earlier bill');
+    await expect(page.getByRole('region', { name: 'Uploaded service costs' })).toContainText('API compute');
+    await expect(page.getByTestId('billing-service-chart').locator('svg.recharts-surface')).toBeVisible();
+    await expect(page.getByTestId('billing-date-chart').locator('svg.recharts-surface')).toBeVisible();
+    await checkNoSample(page);
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
+  });
+
+  test('compares earlier totals and services while disclosing different duration', async ({ page }, testInfo) => {
+    await analyze(page, true);
+    await expect(page.getByTestId('billing-comparison')).toContainText('$313.53 total change');
+    await expect(page.getByTestId('billing-comparison')).toContainText('31.5%');
+    await expect(page.getByTestId('billing-comparison')).toContainText('30 and 31 days');
+    const changes = page.getByRole('region', { name: 'Uploaded service comparisons' });
+    await expect(changes).toContainText('$240.03');
+    await checkNoSample(page);
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-comparison-report.png', { fullPage: true });
+  });
+
+  test('Lumen answers locally without any data requests or example facts', async ({ page }, testInfo) => {
+    await analyze(page, true);
+    const requests = [];
+    page.on('request', (request) => { if (request.method() !== 'GET' || /api\/ask-claude|posthog|anthropic/.test(request.url())) requests.push(request.url()); });
+    await page.getByTestId('lumen-trigger').click();
+    const panel = page.getByTestId('lumen-panel');
+    await expect(panel).toContainText('Local report guide');
+    await expect(panel).toContainText('not sent to an AI service');
+    await page.getByRole('button', { name: 'Summarize my spending', exact: true }).click();
+    await expect(panel).toContainText('$1,310.13');
+    const input = page.getByLabel('Ask Lumen about your uploaded report');
+    await input.fill('What changed?'); await input.press('Enter');
+    await expect(panel).toContainText('$313.53');
+    await input.fill('Forecast next month'); await input.press('Enter');
+    await expect(panel).toContainText('does not establish forecasts');
+    expect(requests).toEqual([]);
+    expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+    await checkNoSample(page);
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(panel).toHaveScreenshot('billing-lumen.png');
+    await input.press('Escape');
+    await expect(page.getByTestId('lumen-trigger')).toBeFocused();
+  });
+
+  test('downloads exact report, evidence and both normalized CSV periods', async ({ page }, testInfo) => {
+    await analyze(page, true);
+    const files = {};
+    for (const label of ['Printable report', 'Evidence JSON', 'Current records CSV', 'Previous records CSV']) {
+      const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: label, exact: true }).click()]);
+      const destination = testInfo.outputPath(download.suggestedFilename());
+      await download.saveAs(destination);
+      files[label] = fs.readFileSync(destination, 'utf8');
+      expect(files[label]).not.toMatch(/2939\.0525|2194\.0|736\.77|canonical|EC2 anomaly/);
+    }
+    expect(files['Printable report']).toContain('USD 1310.125');
+    const evidence = JSON.parse(files['Evidence JSON']);
+    expect(evidence.current.net).toBe('1310.125');
+    expect(evidence.previous.net).toBe('996.6');
+    expect(evidence.comparison.delta).toBe('313.525');
+    expect(files['Current records CSV']).toContain('720.125');
+    expect(files['Previous records CSV']).toContain('480.1');
+  });
+
+  test('replacing a bill drops prior comparison and Lumen history, clearing and reload remove all data', async ({ page }) => {
+    await analyze(page, true);
+    await page.getByTestId('lumen-trigger').click();
+    await page.getByRole('button', { name: 'Summarize my spending', exact: true }).click();
+    await page.getByLabel('Ask Lumen about your uploaded report').press('Escape');
+    await page.getByRole('button', { name: 'Upload another bill', exact: true }).click();
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(one()));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$7.25');
+    await expect(page.getByTestId('billing-comparison')).toContainText('Add an earlier bill');
+    await page.getByTestId('lumen-trigger').click();
+    await expect(page.getByTestId('lumen-panel')).not.toContainText('$1,310');
+    await page.getByLabel('Ask Lumen about your uploaded report').press('Escape');
+    await page.getByRole('button', { name: 'Clear my data', exact: true }).click();
+    await expect(page.getByTestId('billing-upload')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+    await expect(page.locator('body')).not.toContainText('Only my service');
+    await analyze(page);
+    await page.reload();
+    await expect(page.getByTestId('billing-upload')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('API compute');
+  });
+
+  test('switches sample and own data without retaining sample totals or export context', async ({ page }) => {
+    await analyze(page);
+    await page.getByRole('button', { name: 'Try an example', exact: true }).click();
+    await expect(page.getByTestId('approved-dashboard')).toBeVisible();
+    await expect(page.locator('body')).toContainText('Exact canonical value: USD 2939.0525');
+    await expect(page.locator('body')).not.toContainText('API compute');
+    await page.getByRole('button', { name: 'Review my own cloud bill', exact: false }).click();
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(one('25', 'EUR')));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('€25.00');
+    await checkNoSample(page);
+  });
+
+  test('invalid replacement is transactional and duplicate ambiguity needs a visible choice', async ({ page }) => {
+    await analyze(page);
+    await page.getByRole('button', { name: 'Upload another bill', exact: true }).click();
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload('Service,Amount\nCompute,999'));
+    await expect(page.getByRole('alert')).toContainText('could not find');
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Back to report', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+    await page.getByRole('button', { name: 'Upload another bill', exact: true }).click();
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`${one()}\n2026-10-01,Only my service,7.25,USD`));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('need your review');
+    await page.getByText('Period dates & identical rows', { exact: true }).click();
+    await page.getByLabel('Identical rows without a RecordId').selectOption('drop');
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$7.25');
+    await page.getByText('Data checks, coverage & exact cost basis', { exact: true }).click();
+    await expect(page.getByTestId('billing-data-checks')).toContainText('counted once');
+  });
+
+  test('FOCUS currency and negative costs render with the correct report basis', async ({ page }) => {
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(csv('focus'));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('€48.61');
+    await expect(page.getByTestId('billing-credits')).toHaveText('-€5.00');
+    await expect(page.locator('body')).toContainText('Exact: EUR 48.6125');
+    await checkNoSample(page);
+  });
+
+  test('multipart IDs count once and comparison errors explain mismatches', async ({ page }) => {
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles([csv('current'), csv('current')]);
+    await page.getByLabel('Previous billing CSV files', { exact: true }).setInputFiles(payload(one('3', 'EUR')));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('same currency');
+    await page.getByRole('button', { name: 'Remove previous period', exact: true }).click();
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+    await page.getByText('Data checks, coverage & exact cost basis', { exact: true }).click();
+    await expect(page.getByTestId('billing-data-checks')).toContainText('7 repeated record IDs counted once');
+  });
+});

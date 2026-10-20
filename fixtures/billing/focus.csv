@@ -1,0 +1,5 @@
+ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,ProviderName,RecordId,BillingAccountId,ChargeCategory,ResourceId
+2026-09-01T00:00:00Z,2026-09-02T00:00:00Z,Virtual Machines,24.0125,EUR,Microsoft,vm-001,invented-account,Usage,invented-vm
+2026-09-02T00:00:00Z,2026-09-03T00:00:00Z,Virtual Machines,26.1,EUR,Microsoft,vm-002,invented-account,Usage,invented-vm
+2026-09-01T00:00:00Z,2026-09-02T00:00:00Z,Storage,3.5,EUR,Microsoft,storage-001,invented-account,Usage,invented-storage
+2026-09-02T00:00:00Z,2026-09-03T00:00:00Z,Account credit,-5,EUR,Microsoft,credit-001,invented-account,Credit,

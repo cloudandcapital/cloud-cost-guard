@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import logo from "./assets/cloud-and-capital-icon.png";
 import AskClaude from "./components/AskClaude";
+import BillingApp from "./components/billing/BillingApp";
 import { getCcac11PresentationModel } from "./lib/ccac11PresentationModel";
 import { buildCanonicalExportFiles, downloadCanonicalExport } from "./lib/canonicalExport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
@@ -245,4 +246,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default function App() { return <BillingApp SampleDashboard={Dashboard}/>; }

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { parseLumenMessage } from "../lib/lumenMessage";
 import { buildPresetLumenResponse, getLumenFooterLabel, SAMPLE_QUESTIONS } from "../lib/lumenPresets";
+import { answerBillingQuestion } from "../lib/billing/report";
 
 const LUMEN_ENABLED = process.env.REACT_APP_LUMEN_ENABLED === "true";
 
@@ -63,7 +64,7 @@ const toSpokenText = (text) => {
   }).join(" ");
 };
 
-const AskClaude = () => {
+const AskClaude = ({ billingReport = null }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -75,6 +76,8 @@ const AskClaude = () => {
   const panelRef = useRef(null);
   const triggerRef = useRef(null);
   const wasOpenRef = useRef(false);
+  const pendingRequest = useRef(null);
+  useEffect(() => () => { pendingRequest.current?.abort(); }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,7 +100,7 @@ const AskClaude = () => {
     setError(null);
     setAnnouncement("");
 
-    const presetReply = buildPresetLumenResponse(trimmed);
+    const presetReply = billingReport ? answerBillingQuestion(billingReport, trimmed) : buildPresetLumenResponse(trimmed);
     if (presetReply) {
       setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
       setAnnouncement(`Lumen answer: ${toSpokenText(presetReply)}`);
@@ -108,7 +111,9 @@ const AskClaude = () => {
     setAnnouncement("Lumen is preparing an answer.");
 
     try {
+      pendingRequest.current = new AbortController();
       const res = await fetch("/api/ask-claude", {
+        signal: pendingRequest.current.signal,
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -167,7 +172,7 @@ const AskClaude = () => {
     }
   };
 
-  if (!LUMEN_ENABLED) {
+  if (!LUMEN_ENABLED && !billingReport) {
     return (
       <p className="ask-claude-unavailable">Lumen unavailable</p>
     );
@@ -208,7 +213,7 @@ const AskClaude = () => {
             <span className="ask-claude-sparkle" style={{ color: "#8B6F47", fontSize: 16 }}>✦</span>
             <div>
               <div style={{ fontWeight: 600, fontSize: 14, color: "#0A0A0A", lineHeight: 1.2 }}>Lumen</div>
-              <div style={{ fontSize: 10, color: "#9B8E83", lineHeight: 1.2 }}>FinOps AI · Cloud &amp; Capital</div>
+              <div style={{ fontSize: 11, color: "#73665b", lineHeight: 1.4 }}>{billingReport ? 'Local report guide · Cloud & Capital' : 'FinOps AI · Cloud & Capital'}</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -250,10 +255,10 @@ const AskClaude = () => {
           {messages.length === 0 && !loading && (
             <div className="ask-claude-chips">
               <p style={{ fontSize: 12, color: "#7A6B5D", textAlign: "center", marginBottom: 10 }}>
-                Lumen explains the validated CCAC 1.1 illustrative report. It cannot access customer accounts or external resources.
+                {billingReport ? 'Lumen uses prepared answers from your uploaded report, calculated on this device. Your file and questions are not sent to an AI service.' : 'Lumen explains the validated CCAC 1.1 illustrative report. It cannot access customer accounts or external resources. Free-form questions and this sample context are sent to Anthropic; uploaded bills use a separate local guide.'}
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {SAMPLE_QUESTIONS.map((q, i) => (
+                {(billingReport ? ['Summarize my spending', 'What changed?', 'Explain my credits', 'What dates are covered?'] : SAMPLE_QUESTIONS).map((q, i) => (
                   <button key={i} className="ask-claude-chip" onClick={() => sendMessage(q)}>
                     {q}
                   </button>
@@ -294,8 +299,9 @@ const AskClaude = () => {
             ref={inputRef}
             type="text"
             className="ask-claude-input"
-            placeholder="Ask about this sample report…"
-            aria-label="Ask Lumen about this sample report"
+            placeholder={billingReport ? 'Ask about your report…' : 'Ask about this sample report…'}
+            aria-label={billingReport ? 'Ask Lumen about your uploaded report' : 'Ask Lumen about this sample report'}
+            maxLength={2000}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -313,7 +319,7 @@ const AskClaude = () => {
 
         {/* Footer */}
         <div className="ask-claude-footer">
-          {getLumenFooterLabel(messages)}
+          {billingReport ? 'Your uploaded report · local answers · no AI service' : getLumenFooterLabel(messages)}
         </div>
       </div>}
     </>

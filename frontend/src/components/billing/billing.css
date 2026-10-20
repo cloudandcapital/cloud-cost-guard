@@ -1,0 +1,131 @@
+.billing-app{min-height:100vh;color:#2d332f;background:#f5eee9;font-size:14px;line-height:1.6}
+.billing-app h1,.billing-app h2,.billing-app h3,.billing-sample-banner{margin:0}
+.billing-app p{margin:0}
+.billing-app button,.billing-app input,.billing-app select{font:inherit}
+.billing-header{background:#fffdf9;border-bottom:1px solid #e6ddd3}
+.billing-header-inner{max-width:1248px;padding:20px 28px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.billing-brand{display:flex;gap:12px;align-items:center;color:inherit;text-decoration:none;flex-shrink:0}
+.billing-brand img{height:46px;width:46px;border-radius:12px;object-fit:cover;border:1px solid #e3dbd2}
+.billing-brand h1{font-family:'Playfair Display',Georgia,serif;font-size:24px;line-height:1.25}
+.billing-brand span{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:#74695e}
+.billing-header-note{color:#766b61;font-size:12px;text-align:right}
+.billing-main{max-width:1248px;padding:0 28px 44px;margin:0 auto}
+.billing-intro{display:grid;grid-template-columns:1fr 260px;gap:48px;align-items:center;padding:64px 0 42px}
+.billing-eyebrow{color:#526c58;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;line-height:1.6}
+.billing-intro h2{font:500 clamp(32px,4.2vw,54px)/1.13 'Playfair Display',Georgia,serif;letter-spacing:-.025em;margin:14px 0 20px;max-width:760px;text-wrap:balance}
+.billing-intro>div>p:not(.billing-eyebrow){max-width:520px;color:#6b655e;font-size:16px;line-height:1.7}
+.billing-privacy-pill{display:inline-flex;align-items:center;gap:8px;color:#4c6652;font-size:12px;margin-top:22px}
+.billing-intro-art{width:232px;height:232px;position:relative;background:#e1e7dd;border:1px solid #d3ddce;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:14px 14px 0 #efe1db}
+.billing-intro-art svg{width:70px;height:70px;color:#5d7a63;margin-bottom:14px}
+.billing-intro-art span{text-align:center;font:italic 18px/1.4 Georgia,serif;color:#607565}
+.billing-upload-card{background:#fffdf9;border:1px solid #e0d7cd;border-radius:20px;box-shadow:0 6px 24px #40372d05;padding:30px}
+.billing-form-heading{padding-bottom:24px;border-bottom:1px solid #e9e1d9}
+.billing-form-heading h2{font:500 27px/1.3 'Playfair Display',Georgia,serif}
+.billing-form-heading p{color:#746a61;font-size:13px;margin:8px 0 12px}
+.billing-inline-links{display:flex;gap:12px 22px;flex-wrap:wrap;align-items:center}
+.billing-app a:not(.billing-brand){color:#516d58;text-underline-offset:4px;text-decoration-thickness:1px}
+.billing-inline-links a{font-size:12px}
+.billing-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:28px}
+.billing-period-input{min-width:0}
+.billing-period-input+.billing-period-input{border-left:1px solid #e9e1d9;padding-left:30px}
+.billing-step-heading{display:flex;gap:12px;align-items:flex-start;margin-bottom:22px}
+.billing-step{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:#e7ecdf;color:#516852;display:grid;place-items:center;font-size:12px;font-weight:700}
+.billing-period-input:nth-child(2) .billing-step{background:#f1e1dd;color:#855c5e}
+.billing-step-heading h3{font-size:16px;line-height:1.8;font-weight:600}
+.billing-step-heading p{color:#786e63;font-size:12px;line-height:1.6}
+.billing-optional{font-size:10px;font-weight:500;display:inline-block;background:#f3eae4;border-radius:5px;line-height:1.6;padding:2px 6px;margin-left:10px;color:#7c655b;vertical-align:middle}
+.billing-file-label{display:block;font-size:12px;margin-bottom:8px;color:#5d6058}
+.billing-period-input input[type=file]{display:block;background:#f7f6ef;border:1px dashed #b5bfb0;border-radius:10px;padding:12px 8px;min-height:58px;width:100%;color:#6d7066;font-size:11px;overflow:hidden}
+.billing-period-input input[type=file]::file-selector-button{background:white;border:1px solid #d5d9cd;border-radius:6px;padding:8px 10px;margin-right:10px;color:#435d4a;cursor:pointer;font-size:12px;font-weight:600}
+.billing-selected{font-size:11px;line-height:1.7;background:#edf0e6;padding:12px;border-radius:8px;margin-top:12px;display:flex;gap:10px;align-items:flex-start;color:#4b624f;overflow-wrap:anywhere}
+.billing-selected>svg{flex-shrink:0;margin-top:2px}.billing-selected>div{min-width:0;flex:1}.billing-selected span{color:#63715f}.billing-selected button{background:transparent;border:0;cursor:pointer;padding:2px;color:#596254;flex-shrink:0}
+.billing-period-options{margin-top:15px;color:#6c665c;font-size:12px}
+.billing-period-options summary{cursor:pointer;color:#4e6452;padding:6px 0}
+.billing-period-options p{margin:10px 0;line-height:1.6}
+.billing-date-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.billing-date-fields label{min-width:0;display:flex;flex-direction:column;gap:5px}
+.billing-date-fields input,.billing-period-options select{border:1px solid #d7d4c9;background:white;padding:9px;border-radius:6px;width:100%;min-width:0;color:#384b3c}
+.billing-period-options select{margin-top:7px;font-size:12px}
+.billing-submit-row{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin:30px 0 18px;border-top:1px solid #e9e1d9;padding-top:24px}
+.billing-primary,.billing-secondary{display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;padding:12px 19px;border-radius:10px;font-weight:600!important;border:1px solid #526f59;background:#526f59;color:#fffdf9;font-size:13px!important;line-height:1.5;min-height:44px}
+.billing-primary:hover{background:#405f48}.billing-primary:disabled{opacity:.45;cursor:default}
+.billing-secondary{background:#f7f6ef;color:#48624e;border-color:#c3cbbd;flex-shrink:0}
+.billing-link-button{padding:6px 0;min-height:36px;background:transparent;border:0;text-decoration:underline;text-underline-offset:4px;color:#5d685b;cursor:pointer;font-size:12px!important}
+.billing-smallprint{font-size:11px;color:#797067;max-width:790px;line-height:1.8}
+.billing-error{background:#fff3ee;border:1px solid #d9aa96;border-radius:10px;padding:16px;margin-top:24px;color:#814b3b;overflow-wrap:anywhere}
+.billing-error p{margin:6px 0}.billing-error span{font-size:12px}
+.billing-instructions{border:1px solid #ddd7cc;border-radius:12px;background:#faf7f1;margin-top:24px;overflow:hidden}
+.billing-instructions>summary{padding:18px 22px;cursor:pointer;color:#565f52;font-size:13px;line-height:1.6;font-weight:600}
+.billing-instruction-body{padding:6px 24px 26px;color:#69665b;font-size:13px}
+.billing-instruction-body h3{font-family:Georgia,serif;font-weight:600;font-size:19px;color:#3e4b3d;margin:14px 0 10px}
+.billing-instruction-body p{margin:12px 0;line-height:1.8}
+.billing-instruction-body ul{list-style:disc;padding-left:20px;margin:12px 0;line-height:1.8}
+.billing-instruction-body li+li{margin-top:10px}
+.billing-format-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:20px 0}
+.billing-format-grid>div{min-width:0;background:#fffdf9;border:1px solid #e4dfd4;border-radius:10px;padding:20px}
+.billing-format-grid code{display:block;background:#f1efe7;padding:12px;margin:10px 0;font-size:11px;overflow-wrap:anywhere;border-radius:6px;line-height:1.8}
+.billing-footer{max-width:1248px;margin:12px auto 0;padding:28px 28px 40px;border-top:1px solid #e0d8cd;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#776e63;font-size:11px}
+.billing-footer>span{font-family:Georgia,serif;font-style:italic;font-size:17px;color:#5e6f5b}
+.billing-footer a{white-space:nowrap}
+.billing-sample-banner{background:#dfe8da;border-bottom:1px solid #c4d0bd;padding:12px 24px;display:flex;justify-content:center;align-items:center;gap:24px;flex-wrap:wrap;color:#3e5844;font:12px/1.6 Inter,sans-serif}
+.billing-sample-banner button{background:#fffdf9;padding:8px 14px;border:1px solid #aebda7;border-radius:7px;cursor:pointer;color:#3f5945;font:600 12px/1.6 Inter,sans-serif}
+.billing-report{padding-top:38px}
+.billing-report-top{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px}
+.billing-report-top h2{font:500 36px/1.2 'Playfair Display',Georgia,serif;margin:10px 0 13px;text-wrap:balance}
+.billing-period-label{font-size:12px;color:#766c61}
+.billing-report-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;max-width:360px}
+.billing-report-actions .billing-primary{flex-basis:100%;max-width:250px;margin-left:auto}
+.billing-local-note{display:flex;align-items:center;gap:10px;color:#546951;background:#e9eddf;border:1px solid #d5dec9;border-radius:10px;padding:13px 16px;font-size:12px;margin:0 0 25px}
+.billing-local-note svg{flex-shrink:0}
+.billing-summary-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr;gap:18px}
+.billing-summary-grid article{background:#fffdf9;border:1px solid #e2d9ce;border-radius:17px;padding:26px;min-width:0}
+.billing-summary-grid .billing-total-card{background:#e1e8dc;border-color:#c9d6c3}
+.billing-total{font:500 clamp(28px,3.5vw,46px)/1.2 'Playfair Display',Georgia,serif;color:#324c39;margin:14px 0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.billing-total-card>p:not(.billing-eyebrow){font-size:11px;color:#526350}
+.billing-total-card>p+p{margin-top:10px}
+.billing-exact{font-size:11px!important;color:#6f7668;overflow-wrap:anywhere}
+.billing-reconciled{border-top:1px solid #c8d3c1;margin-top:18px;padding-top:14px;display:flex;align-items:center;gap:7px;font-size:11px;color:#526850}
+.billing-reconciled svg{flex-shrink:0}
+.billing-stat-card h3{font-size:12px;color:#6c6c60;font-weight:500}
+.billing-stat-card strong{display:block;font-family:Georgia,serif;font-weight:500;font-size:28px;line-height:1.3;margin:20px 0 16px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.billing-stat-card p{font-size:11px;color:#787366;margin-top:12px}
+.billing-summary-grid .billing-credit-card{background:#f4e4df;border-color:#e5cfc8}
+.billing-rounding{font-size:11px;line-height:1.8;color:#7a7065;margin:14px 0 26px!important}
+.billing-comparison-card{padding:25px;background:#fffdf9;border:1px solid #e0d8cd;border-radius:15px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.billing-comparison-card>div:first-child{flex:1;min-width:240px}
+.billing-comparison-card h3{font:500 24px/1.4 Georgia,serif;margin:9px 0}
+.billing-comparison-card p{font-size:12px;color:#746a60;max-width:640px}
+.billing-previous-total{display:flex;flex-direction:column;gap:6px;text-align:right}
+.billing-previous-total strong{font:500 26px/1.3 Georgia,serif}.billing-previous-total span{color:#736e62;font-size:11px}
+.billing-comparison-card .billing-comparison-warning{flex-basis:100%;background:#f7eee6;border-radius:7px;border-left:3px solid #b1947b;padding:12px;font-size:12px;max-width:none}
+.billing-section-heading{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin:36px 0 18px}
+.billing-section-heading h2{font:500 27px/1.3 'Playfair Display',Georgia,serif;text-wrap:balance}
+.billing-section-heading span{font-size:11px;color:#7d7368;text-align:right;flex-shrink:0}
+.billing-findings{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.billing-findings article{padding:22px;border:1px solid #e2dacf;border-radius:12px;background:#fffdf9;min-width:0}
+.billing-findings h3{font:500 19px/1.4 Georgia,serif;margin-bottom:11px}
+.billing-findings p{color:#71695f;font-size:12px;line-height:1.9;overflow-wrap:anywhere}
+.billing-findings article:last-child{background:#eceee3}
+.billing-charts{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
+.billing-chart-card{min-width:0;padding:24px 16px;background:#fffdf9;border:1px solid #e1d8cd;border-radius:14px}
+.billing-chart-card h3{font:500 21px/1.3 Georgia,serif;margin:0 8px 10px}
+.billing-chart-card>p{font-size:11px;color:#786f62;min-height:56px;margin:0 8px 8px;line-height:1.7}
+.billing-chart{height:310px;width:100%;min-width:0}
+.billing-table-wrap{overflow-x:auto;background:#fffdf9;border:1px solid #e1d8cc;border-radius:12px;max-height:560px;overflow-y:auto}
+.billing-table{width:100%;border-collapse:collapse;font-size:12px;text-align:right}
+.billing-table th,.billing-table td{padding:16px;border-bottom:1px solid #ebe3d8;vertical-align:top;white-space:nowrap;font-variant-numeric:tabular-nums}
+.billing-table thead th{font-weight:500;font-size:11px;color:#766e61;background:#f3f2e9;position:sticky;top:0;z-index:1}
+.billing-table th:first-child{text-align:left;white-space:normal;min-width:180px;max-width:310px;overflow-wrap:anywhere;font-weight:500}
+.billing-table tbody th small{display:block;font-size:10px;color:#807665;font-weight:400;margin-top:4px}
+.billing-table tfoot{background:#e9eddf;font-weight:600}
+.billing-section-note{font-size:12px;line-height:1.8;color:#786f62;margin:-6px 0 16px!important}
+.billing-download-card{background:#e3e9dd;border:1px solid #ccd7c4;border-radius:15px;padding:26px;display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px}
+.billing-download-card h2{font:500 24px/1.3 Georgia,serif;margin:12px 0}
+.billing-download-card p{font-size:12px;color:#63725e;max-width:430px;line-height:1.8}
+.billing-download-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:center}
+.billing-download-actions button{background:#fdfcf7;display:flex;gap:8px;align-items:center;justify-content:center;border:1px solid #bccbb2;border-radius:8px;font-size:12px;padding:12px 10px;color:#4d6148;cursor:pointer;min-height:44px}
+.billing-download-actions button:hover{background:#f1f4e9}.billing-download-actions svg{flex-shrink:0}
+.billing-check-note{background:#f1e9dc;border-left:2px solid #b39b7c;padding:10px;font-size:12px}
+.billing-app .ask-claude-panel{color:#2d332f}.billing-app .ask-claude-btn{background:#526f59}.billing-app .ask-claude-footer{color:#6f715f}
+@media(max-width:850px){.billing-intro{grid-template-columns:1fr 180px;gap:25px;padding-top:42px}.billing-intro-art{width:170px;height:170px}.billing-intro-art svg{height:50px;width:50px}.billing-intro-art span{font-size:15px}.billing-summary-grid{grid-template-columns:1fr 1fr}.billing-summary-grid .billing-total-card{grid-column:1/-1}.billing-charts{grid-template-columns:1fr}.billing-format-grid{gap:16px}.billing-footer p{display:none}.billing-report-top{align-items:flex-start}.billing-report-actions{max-width:200px}.billing-download-card{grid-template-columns:1fr}.billing-chart-card>p{min-height:auto;margin-bottom:18px}}
+@media(max-width:639px){.billing-main{padding:0 16px 30px}.billing-header-inner{padding:16px;gap:10px}.billing-brand h1{font-size:21px}.billing-brand img{width:40px;height:40px}.billing-header-note{display:none}.billing-intro{display:block;padding:36px 4px 28px}.billing-intro h2{font-size:35px;margin:12px 0 18px;line-height:1.16;max-width:380px}.billing-intro>div>p:not(.billing-eyebrow){font-size:14px}.billing-intro-art{display:none}.billing-desktop-break{display:none}.billing-privacy-pill{font-size:11px;margin-top:17px}.billing-upload-card{padding:22px 18px;border-radius:16px}.billing-form-heading h2{font-size:24px}.billing-form-heading p{font-size:12px;line-height:1.7}.billing-upload-grid{grid-template-columns:1fr;gap:24px;margin-top:24px}.billing-period-input+.billing-period-input{padding:24px 0 0;border-left:0;border-top:1px solid #e7ded3}.billing-step-heading{margin-bottom:16px}.billing-submit-row{gap:12px 18px;margin-top:24px}.billing-submit-row .billing-primary{flex-basis:100%}.billing-smallprint{font-size:10px}.billing-instructions>summary{padding:16px;font-size:12px}.billing-instruction-body{padding:0 16px 20px}.billing-instruction-body p,.billing-instruction-body li{font-size:12px}.billing-format-grid{grid-template-columns:1fr;gap:12px}.billing-format-grid>div{padding:16px}.billing-footer{padding:24px 16px 90px;align-items:flex-start;font-size:10px}.billing-footer>span{font-size:15px}.billing-footer a{white-space:normal;text-align:right;max-width:130px}.billing-report{padding-top:28px}.billing-report-top{display:block}.billing-report-top h2{font-size:30px}.billing-report-actions{max-width:none;justify-content:flex-start;margin:22px 0 0;gap:10px 20px}.billing-report-actions .billing-primary{flex-basis:auto;margin:0;padding:10px 13px;font-size:12px!important}.billing-report-actions .billing-link-button{font-size:11px!important}.billing-local-note{padding:12px;font-size:11px;align-items:flex-start;margin-bottom:18px}.billing-local-note svg{margin-top:2px}.billing-summary-grid{gap:12px}.billing-summary-grid article{padding:19px 16px}.billing-total{font-size:39px}.billing-stat-card h3{font-size:11px}.billing-stat-card strong{font-size:23px;margin:15px 0}.billing-exact{font-size:10px!important}.billing-rounding{font-size:10px;margin:12px 0 20px!important}.billing-comparison-card{padding:20px;gap:18px;display:block}.billing-comparison-card>div:first-child{min-width:0}.billing-comparison-card h3{font-size:22px}.billing-comparison-card .billing-secondary{margin-top:18px}.billing-previous-total{text-align:left;margin-top:20px}.billing-comparison-card .billing-comparison-warning{margin-top:16px;padding:10px;font-size:11px}.billing-section-heading{margin-top:28px}.billing-section-heading h2{font-size:24px}.billing-section-heading span{font-size:10px;max-width:90px;white-space:normal}.billing-findings{grid-template-columns:1fr;gap:12px}.billing-findings article{padding:20px}.billing-findings h3{font-size:19px}.billing-charts{gap:16px;margin-top:22px}.billing-chart-card{padding:22px 10px}.billing-chart{height:290px}.billing-chart-card h3{font-size:21px}.billing-table th,.billing-table td{padding:13px 12px}.billing-table th:first-child{min-width:155px}.billing-download-card{padding:22px 18px;gap:20px}.billing-download-actions{gap:9px}.billing-download-actions button{font-size:10px;padding:12px 8px}.billing-sample-banner{font-size:11px;gap:8px;padding:10px}.billing-report .ask-claude-input{min-width:0}}
