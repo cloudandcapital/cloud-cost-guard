@@ -1,4 +1,24 @@
-const { expect } = require("@playwright/test");
+const { expect, test } = require("@playwright/test");
+const crypto = require('node:crypto');
+const path = require('node:path');
+
+// Preserve a reviewable image when a CI-only browser has no approved baseline.
+// The assertion still fails; no baseline is accepted or changed automatically.
+async function captureVisual(locator, name, options = {}) {
+  try { await expect(locator).toHaveScreenshot(name, options); }
+  catch (error) {
+    if (process.env.CCG_EXPORT_VISUAL_EVIDENCE === 'true') {
+      const bytes = await locator.screenshot({ animations: 'disabled', caret: 'hide', ...options });
+      const info = test.info();
+      const target = path.relative(process.cwd(), info.snapshotPath(name)).replaceAll(path.sep, '/');
+      const data = bytes.toString('base64');
+      const sha = crypto.createHash('sha256').update(bytes).digest('hex');
+      console.log(`CCG_VISUAL_META ${JSON.stringify({ target, sha, parts: Math.ceil(data.length / 12000) })}`);
+      for (let part = 0; part * 12000 < data.length; part += 1) console.log(`CCG_VISUAL_CHUNK ${JSON.stringify({ target, sha, part, data: data.slice(part * 12000, (part + 1) * 12000) })}`);
+    }
+    throw error;
+  }
+}
 
 const PRIMARY_TABS = ["Findings", "Products", "Clouds", "Kubernetes", "Overview", "AI Spend", "SaaS"];
 
@@ -103,6 +123,7 @@ async function expectNoBrokenDisplayValues(page) {
 }
 
 module.exports = {
+  captureVisual,
   PRIMARY_TABS,
   expectDashboardFonts,
   expectExactPageOverflow,

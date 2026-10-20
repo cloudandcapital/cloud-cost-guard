@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { test, expect } = require('@playwright/test');
-const { expectExactPageOverflow, expectNoBrokenDisplayValues } = require('./helpers');
+const { captureVisual, expectExactPageOverflow, expectNoBrokenDisplayValues } = require('./helpers');
 
 const csv = (name) => path.resolve(__dirname, `../public/billing/${name}-example.csv`);
 const payload = (text, name = 'billing.csv') => ({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
@@ -41,7 +41,7 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
     await expect(page.getByText('Get your billing records', { exact: true })).toBeVisible();
     await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-upload.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(page, 'billing-upload.png', { fullPage: true });
   });
 
   test('reconciles current spending, negative adjustments, services, charts and missing baseline', async ({ page }, testInfo) => {
@@ -54,7 +54,7 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('billing-service-chart').locator('svg.recharts-surface')).toBeVisible();
     await expect(page.getByTestId('billing-date-chart').locator('svg.recharts-surface')).toBeVisible();
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(page, 'billing-current-report.png', { fullPage: true });
   });
 
   test('compares earlier totals and services while disclosing different duration', async ({ page }, testInfo) => {
@@ -65,13 +65,13 @@ test.describe('browser-local billing upload experience', () => {
     const changes = page.getByRole('region', { name: 'Uploaded service comparisons' });
     await expect(changes).toContainText('$240.03');
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-comparison-report.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(page, 'billing-comparison-report.png', { fullPage: true });
   });
 
   test('Lumen answers locally without any data requests or example facts', async ({ page }, testInfo) => {
-    await analyze(page, true);
     const requests = [];
     page.on('request', (request) => { if (request.method() !== 'GET' || /api\/ask-claude|posthog|anthropic/.test(request.url())) requests.push(request.url()); });
+    await analyze(page, true);
     await page.getByTestId('lumen-trigger').click();
     const panel = page.getByTestId('lumen-panel');
     await expect(panel).toContainText('Local report guide');
@@ -86,7 +86,7 @@ test.describe('browser-local billing upload experience', () => {
     expect(requests).toEqual([]);
     expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(panel).toHaveScreenshot('billing-lumen.png');
+    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(panel, 'billing-lumen.png');
     await input.press('Escape');
     await expect(page.getByTestId('lumen-trigger')).toBeFocused();
   });
@@ -185,5 +185,16 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
     await page.getByText('Data checks, coverage & exact cost basis', { exact: true }).click();
     await expect(page.getByTestId('billing-data-checks')).toContainText('7 repeated record IDs counted once');
+  });
+
+  test('many service groups paginate while totals and downloads still cover every record', async ({ page }) => {
+    const rows = Array.from({ length: 32 }, (_, index) => `2026-10-01,Service ${index.toString().padStart(2, '0')},1,USD`).join('\n');
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`Date,Service,Cost,Currency\n${rows}`));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$32.00');
+    await expect(page.getByRole('region', { name: 'Uploaded service costs' }).locator('tbody tr')).toHaveCount(25);
+    await page.getByRole('button', { name: 'Next services page', exact: true }).click();
+    await expect(page.getByRole('region', { name: 'Uploaded service costs' }).locator('tbody tr')).toHaveCount(7);
+    await expect(page.getByRole('button', { name: 'Next services page', exact: true })).toBeDisabled();
   });
 });

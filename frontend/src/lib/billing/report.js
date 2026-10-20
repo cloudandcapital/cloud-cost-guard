@@ -75,7 +75,8 @@ export function buildBillingReport(currentFiles, previousFiles = [], options = {
   } else findings.push({ title: 'No positive charges', text: 'These records contain only credits, zero costs, or negative adjustments. There is no positive spending share to calculate.' });
   if (comparison) {
     const delta = decimalUnits(comparison.delta);
-    findings.push({ title: 'What changed', text: `Net cost is ${cost(decimalString(absolute(delta)))} ${delta > 0n ? 'higher' : delta < 0n ? 'lower' : 'different'} than the previous upload${comparison.percent !== null ? ` (${comparison.percent}%)` : '. A percentage is not meaningful when the previous net cost is zero or negative'}.${comparison.warnings.length ? ` ${comparison.warnings.join(' ')}` : ''}` });
+    const changeText = delta === 0n ? 'Net cost is unchanged from the previous upload' : `Net cost is ${cost(decimalString(absolute(delta)))} ${delta > 0n ? 'higher' : 'lower'} than the previous upload`;
+    findings.push({ title: 'What changed', text: `${changeText}${comparison.percent !== null ? ` (${comparison.percent}%)` : '. A percentage is not meaningful when the previous net cost is zero or negative'}.${comparison.warnings.length ? ` ${comparison.warnings.join(' ')}` : ''}` });
     const driver = comparison.drivers.find((row) => row.delta !== '0');
     if (driver) findings.push({ title: 'Biggest movement', text: `${driver.service} (${driver.provider}) changed by ${cost(driver.delta)}, from ${cost(driver.previous)} to ${cost(driver.current)}. ${driver.coverage}. This locates the change; billing amounts alone do not establish its cause.` });
   } else findings.push({ title: 'Want to know what changed?', text: 'Add an earlier billing CSV to compare totals and service costs. With one upload, there is no measured increase, decrease, or anomaly baseline.' });

@@ -1,5 +1,5 @@
 const { test, expect } = require("@playwright/test");
-const { openApprovedDashboard, waitForChartsStable } = require("./helpers");
+const { captureVisual, openApprovedDashboard, waitForChartsStable } = require("./helpers");
 
 const TAB_CASES = [
   ["findings", "Findings"],
@@ -19,34 +19,34 @@ test.describe("approved visual contract", () => {
       if (page.viewportSize().width < 768) await page.getByTestId("mobile-section-select").selectOption({ label: tab });
       else await page.getByTestId("primary-tabs").getByRole("tab", { name: tab, exact: true }).click();
       await waitForChartsStable(page);
-      await expect(page).toHaveScreenshot(`${slug}-full-page.png`, { fullPage: true });
+      await captureVisual(page, `${slug}-full-page.png`, { fullPage: true });
     });
   }
 
   test("executive summary targeted", async ({ page }) => {
-    await expect(page.getByTestId("executive-summary")).toHaveScreenshot("executive-summary.png");
+    await captureVisual(page.getByTestId("executive-summary"), "executive-summary.png");
   });
 
   test("scope donut targeted", async ({ page }) => {
-    await expect(page.getByTestId("scope-donut-card")).toHaveScreenshot("scope-donut.png");
+    await captureVisual(page.getByTestId("scope-donut-card"), "scope-donut.png");
   });
 
   test("canonical export menu open", async ({ page }) => {
     await page.getByTestId("canonical-export-trigger").click();
     await expect(page.getByTestId("canonical-export-menu")).toBeVisible();
-    await expect(page).toHaveScreenshot("canonical-export-menu-open.png");
+    await captureVisual(page, "canonical-export-menu-open.png");
   });
 
   test("expanded triage targeted", async ({ page }) => {
     await page.getByRole("button", { name: "Review plan" }).click();
-    await expect(page.getByTestId("triage-card")).toHaveScreenshot("triage-expanded.png");
+    await captureVisual(page.getByTestId("triage-card"), "triage-expanded.png");
   });
 
   test("finding modal targeted", async ({ page }) => {
     const methodologyButtons = page.getByRole("button", { name: "Methodology" });
     expect(await methodologyButtons.count()).toBe(10);
     await methodologyButtons.first().click();
-    await expect(page.getByTestId("finding-modal")).toHaveScreenshot("finding-modal.png");
+    await captureVisual(page.getByTestId("finding-modal"), "finding-modal.png");
   });
 
   test("Lumen open targeted", async ({ page }) => {
