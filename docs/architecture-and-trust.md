@@ -1,6 +1,6 @@
 # Architecture and trust boundaries
 
-Cloud Cost Guard's draft upload flow runs the actual analytical pipeline locally in a Python/WebAssembly worker and presents its validated partial Cloud report. The optional complete CCAC example retains its original pinned artifacts and validators. [Pipeline ownership and verification](pipeline-upload-integration.md) and [upload rules](billing-upload.md) explain the supported data and privacy boundary. Neither path connects to customer cloud accounts or credentials. Producer changes remain linked drafts pending a coordinated release approval.
+Cloud Cost Guard's billing upload runs the analytical pipeline locally in a Python/WebAssembly worker and presents its validated partial Cloud report. The optional complete CCAC example retains its pinned artifacts and validators. [Pipeline ownership and verification](pipeline-upload-integration.md) and [upload rules](billing-upload.md) explain the supported data and privacy boundary. Neither path connects to customer cloud accounts or credentials. The reviewed producer revisions are recorded in the [source lock](../pipeline/sources.lock.json).
 
 ## System architecture
 
