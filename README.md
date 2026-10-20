@@ -4,19 +4,27 @@
 [![CCAC](https://img.shields.io/badge/CCAC-1.1-6b8f71)](https://github.com/cloudandcapital/cloud-capital-analysis-contract)
 [![Read only](https://img.shields.io/badge/actions-read--only-8B6F47)](https://github.com/cloudandcapital/cloud-cost-guard)
 [![AI for FinOps](https://img.shields.io/badge/AI-Lumen-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
-[![Demo data](https://img.shields.io/badge/data-illustrative%20demo-8B6F47)](https://github.com/cloudandcapital/cloud-cost-guard)
+[![Local CSV review](https://img.shields.io/badge/data-browser--local%20CSV-6b8f71)](docs/billing-upload.md)
 
-**A finance-first, read-only decision dashboard for validated Cloud, direct-AI, and SaaS spend, with explicit coverage boundaries and canonical Lumen explanations.**
+**Upload a billing CSV to populate the Cloud Cost Guard dashboard with your totals, services, credits, and optional earlier-period comparison. The optional example uses the same dashboard with validated illustrative Cloud, direct-AI, and SaaS evidence.**
 
-[**Live Demo →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
+[**Cloud Cost Guard →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
+
+**Draft integration:** uploads now run the existing FinOps Lite → Watchdog → released CCAC validation → Command Center pipeline locally, then populate this dashboard. Producer changes are in linked draft PRs; no production release is approved. See [pipeline ownership and verification](docs/pipeline-upload-integration.md).
 
 ---
 
-**Illustrative sample billing data. No customer accounts, credentials, or production resources are connected.**
+**Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, privacy and release coordination →](docs/billing-upload.md)
 
-The public application uses one deterministic tracked sample report so every total, period, chart, and finding can be inspected. Refresh reloads that tracked report; it does not synchronize a cloud account or billing export.
+The main flow supports FOCUS BilledCost CSVs and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Sections that need other evidence explain what is missing instead of displaying example metrics. “Try an example” opens the preserved deterministic CCAC report in the same dashboard. Its Refresh button only reloads that example; it does not synchronize a cloud account. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
 
-**Features:**
+**CSV review:**
+- Exact decimal totals, signed credits, service breakdowns, charge-date charts, and period comparisons
+- Downloadable template and invented fixtures, with AWS/Azure FOCUS export instructions
+- Deliberate currency, interval, coverage, duplicate, invalid-row, and replacement handling
+- Local HTML/JSON/CSV downloads and a deterministic local Lumen guide; no file upload or AI transfer
+
+**Optional CCAC example:**
 - Exact, reconciled Technology Spend across canonical Cloud, direct-AI, and SaaS scopes
 - AWS service and daily Cloud evidence; Azure, GCP, and Kubernetes remain explicitly unavailable in the validated report
 - Direct-AI detail plus a separately labeled, non-additive broader-AI analysis
@@ -51,7 +59,7 @@ npm ci
 npm start
 ```
 
-The dashboard loads the tracked, validated CCAC 1.1 illustrative report. No cloud credentials are used or required. Deterministic Lumen presets and the rest of the dashboard run from the frontend; free-form Lumen additionally requires the deployed serverless API.
+The application starts with the browser-local billing upload flow. No cloud credentials or backend are required. Uploaded-report Lumen uses local prepared answers. “Try an example” loads the tracked, validated CCAC 1.1 illustrative report; its free-form Lumen additionally requires the deployed serverless API.
 
 ### Local environment configuration
 

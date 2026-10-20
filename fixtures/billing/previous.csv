@@ -1,0 +1,8 @@
+Date,EndDate,Service,Cost,Currency,Provider,RecordId
+2026-08-01,2026-09-01,API compute,480.1,USD,AWS,aug-compute
+2026-08-01,2026-09-01,Managed database,300,USD,AWS,aug-database
+2026-08-01,2026-09-01,Object storage,82.5,USD,AWS,aug-storage
+2026-08-01,2026-09-01,Data transfer,90,USD,AWS,aug-transfer
+2026-08-01,2026-09-01,Support,49,USD,AWS,aug-support
+2026-08-31,2026-09-01,Tax,20,USD,AWS,aug-tax
+2026-08-15,2026-08-16,Promotional credit,-25,USD,AWS,aug-credit

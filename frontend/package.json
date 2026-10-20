@@ -2,14 +2,17 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-
-  "engines": { "node": "24.x" },
-
-  "eslintConfig": {
-    "extends": ["react-app"],
-    "plugins": ["react-hooks"]
+  "engines": {
+    "node": "24.x"
   },
-
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ],
+    "plugins": [
+      "react-hooks"
+    ]
+  },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-accordion": "^1.2.8",
@@ -62,7 +65,6 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.4"
   },
-
   "scripts": {
     "start": "craco start",
     "build": "craco build",
@@ -70,14 +72,23 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "test:api": "node --test ../scripts/lumen-handler.test.cjs",
-    "test:production-mount": "node --test ../scripts/production-mount.test.cjs"
+    "test:production-mount": "node --test ../scripts/production-mount.test.cjs",
+    "prestart": "node ../scripts/prepare_billing_runtime.cjs",
+    "prebuild": "node ../scripts/prepare_billing_runtime.cjs",
+    "test:pipeline": "node --test ../scripts/billing-runtime.test.mjs"
   },
-
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
-
   "devDependencies": {
     "@craco/craco": "^7.1.0",
     "@playwright/test": "1.62.1",
@@ -89,6 +100,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "globals": "15.15.0",
     "postcss": "^8.4.49",
+    "pyodide": "0.29.4",
     "react-scripts": "5.0.1",
     "tailwindcss": "^3.4.17"
   }

@@ -1,0 +1,8 @@
+Date,EndDate,Service,Cost,Currency,Provider,RecordId
+2026-09-01,2026-10-01,API compute,720.125,USD,AWS,sep-compute
+2026-09-01,2026-10-01,Managed database,340,USD,AWS,sep-database
+2026-09-01,2026-10-01,Object storage,86.75,USD,AWS,sep-storage
+2026-09-01,2026-10-01,Data transfer,135,USD,AWS,sep-transfer
+2026-09-01,2026-10-01,Support,49,USD,AWS,sep-support
+2026-09-30,2026-10-01,Tax,31.5,USD,AWS,sep-tax
+2026-09-15,2026-09-16,Promotional credit,-52.25,USD,AWS,sep-credit

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cloudandcapital.com/schemas/ccac/1.0.0/tool-result.schema.json",
+  "title": "CCAC tool result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "document_type", "producer", "run_id", "generated_at", "mode", "period", "inputs", "quality", "metrics", "findings", "opportunities", "evidence", "extensions"],
+  "properties": {
+    "contract": {"const": "ccac/1.0.0"},
+    "document_type": {"const": "tool_result"},
+    "producer": {"$ref": "common.schema.json#/$defs/producer"},
+    "run_id": {"type": "string", "format": "uuid"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "mode": {"enum": ["illustrative", "real"]},
+    "period": {"$ref": "common.schema.json#/$defs/period"},
+    "inputs": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/source"}, "minItems": 1},
+    "quality": {"$ref": "common.schema.json#/$defs/quality"},
+    "metrics": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/metric"}},
+    "findings": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/finding"}},
+    "opportunities": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/opportunity"}},
+    "evidence": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/evidence"}, "minItems": 1},
+    "extensions": {"type": "object"}
+  }
+}
+

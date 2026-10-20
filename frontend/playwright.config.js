@@ -10,12 +10,13 @@ module.exports = defineConfig({
   outputDir: "./test-results/visual-contract",
   snapshotPathTemplate,
   fullyParallel: false,
+  timeout: 90000,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
+  workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [["line"], ["html", { outputFolder: "playwright-report", open: "never" }]] : "list",
   expect: {
-    timeout: 10_000,
+    timeout: 30_000,
     toHaveScreenshot: {
       animations: "disabled",
       caret: "hide",

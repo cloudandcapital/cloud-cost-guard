@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cloudandcapital.com/schemas/ccac/1.1.0/pipeline-manifest.schema.json",
+  "title": "CCAC pipeline manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "document_type", "run_id", "mode", "started_at", "completed_at", "status", "required_producers", "artifacts", "errors"],
+  "properties": {
+    "contract": {"const": "ccac/1.1.0"},
+    "document_type": {"const": "pipeline_manifest"},
+    "run_id": {"type": "string", "format": "uuid"},
+    "mode": {"enum": ["illustrative", "real"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "status": {"enum": ["complete", "partial", "failed"]},
+    "required_producers": {
+      "type": "array",
+      "prefixItems": [
+        {"const": "finops-lite"},
+        {"const": "finops-watchdog"},
+        {"const": "recovery-economics"},
+        {"const": "ai-cost-lens"},
+        {"const": "saas-cost-analyzer"},
+        {"const": "tech-spend-command-center"}
+      ],
+      "items": false,
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["producer", "document_type", "relative_path", "content_sha256", "status", "contract_valid"],
+        "properties": {
+          "producer": {"$ref": "common.schema.json#/$defs/producer"},
+          "document_type": {"enum": ["tool_result", "trusted_report"]},
+          "relative_path": {"type": "string", "pattern": "^(?!/)(?!.*\\.\\.).+$"},
+          "content_sha256": {"$ref": "common.schema.json#/$defs/sha256"},
+          "status": {"enum": ["produced", "omitted", "failed"]},
+          "contract_valid": {"type": "boolean"},
+          "omission_reason": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "errors": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/quality_issue"}}
+  }
+}

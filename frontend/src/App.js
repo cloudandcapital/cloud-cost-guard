@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import logo from "./assets/cloud-and-capital-icon.png";
 import AskClaude from "./components/AskClaude";
+import BillingApp from "./components/billing/BillingApp";
+import { BillingSummary, BillingComparison, BillingFindings, BillingServices, BillingClouds, BillingUnavailable, BillingOverview, BillingDataChecks, BillingDownloads } from "./components/billing/BillingDashboard";
+import { buildBillingExports } from "./lib/billing/export";
 import { getCcac11PresentationModel } from "./lib/ccac11PresentationModel";
 import { buildCanonicalExportFiles, downloadCanonicalExport } from "./lib/canonicalExport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
@@ -116,7 +119,7 @@ const FindingModal = ({ finding, onClose }) => {
   );
 };
 
-function Dashboard() {
+export function Dashboard({ report, onReplace, onClear, onExample }) {
   const [revision, setRevision] = useState(0);
   const [provider, setProvider] = useState("aws");
   const [finding, setFinding] = useState(null);
@@ -130,10 +133,11 @@ function Dashboard() {
     if (rail && selected) rail.scrollTo({ left: selected.offsetLeft - (rail.clientWidth - selected.clientWidth) / 2, behavior: "smooth" });
   }, [activeTab]);
   const result = useMemo(() => {
+    if (report) return { model: null, error: null };
     void revision;
     try { return { model: getCcac11PresentationModel(), error: null }; }
     catch (error) { return { model: null, error: error.message }; }
-  }, [revision]);
+  }, [revision, report]);
 
   if (result.error) return (
     <main className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light flex items-center justify-center p-6" data-testid="canonical-error-state">
@@ -142,63 +146,68 @@ function Dashboard() {
   );
 
   const model = result.model;
-  const scopeChart = model.scopes.map((scope, index) => ({
+  const scopeChart = model?.scopes.map((scope, index) => ({
     name: scope.id.endsWith("cloud") ? "Cloud" : scope.id.endsWith("direct_ai") ? "Direct AI" : "SaaS",
     value: scope.displayValue,
     fill: colors[index],
     record: scope,
-  }));
-  const cloudDaily = model.cloud.daily.map((record) => ({ date: record.dimensions.date.slice(5), cost: record.displayValue }));
-  const cloudServices = model.cloud.services.map((record) => ({ name: record.dimensions.service, cost: record.displayValue }));
-  const aiModels = model.ai.costMetrics.map((record) => ({
+  })) || [];
+  const cloudDaily = model?.cloud.daily.map((record) => ({ date: record.dimensions.date.slice(5), cost: record.displayValue })) || [];
+  const cloudServices = model?.cloud.services.map((record) => ({ name: record.dimensions.service, cost: record.displayValue })) || [];
+  const aiModels = model?.ai.costMetrics.map((record) => ({
     id: record.id, provider: record.dimensions.provider, model: record.dimensions.model,
     billingChannel: record.dimensions.billing_channel, cost: record.displayValue,
-  }));
-  const topAnomaly = model.anomalies[0];
-  const unsupported = (key) => model.unsupported[key]?.explanation || unavailable;
+  })) || [];
+  const topAnomaly = model?.anomalies[0];
+  const unsupported = (key) => model?.unsupported[key]?.explanation || unavailable;
+  const sections = [["findings", "Findings"], ["products", report ? "Services" : "Products"], ["clouds", "Clouds"], ["kubernetes", "Kubernetes"], ["overview", "Overview"], ["ai-spend", "AI Spend"], ["saas", "SaaS"]];
   const handleExport = (kind) => {
     setExportError("");
     try {
-      const files = buildCanonicalExportFiles();
+      const files = report ? buildBillingExports(report) : buildCanonicalExportFiles();
       downloadCanonicalExport(files[kind]);
     } catch {
-      setExportError("Canonical export could not be generated safely. No file was downloaded.");
+      setExportError(report ? "The download could not be created. Your report is still here; try again." : "Canonical export could not be generated safely. No file was downloaded.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-bg to-brand-light" data-testid="approved-dashboard" data-view-schema={model.schema}>
+    <div className={`min-h-screen bg-gradient-to-br from-brand-bg to-brand-light${report ? " billing-dashboard" : ""}`} data-testid="approved-dashboard" data-view-schema={report?.schema || model.schema} data-source={report ? "uploaded" : "example"}>
       <header className="nav-header" data-testid="dashboard-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <img src={logo} alt="Cloud & Capital" className="brand-logo" />
-            <div className="leading-tight"><h1 className="brand-title">Cloud+ Cost Guard</h1><p className="brand-deck">Canonical technology spend decision support <span>· Illustrative</span></p></div>
+            <div className="leading-tight"><h1 className="brand-title">Cloud+ Cost Guard</h1><p className="brand-deck">{report ? <>Your cloud billing dashboard <span>· Uploaded data</span></> : <>Canonical technology spend decision support <span>· Illustrative</span></>}</p></div>
           </div>
           <div className="header-actions">
             <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
-              <div className="btn-brand-outline rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs text-brand-muted"><Calendar className="h-4 w-4 mr-2" />21-day report</div>
+              <div className="btn-brand-outline rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs text-brand-muted"><Calendar className="h-4 w-4 mr-2" />{report ? `${report.current.days}-day bill` : "21-day report"}</div>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="outline" className="btn-brand-outline rounded-2xl px-2 sm:px-4 text-xs" data-testid="canonical-export-trigger" aria-label="Export canonical report"><Download className="h-4 w-4 mr-2" />Export<ChevronDown className="h-3 w-3 ml-1" /></Button></DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="outline" className="btn-brand-outline rounded-2xl px-2 sm:px-4 text-xs" data-testid="canonical-export-trigger" aria-label={report ? "Export uploaded report" : "Export canonical report"}><Download className="h-4 w-4 mr-2" />Export<ChevronDown className="h-3 w-3 ml-1" /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="export-menu" data-testid="canonical-export-menu">
-                  <DropdownMenuItem onSelect={() => handleExport("html")} className="export-menu-item" data-testid="canonical-export-html"><FileText /><span><strong>Canonical executive report</strong><small>Self-contained printable HTML</small></span></DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleExport("json")} className="export-menu-item" data-testid="canonical-export-json"><FileJson /><span><strong>Canonical evidence package</strong><small>Deterministic machine-readable JSON</small></span></DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleExport("html")} className="export-menu-item" data-testid="canonical-export-html"><FileText /><span><strong>{report ? "Your billing report" : "Canonical executive report"}</strong><small>Self-contained printable HTML</small></span></DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleExport("json")} className="export-menu-item" data-testid="canonical-export-json"><FileJson /><span><strong>{report ? "Your billing evidence" : "Canonical evidence package"}</strong><small>{report ? "Exact totals and normalized records" : "Deterministic machine-readable JSON"}</small></span></DropdownMenuItem>
+                  {report && <><DropdownMenuItem onSelect={() => handleExport("current")} className="export-menu-item"><FileText/><span><strong>Current records CSV</strong><small>Normalized records from this bill</small></span></DropdownMenuItem>{report.previous && <DropdownMenuItem onSelect={() => handleExport("previous")} className="export-menu-item"><FileText/><span><strong>Previous records CSV</strong><small>Normalized comparison records</small></span></DropdownMenuItem>}</>}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button onClick={() => setRevision((value) => value + 1)} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs"><Activity className="h-4 w-4 mr-2" />Refresh</Button>
+              {report ? <Button onClick={onReplace} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs">Upload another bill</Button> : <Button onClick={() => setRevision((value) => value + 1)} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs"><Activity className="h-4 w-4 mr-2" />Refresh</Button>}
             </div>
             {exportError && <p className="export-error" role="alert" data-testid="canonical-export-error">{exportError}</p>}
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6" data-testid={report ? "billing-report" : undefined}>
         <div className="trust-strip" data-testid="capability-disclosure">
+          {report ? <><span className="font-medium">Your uploaded bill powers this dashboard. No cloud account credentials needed.</span><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>Clear my data</button><button onClick={onExample}>Try an example</button></div></> : <>
           <span className="font-medium">Validated CCAC 1.1 illustrative report. No customer accounts, credentials, or production resources are connected.</span>
           <span>Refresh reloads the tracked canonical view; it does not sync cloud accounts.</span>
           <span>Report generated: {model.identity.generated_at}</span>
           <span>Lumen explains this same validated CCAC 1.1 illustrative report; presets are deterministic and free-form explanations are generated by Claude.</span>
+          </>}
         </div>
 
+        {report ? <><BillingSummary report={report}/><BillingComparison report={report} onReplace={onReplace}/></> : <>
         <section className="executive-summary" data-testid="executive-summary">
           <Card className="hero-card"><CardContent className="hero-content">
             <div className="hero-copy"><div className="eyebrow">Published Technology Spend</div><div className="hero-total" data-canonical-id={model.total.id}>{money(model.total.displayValue)}</div><div className="exact-value">Exact canonical value: USD {model.total.value}</div><div className="text-sm text-brand-muted mt-2">{periodLabel(model.identity.report_period)}</div>
@@ -217,13 +226,23 @@ function Dashboard() {
         </section>
 
         <Card className="kpi-card shadow-sm mb-5" data-testid="triage-card"><CardContent className="py-4"><div className="flex items-center justify-between gap-4"><div><div className="font-semibold">Triage boundary</div><p className="text-sm text-brand-muted">Canonical findings support read-only review. No savings or remediation value is generated in the browser.</p></div><Button variant="outline" onClick={() => setReviewOpen(!reviewOpen)} className="btn-brand-outline">{reviewOpen ? "Hide review plan" : "Review plan"}</Button></div>{reviewOpen && <ol className="mt-4 list-decimal pl-5 text-sm space-y-2"><li>Confirm canonical evidence and accountable owner.</li><li>Validate the observed condition without treating anomaly impact as savings.</li><li>Obtain approval before any external change.</li><li>Verify cost and service health after approved action.</li></ol>}</CardContent></Card>
+        </>}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="mobile-section-nav"><label htmlFor="mobile-section-select">Dashboard section</label><select id="mobile-section-select" data-testid="mobile-section-select" value={activeTab} onChange={(event) => setActiveTab(event.target.value)}>{[["findings","Findings"],["products","Products"],["clouds","Clouds"],["kubernetes","Kubernetes"],["overview","Overview"],["ai-spend","AI Spend"],["saas","SaaS"]].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+          <div className="mobile-section-nav"><label htmlFor="mobile-section-select">Dashboard section</label><select id="mobile-section-select" data-testid="mobile-section-select" value={activeTab} onChange={(event) => setActiveTab(event.target.value)}>{sections.map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></div>
           <div className="tab-shell"><TabsList ref={tabRail} className="ccg-tabs" data-testid="primary-tabs" aria-label="Dashboard sections">
-            {[["findings","Findings"],["products","Products"],["clouds","Clouds"],["kubernetes","Kubernetes"],["overview","Overview"],["ai-spend","AI Spend"],["saas","SaaS"]].map(([value,label]) => <TabsTrigger key={value} value={value} className="ccg-tab">{label}</TabsTrigger>)}
+            {sections.map(([value,label]) => <TabsTrigger key={value} value={value} className="ccg-tab">{label}</TabsTrigger>)}
           </TabsList></div>
 
+          {report ? <>
+            <TabsContent value="findings" className="space-y-5"><BillingFindings report={report}/></TabsContent>
+            <TabsContent value="products" className="space-y-5"><BillingServices report={report}/></TabsContent>
+            <TabsContent value="clouds" className="space-y-6"><BillingClouds report={report}/></TabsContent>
+            <TabsContent value="kubernetes"><BillingUnavailable section="kubernetes" onServices={() => setActiveTab("products")}/></TabsContent>
+            <TabsContent value="overview" className="space-y-6"><BillingOverview report={report}/></TabsContent>
+            <TabsContent value="ai-spend"><BillingUnavailable section="ai-spend" onServices={() => setActiveTab("products")}/></TabsContent>
+            <TabsContent value="saas"><BillingUnavailable section="saas" onServices={() => setActiveTab("products")}/></TabsContent>
+          </> : <>
           <TabsContent value="findings" className="space-y-5"><div className="section-heading"><div><div className="eyebrow">Decision queue</div><h2>Canonical Findings</h2><p>Prioritized review with provenance and methodology kept close at hand.</p></div><Badge className="badge-brand">{model.findings.length} findings</Badge></div><div className="finding-list">{model.findings.map((item) => <FindingCard key={item.id} finding={item} onDetails={setFinding} />)}</div></TabsContent>
 
           <TabsContent value="products" className="space-y-5"><h2 className="section-title">Cloud Services</h2><Card className="kpi-card"><CardContent className="pt-6"><ResponsiveTable label="Cloud service costs"><Table><TableHeader><TableRow><TableHead>Canonical service</TableHead><TableHead>Provider</TableHead><TableHead className="text-right">Reporting-period cost</TableHead></TableRow></TableHeader><TableBody>{model.cloud.services.map((service) => <TableRow key={service.id}><TableCell>{service.dimensions.service}</TableCell><TableCell>{service.dimensions.provider.toUpperCase()}</TableCell><TableCell className="text-right">{money(service.displayValue)}</TableCell></TableRow>)}</TableBody></Table></ResponsiveTable></CardContent></Card></TabsContent>
@@ -237,12 +256,14 @@ function Dashboard() {
           <TabsContent value="ai-spend" className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><MetricCard title="Canonical direct-AI scope" value={money(model.ai.directScope.displayValue,4)} subtitle="Additive Technology Spend input · direct vendors only" icon={Bot}/><MetricCard title="Broader AI domain analysis" value={money(model.ai.domainTotal.displayValue,4)} subtitle="Non-additive; includes provider-billed AI already represented in Cloud" icon={Info}/></div><Card className="kpi-card"><CardHeader><CardTitle>Supported model/provider cost metrics</CardTitle><CardDescription>Illustrative usage evidence only; not current vendor pricing.</CardDescription></CardHeader><CardContent><ResponsiveTable label="AI model and provider costs"><Table><TableHeader><TableRow><TableHead>Model</TableHead><TableHead>Provider</TableHead><TableHead>Billing channel</TableHead><TableHead className="text-right">Cost</TableHead></TableRow></TableHeader><TableBody>{aiModels.map((item)=><TableRow key={item.id}><TableCell>{item.model}</TableCell><TableCell>{item.provider}</TableCell><TableCell>{item.billingChannel.replaceAll("_"," ")}</TableCell><TableCell className="text-right">{money(item.cost,4)}</TableCell></TableRow>)}</TableBody></Table></ResponsiveTable></CardContent></Card></TabsContent>
 
           <TabsContent value="saas" className="space-y-6"><MetricCard title="Canonical SaaS scope" value={money(model.saas.scope.displayValue)} subtitle={`${periodLabel(model.saas.scope.trace.period)} · same-period allocated spend`} icon={Layers}/><div className="grid grid-cols-1 md:grid-cols-2 gap-6">{model.saas.invoices.map((invoice)=><Card key={invoice.id} className="kpi-card"><CardHeader><CardTitle>{invoice.dimensions.application}</CardTitle><CardDescription>{invoice.dimensions.billing_cadence} supplied invoice evidence</CardDescription></CardHeader><CardContent><div className="text-2xl font-bold">{money(invoice.displayValue)}</div><p className="text-xs text-brand-muted mt-2">{periodLabel(invoice.trace.period)}. This invoice is not added to the canonical SaaS scope.</p></CardContent></Card>)}</div><UnavailableCard title="Combined invoice total" explanation="Annual and quarterly invoice records cover incompatible periods; no canonical combined invoice metric exists." /></TabsContent>
+          </>}
         </Tabs>
+        {report && <><BillingDownloads report={report} onDownload={handleExport}/><BillingDataChecks report={report}/><p className="billing-dashboard-help">Want help interpreting your bill? <a href="https://cloudandcapital.com/services">Get a second pair of eyes from Cloud &amp; Capital.</a></p></>}
       </main>
       <FindingModal finding={finding} onClose={() => setFinding(null)} />
-      {!finding && <AskClaude />}
+      {!finding && <AskClaude billingReport={report}/>}
     </div>
   );
 }
 
-export default Dashboard;
+export default function App() { return <BillingApp Dashboard={Dashboard}/>; }
