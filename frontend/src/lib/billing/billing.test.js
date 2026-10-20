@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 import { TextEncoder, TextDecoder } from 'util';
-import { decimalUnits, decimalString, normalizeCsv, parseCsv, preparePeriod, readBillingFiles } from './csv';
+import { decimalUnits, decimalString, normalizeCsv, parseCsv, readBillingFiles } from './csv';
 import { answerBillingQuestion, money, periodLabel } from './report';
 import { buildBillingExports } from './export';
 import { nativeBillingReport as buildBillingReport } from './nativePipelineTestHelper';
@@ -29,6 +30,15 @@ describe('browser billing CSV ingestion', () => {
     expect(file.rows[0].cost).toBe('1234.56');
     expect(file.rows[0].currency).toBe('USD');
     expect(file.rows[0].end).toBe('2026-09-02T00:00:00.000Z');
+  });
+  test('browser decoding preserves original BOM and CRLF bytes for producer source hashes', async () => {
+    const text = '\uFEFFDate,Service,Cost,Currency\r\n2026-09-01,Compute,0.125,USD\r\n';
+    const bytes = new TextEncoder().encode(text);
+    const files = await readBillingFiles([{name:'original.csv',size:bytes.length,arrayBuffer:async()=>bytes.buffer}]);
+    expect(files[0].text).toBe(text);
+    const report = buildBillingReport(files);
+    const artifact = JSON.parse(report.pipeline.artifacts['finops-lite.json']);
+    expect(artifact.inputs[0].content_sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
   });
   test.each([
     ['', /header/], ['Date,Date\n1,2', /unique header/], ['Date;Service;Cost;Currency\n2026-09-01;Storage;1;USD', /could not find/],
@@ -85,11 +95,11 @@ describe('browser billing CSV ingestion', () => {
     expect(buildBillingReport([file]).current.net).toBe('9');
   });
   test('validates charge intervals, selected coverage and supported span', () => {
-    expect(() => preparePeriod(current(), { start: '2026-09-02' })).toThrow(/leave out/);
-    expect(preparePeriod(current(), { start: '2026-08-31', end: '2026-09-30' }).days).toBe(31);
+    expect(() => buildBillingReport(current(), [], { current: { start: '2026-09-02' } })).toThrow(/leave out/);
+    expect(buildBillingReport(current(), [], { current: { start: '2026-08-31', end: '2026-09-30' } }).current.days).toBe(31);
     const reversed = 'Date,EndDate,Service,Cost,Currency\n2026-09-02,2026-09-01,A,1,USD';
     expect(() => normalizeCsv(reversed)).toThrow(/end must be after/);
-    expect(() => preparePeriod(current(), { start: '2020-01-01' })).toThrow(/366 days/);
+    expect(() => buildBillingReport(current(), [], { current: { start: '2020-01-01' } })).toThrow(/366 days/);
   });
 });
 
@@ -119,6 +129,8 @@ describe('report, exports and Lumen share uploaded evidence', () => {
     const old = simple('2026-08-01,Old service,4,USD,AWS,c');
     const report = buildBillingReport([now], [old]);
     expect(report.current.services).toHaveLength(2);
+    expect(answerBillingQuestion(report, 'What are Compute costs?')).toContain('more than one provider group');
+    expect(answerBillingQuestion(report, 'What are AWS Compute costs?')).toContain('Compute (AWS) has $10.00');
     expect(report.comparison.drivers.find((row) => row.service === 'Old service')).toMatchObject({ delta: '-4', coverage: 'Not in current upload' });
     expect(report.comparison.warnings.join(' ')).toMatch(/coverage differs/);
   });

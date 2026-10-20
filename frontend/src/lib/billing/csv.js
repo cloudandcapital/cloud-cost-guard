@@ -105,7 +105,6 @@ export function normalizeCsv(text, filename = 'billing.csv') {
     const expected = focus ? 'ChargePeriodStart, ChargePeriodEnd, ServiceName, BilledCost, BillingCurrency' : 'Date, Service, Cost, Currency';
     fail(`${filename}: we could not find ${missing.join(', ')}. Use the ${focus ? 'FOCUS' : 'simple'} CSV headers: ${expected}. Rename or map your columns using the template. Summary tables and invoice PDFs cannot be read.`);
   }
-  const columnsUsed = new Set([...Object.values(fields), 'recordid', 'billingaccountid', 'chargecategory']);
   const rows = parsed.slice(1).map(({ cells, line }) => {
     try {
       if (cells.length !== headers.length) fail(`Expected ${headers.length} columns but found ${cells.length}. Check commas and quotes.`);
@@ -127,10 +126,9 @@ export function normalizeCsv(text, filename = 'billing.csv') {
       if (end <= start) fail('The charge end must be after its start. End dates are exclusive.');
       const recordId = get('recordid'), accountId = get('billingaccountid');
       if (recordId.length > 300 || accountId.length > 300) fail('Record and account IDs must be 300 characters or fewer.');
-      const row = { start, end, service, provider, currency, cost, recordId, accountId, file: filename, line };
-      // Preserve extra dimensions in duplicate detection, but do not retain or export them.
-      const extras = headers.map((header, index) => [header, cells[index].trim()]).filter(([header]) => !columnsUsed.has(header)).sort(([a], [b]) => a.localeCompare(b));
-      return { ...row, fingerprint: JSON.stringify([start, end, service, provider, currency, cost, accountId, get('chargecategory'), extras]) };
+      // UI preflight only. The original text goes to FinOps Lite, which owns
+      // normalization, full-dimension duplicate identity and period handling.
+      return { start, end, service, provider, currency, cost, recordId, accountId, file: filename, line };
     } catch (error) { return fail(`${filename}, line ${line}: ${error.message}`); }
   });
   return { name: filename, text, format: focus ? 'FOCUS BilledCost' : 'Simple billing CSV', rows };
@@ -152,52 +150,4 @@ export async function readBillingFiles(fileList) {
   }
   if (data.reduce((sum, file) => sum + file.rows.length, 0) > LIMITS.rows) fail('This period has more than 50,000 records across its files. Export a smaller period.');
   return data;
-}
-
-export function preparePeriod(files, { duplicatePolicy = 'review', start = '', end = '' } = {}) {
-  if (!['review', 'keep', 'drop'].includes(duplicatePolicy)) fail('Choose how identical rows should be handled before reviewing the bill.');
-  if (!files?.length) fail('Choose your current billing CSV first.');
-  const sourceRows = files.flatMap((file) => file.rows);
-  if (!sourceRows.length || sourceRows.length > LIMITS.rows) fail('Use between 1 and 50,000 billing records per period.');
-  const currencies = [...new Set(sourceRows.map((row) => row.currency))];
-  if (currencies.length !== 1) fail(`These records contain ${currencies.join(', ')}. Export one currency at a time; no exchange rates are applied.`);
-  const ids = new Map(), fingerprints = new Set(), rows = [];
-  let repeatedIds = 0, identicalRows = 0;
-  for (const row of sourceRows) {
-    if (row.recordId) {
-      const key = JSON.stringify([row.provider, row.accountId, row.recordId]);
-      if (ids.has(key)) {
-        if (ids.get(key) !== row.fingerprint) fail(`${row.file}, line ${row.line}: RecordId ${row.recordId} has conflicting values. Export a single, consistent version of this record.`);
-        repeatedIds += 1; continue;
-      }
-      ids.set(key, row.fingerprint);
-    } else if (fingerprints.has(row.fingerprint)) {
-      identicalRows += 1;
-      if (duplicatePolicy !== 'keep') continue;
-    }
-    if (!row.recordId) fingerprints.add(row.fingerprint);
-    const { fingerprint, ...clean } = row;
-    rows.push(clean);
-  }
-  if (identicalRows && duplicatePolicy === 'review') fail(`${identicalRows} repeated row${identicalRows === 1 ? '' : 's'} without a RecordId need your review. In “Identical rows”, choose “Count once” for repeated exports or “Keep all” for separate charges that happen to match.`);
-  const first = rows.reduce((a, row) => row.start < a ? row.start : a, rows[0].start);
-  const last = rows.reduce((a, row) => row.end > a ? row.end : a, rows[0].end);
-  const coverageEnd = last.includes('T00:00:00.000Z') ? last.slice(0, 10) : nextDay(last.slice(0, 10));
-  const startDay = start ? day(start, 'Period start') : first.slice(0, 10);
-  const endDay = end ? nextDay(day(end, 'Period end')) : coverageEnd;
-  if (`${startDay}T00:00:00.000Z` > first || `${endDay}T00:00:00.000Z` < last) fail('The selected dates leave out billing records. Choose dates that include every charge interval, or export a narrower file.');
-  const days = (Date.parse(`${endDay}T00:00:00Z`) - Date.parse(`${startDay}T00:00:00Z`)) / DAY;
-  if (days < 1 || days > LIMITS.days) fail('Choose a reporting period between 1 and 366 days.');
-  const warnings = [];
-  if (repeatedIds) warnings.push(`${repeatedIds} repeated record ID${repeatedIds === 1 ? '' : 's'} counted once.`);
-  if (identicalRows) warnings.push(`${identicalRows} identical row${identicalRows === 1 ? '' : 's'} without IDs ${duplicatePolicy === 'keep' ? 'kept as separate charges' : 'counted once'} by your choice.`);
-  if (rows.some((row) => !row.recordId)) warnings.push('Some records have no RecordId. Only identical rows can be checked; overlapping exports may contain other duplicates.');
-  if (rows.some((row) => row.provider === 'Not specified')) warnings.push('Provider was not supplied for some records. They are grouped under “Not specified”.');
-  return {
-    currency: currencies[0], rows, start: startDay, end: endDay, days,
-    dateBasis: start || end ? 'Selected dates (inclusive in the form; end exclusive in downloads)' : 'Coverage inferred from charge dates; a complete invoice period is not confirmed',
-    sources: files.map(({ name, format, rows: source }) => ({ name, format, rows: source.length })),
-    sourceRowCount: sourceRows.length, repeatedIds, identicalRows, duplicatePolicy, warnings,
-    spansMultipleDays: rows.some((row) => row.end > `${nextDay(row.start.slice(0, 10))}T00:00:00.000Z`),
-  };
 }
