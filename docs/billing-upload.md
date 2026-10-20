@@ -1,6 +1,10 @@
 # Review your own cloud bill
 
-The start screen accepts billing CSVs without cloud credentials. Select the current period's files, optionally add a separate earlier period, and choose **Review my bill**. **Try an example** opens the preserved CCAC dashboard; it is never used to complete missing upload data.
+The start screen accepts billing CSVs without cloud credentials. Select the current period's files, optionally add a separate earlier period, and choose **Review my bill**. Your records populate the existing Cloud Cost Guard dashboard: the same header, summary cards, section navigation, charts, export menu and Lumen panel. There is no separate result-page product. **Try an example** opens this dashboard in a clearly labeled CCAC example mode; it is never used to complete missing upload data.
+
+**Findings** explains totals, service drivers and supplied comparisons. **Services** accounts for all service groups and signed credits. **Clouds** charts the uploaded records and filters only providers actually present, with explicit filtered subtotals; the headline, exports and Lumen continue to cover the whole upload. **Overview** explains the cost basis and coverage. **Kubernetes**, **AI Spend** and **SaaS** explain what additional workload, direct-vendor or invoice data is needed, without filling those sections with example metrics. Provider-billed AI can still be present in the supplied service costs.
+
+The GitHub pipeline tests, validates and builds the app and its tracked illustrative fixtures. It is not a customer billing ingestion service, and visitors do not need a GitHub workflow run or a human to upload on their behalf. CSV processing runs locally when they use the app. The reference cloud connectors remain disconnected from production ingestion. Assisted interpretation is an optional Cloud & Capital service linked below the dashboard; the self-service flow stands on its own.
 
 ## Supported files
 
@@ -60,7 +64,7 @@ HTML reports escape all supplied text and contain no scripts or external resourc
 
 ## Implementation and reuse
 
-`src/lib/billing/csv.js` parses and normalizes files; `report.js` owns exact aggregates, findings, comparison and local Lumen answers; `export.js` renders the same report to HTML/JSON/CSV. `BillingApp` selects upload, uploaded report or example and controls data reset. The existing `downloadCanonicalExport` download utility and `AskClaude` dialog/accessibility shell are reused. CCAC sample validation, canonical exports, Lumen API, and reference cloud connectors remain separate; their data and schemas are not misrepresented as uploaded evidence.
+`src/lib/billing/csv.js` parses and normalizes files; `report.js` owns exact aggregates, findings, comparison and local Lumen answers; `export.js` renders the same report to HTML/JSON/CSV. `BillingApp` selects upload or dashboard and controls data reset. The `Dashboard` component in `App.js` provides the shared shell and all seven existing sections for both uploaded and example modes. `BillingDashboard.jsx` supplies its uploaded-data sections, reusing the dashboard cards and navigation. The existing `downloadCanonicalExport` download utility and `AskClaude` dialog/accessibility shell are reused. Uploaded mode never invokes the CCAC example model loader. CCAC sample validation, canonical exports, Lumen API, and reference cloud connectors remain separate; their data and schemas are not misrepresented as uploaded evidence.
 
 ## Release coordination
 

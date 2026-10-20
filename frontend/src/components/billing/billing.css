@@ -137,3 +137,67 @@
 @media(max-width:639px){.billing-main{padding:0 16px 30px}.billing-header-inner{padding:16px;gap:10px}.billing-brand h1{font-size:21px}.billing-brand img{width:40px;height:40px}.billing-header-note{display:none}.billing-intro{display:block;padding:36px 4px 28px}.billing-intro h2{font-size:35px;margin:12px 0 18px;line-height:1.16;max-width:380px}.billing-intro>div>p:not(.billing-eyebrow){font-size:14px}.billing-intro-art{display:none}.billing-desktop-break{display:none}.billing-privacy-pill{font-size:11px;margin-top:17px}.billing-upload-card{padding:22px 18px;border-radius:16px}.billing-form-heading h2{font-size:24px}.billing-form-heading p{font-size:12px;line-height:1.7}.billing-upload-grid{grid-template-columns:1fr;gap:24px;margin-top:24px}.billing-period-input+.billing-period-input{padding:24px 0 0;border-left:0;border-top:1px solid #e7ded3}.billing-step-heading{margin-bottom:16px}.billing-submit-row{gap:12px 18px;margin-top:24px}.billing-submit-row .billing-primary{flex-basis:100%}.billing-smallprint{font-size:10px}.billing-instructions>summary{padding:16px;font-size:12px}.billing-instruction-body{padding:0 16px 20px}.billing-instruction-body p,.billing-instruction-body li{font-size:12px}.billing-format-grid{grid-template-columns:1fr;gap:12px}.billing-format-grid>div{padding:16px}.billing-footer{padding:24px 16px 90px;align-items:flex-start;font-size:10px}.billing-footer>span{font-size:15px}.billing-footer a{white-space:normal;text-align:right;max-width:130px}.billing-report{padding-top:28px}.billing-report-top{display:block}.billing-report-top h2{font-size:30px}.billing-report-actions{max-width:none;justify-content:flex-start;margin:22px 0 0;gap:10px 20px}.billing-report-actions .billing-primary{flex-basis:auto;margin:0;padding:10px 13px;font-size:12px!important}.billing-report-actions .billing-link-button{font-size:11px!important}.billing-local-note{padding:12px;font-size:11px;align-items:flex-start;margin-bottom:18px}.billing-local-note svg{margin-top:2px}.billing-summary-grid{gap:12px}.billing-summary-grid article{padding:19px 16px}.billing-total{font-size:39px}.billing-stat-card h3{font-size:11px}.billing-stat-card strong{font-size:23px;margin:15px 0}.billing-exact{font-size:10px!important}.billing-rounding{font-size:10px;margin:12px 0 20px!important}.billing-comparison-card{padding:20px;gap:18px;display:block}.billing-comparison-card>div:first-child{min-width:0}.billing-comparison-card h3{font-size:22px}.billing-comparison-card .billing-secondary{margin-top:18px}.billing-previous-total{text-align:left;margin-top:20px}.billing-comparison-card .billing-comparison-warning{margin-top:16px;padding:10px;font-size:11px}.billing-section-heading{margin-top:28px}.billing-section-heading h2{font-size:24px}.billing-section-heading span{font-size:10px;max-width:90px;white-space:normal}.billing-findings{grid-template-columns:1fr;gap:12px}.billing-findings article{padding:20px}.billing-findings h3{font-size:19px}.billing-charts{gap:16px;margin-top:22px}.billing-chart-card{padding:22px 10px}.billing-chart{height:290px}.billing-chart-card h3{font-size:21px}.billing-table th,.billing-table td{padding:13px 12px}.billing-table th:first-child{min-width:155px}.billing-download-card{padding:22px 18px;gap:20px}.billing-download-actions{gap:9px}.billing-download-actions button{font-size:10px;padding:12px 8px}.billing-sample-banner{font-size:11px;gap:8px;padding:10px}.billing-report .ask-claude-input{min-width:0}}
 @media(max-width:639px){.billing-summary-grid.billing-long-values{grid-template-columns:1fr}.billing-report-large-values .billing-previous-total strong{font-size:22px}}
 @media(max-width:639px){.billing-mobile-table-hint{display:block;font-size:11px;color:#526d58;margin:0 0 12px!important}}
+
+/* Uploaded records use the existing Cloud Cost Guard dashboard layout. */
+.billing-dashboard{color:#2d332f;line-height:1.6}
+.billing-dashboard .hero-copy{background:#e1e8dc}
+.billing-dashboard .hero-total{color:#324c39;white-space:nowrap}
+.billing-dashboard .scope-card{background:#fffdf9}
+.billing-dashboard .scope-stack .kpi-card{min-width:0;background:#fffdf9}
+.billing-dashboard .scope-stack .billing-credit-metric{background:#f2e4df;border-color:#ddc7c0}
+.billing-dashboard .scope-stack [class*="text-2xl"]{font-size:clamp(16px,1.35vw,20px);white-space:nowrap}
+.billing-dashboard .scope-stack .billing-exact{font-size:10px;margin-top:8px;overflow-wrap:anywhere;color:#6a7060}
+.billing-dashboard .scope-stack [data-slot="card-title"]{line-height:1.5}
+.billing-dashboard .btn-brand-primary{background:#526f59;border-color:#526f59}
+.billing-dashboard .trust-strip{border-left-color:#78917c;background:#e9eddf;color:#52634e;align-items:center}
+.billing-data-actions{display:flex;flex-wrap:wrap;gap:8px 20px;margin-left:auto}
+.billing-data-actions button{font:inherit;min-height:34px;text-decoration:underline;text-underline-offset:4px}
+.billing-dashboard .billing-comparison-card{margin-bottom:24px}
+.billing-dashboard .billing-rounding{margin:0!important}
+.billing-dashboard .billing-scope-legend{display:grid;gap:10px}
+.billing-scope-legend>div{display:flex;justify-content:space-between;align-items:baseline;gap:18px;font-size:12px}
+.billing-scope-legend>div>span{min-width:0;overflow-wrap:anywhere}
+.billing-scope-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.billing-scope-legend small{display:block;color:#7b756b;font-size:10px;padding-left:18px}
+.billing-scope-legend strong{flex-shrink:0;font-variant-numeric:tabular-nums}
+.billing-no-charges{font-size:13px;line-height:1.8;padding:28px 0;color:#746e60}
+.billing-dashboard .billing-upload-findings .finding-row{grid-template-columns:145px minmax(0,1fr)}
+.billing-finding-number{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#e5ebdf;color:#536d59;font-size:12px;font-weight:600}
+.billing-provider-filters{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 16px}
+.billing-provider-filters button{max-width:100%;height:auto;min-height:44px;white-space:normal;overflow-wrap:anywhere}
+.billing-filter-total{display:flex;gap:8px 20px;align-items:baseline;flex-wrap:wrap;padding:16px 20px;background:#e6ecdf;border:1px solid #ccd7c3;border-radius:12px;font-size:14px}
+.billing-filter-total strong{overflow-wrap:anywhere}
+.billing-filter-total span{color:#6c7565;font-size:11px}
+.billing-dashboard .billing-chart-card h3{font-size:23px}
+.billing-dashboard .billing-missing-section .unavailable-content{padding:26px!important;gap:14px}
+.billing-missing-section h2{font:600 26px/1.3 'Playfair Display',Georgia,serif;margin:8px 0 16px}
+.billing-missing-section p:not(.eyebrow){max-width:75ch;font-size:13px;color:#716c60;line-height:1.8;margin:12px 0}
+.billing-missing-section button{margin-top:10px;white-space:normal;height:auto;min-height:44px}
+.billing-overview-copy{padding:24px}
+.billing-overview-copy h3{font:600 22px/1.3 'Playfair Display',Georgia,serif}
+.billing-overview-copy p{max-width:85ch;color:#6b6b60;font-size:13px;line-height:1.8;margin-top:16px}
+.billing-overview>.kpi-card{margin-top:20px}
+.billing-dashboard-help{font-size:12px;color:#726b61;padding:24px 0 84px;line-height:1.8}
+.billing-dashboard a{color:#516d58;text-decoration:underline;text-underline-offset:4px}
+.billing-dashboard .ask-claude-panel{color:#2d332f}
+.billing-dashboard .ask-claude-btn{background:#526f59}
+.billing-dashboard .ask-claude-footer{color:#6f715f}
+.billing-dashboard .ask-claude-input{min-width:0}
+.billing-dashboard-large-values .hero-total{font-size:clamp(25px,3.3vw,44px)}
+.billing-dashboard-large-values .scope-stack{grid-template-columns:1fr}
+.billing-dashboard-large-values .scope-stack [class*="text-2xl"]{font-size:22px}
+.billing-dashboard-large-values .billing-scope-legend>div{flex-wrap:wrap;gap:3px 16px}
+@media(max-width:767px){
+  .billing-dashboard .header-actions>div:first-child{grid-template-columns:minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.4fr)}
+  .billing-dashboard .header-actions button{white-space:normal;line-height:1.3;height:auto;min-height:44px}
+  .billing-data-actions{margin-left:0;width:100%;gap:24px}
+  .billing-dashboard .scope-stack{grid-template-columns:1fr 1fr}
+  .billing-dashboard .scope-stack>.kpi-card:last-child{grid-column:1/-1}
+  .billing-dashboard .scope-stack [class*="text-2xl"]{font-size:20px}
+  .billing-dashboard .scope-stack>.kpi-card:last-child [class*="text-2xl"]{font-size:24px}
+  .billing-dashboard .billing-upload-findings .finding-row{grid-template-columns:1fr}
+  .billing-dashboard .billing-missing-section .unavailable-content{padding:20px 16px!important}
+  .billing-dashboard-large-values .scope-stack{grid-template-columns:1fr}
+  .billing-dashboard-large-values .hero-total{font-size:clamp(22px,6.6vw,34px)}
+  .billing-dashboard .billing-overview-copy{padding:20px}
+}

@@ -6,7 +6,7 @@
 [![AI for FinOps](https://img.shields.io/badge/AI-Lumen-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
 [![Local CSV review](https://img.shields.io/badge/data-browser--local%20CSV-6b8f71)](docs/billing-upload.md)
 
-**Understand your cloud bill with a browser-local CSV review: totals, services, credits, and an optional earlier-period comparison. An optional illustrative dashboard preserves the validated Cloud, direct-AI, and SaaS example.**
+**Upload a billing CSV to populate the Cloud Cost Guard dashboard with your totals, services, credits, and optional earlier-period comparison. The optional example uses the same dashboard with validated illustrative Cloud, direct-AI, and SaaS evidence.**
 
 [**Cloud Cost Guard →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
@@ -14,7 +14,7 @@
 
 **Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, privacy and release coordination →](docs/billing-upload.md)
 
-The main flow supports FOCUS BilledCost CSVs and a simple Date/Service/Cost/Currency template, with downloads built from the same uploaded records. “Try an example” opens the preserved deterministic CCAC report. Its Refresh button only reloads that example; it does not synchronize a cloud account.
+The main flow supports FOCUS BilledCost CSVs and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Sections that need other evidence explain what is missing instead of displaying example metrics. “Try an example” opens the preserved deterministic CCAC report in the same dashboard. Its Refresh button only reloads that example; it does not synchronize a cloud account. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
 
 **CSV review:**
 - Exact decimal totals, signed credits, service breakdowns, charge-date charts, and period comparisons

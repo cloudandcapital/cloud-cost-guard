@@ -16,6 +16,11 @@ async function checkNoSample(page) {
   const body = await page.locator('body').innerText();
   for (const value of ['2939.0525', '2,939.05', '2,194.00', '736.77', '8.2825', 'Top canonical anomaly']) expect(body).not.toContain(value);
 }
+async function openSection(page, value, label) {
+  const mobile = page.getByTestId('mobile-section-select');
+  if (await mobile.isVisible()) await mobile.selectOption(value);
+  else await page.getByRole('tab', { name: label, exact: true }).click();
+}
 
 test.describe('browser-local billing upload experience', () => {
   let problems;
@@ -50,11 +55,18 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('billing-charges')).toHaveText('$1,362.38');
     await expect(page.getByTestId('billing-credits')).toHaveText('-$52.25');
     await expect(page.getByTestId('billing-comparison')).toContainText('Add an earlier bill');
+    await expect(page.getByTestId('approved-dashboard')).toHaveAttribute('data-source', 'uploaded');
+    await expect(page.getByRole('heading', { name: 'Cloud+ Cost Guard', exact: true })).toBeVisible();
+    await checkNoSample(page);
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
+    await openSection(page, 'products', 'Services');
     await expect(page.getByRole('region', { name: 'Uploaded service costs' })).toContainText('API compute');
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-services.png', { fullPage: true });
+    await openSection(page, 'clouds', 'Clouds');
     await expect(page.getByTestId('billing-service-chart').locator('svg.recharts-surface')).toBeVisible();
     await expect(page.getByTestId('billing-date-chart').locator('svg.recharts-surface')).toBeVisible();
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-clouds.png', { fullPage: true });
   });
 
   test('compares earlier totals and services while disclosing different duration', async ({ page }, testInfo) => {
@@ -192,9 +204,70 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`Date,Service,Cost,Currency\n${rows}`));
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
     await expect(page.getByTestId('billing-net-total')).toHaveText('$32.00');
+    await openSection(page, 'products', 'Services');
     await expect(page.getByRole('region', { name: 'Uploaded service costs' }).locator('tbody tr')).toHaveCount(25);
     await page.getByRole('button', { name: 'Next services page', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Uploaded service costs' }).locator('tbody tr')).toHaveCount(7);
     await expect(page.getByRole('button', { name: 'Next services page', exact: true })).toBeDisabled();
+  });
+
+  test('all original dashboard sections use the upload, with honest boundaries for missing evidence', async ({ page }) => {
+    await analyze(page, true);
+    for (const [value, label] of [['products', 'Services'], ['clouds', 'Clouds'], ['kubernetes', 'Kubernetes'], ['overview', 'Overview'], ['ai-spend', 'AI Spend'], ['saas', 'SaaS'], ['findings', 'Findings']]) {
+      await openSection(page, value, label);
+      await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+      if (['kubernetes', 'ai-spend', 'saas'].includes(value)) {
+        await expect(page.getByTestId(`billing-unavailable-${value}`)).toContainText('Additional data needed');
+        await expect(page.getByTestId(`billing-unavailable-${value}`)).toContainText('Only your supplied cloud costs');
+      }
+      if (value === 'overview') await expect(page.getByRole('tabpanel')).toContainText('does not reconcile your upload against a provider invoice');
+      await checkNoSample(page);
+      await expectNoBrokenDisplayValues(page);
+      await expectExactPageOverflow(page);
+    }
+    await expect(page.getByRole('region', { name: 'Uploaded service comparisons' })).toContainText('$240.03');
+  });
+
+  test('provider chart filters calculate signed subtotals from the upload and leave the overall report grounded', async ({ page }) => {
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload('Date,Service,Cost,Currency,Provider\n2026-10-01,My compute,10.125,USD,AWS\n2026-10-02,My credit,-2.1,USD,AWS\n2026-10-03,My database,20,USD,Azure'));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await openSection(page, 'clouds', 'Clouds');
+    await page.getByRole('button', { name: 'AWS', exact: true }).click();
+    await expect(page.getByTestId('billing-provider-total')).toContainText('AWS: $8.03 net');
+    await expect(page.getByTestId('billing-service-chart')).toContainText('My compute');
+    await expect(page.getByTestId('billing-service-chart')).not.toContainText('My database');
+    await page.getByRole('button', { name: 'Azure', exact: true }).click();
+    await expect(page.getByTestId('billing-provider-total')).toContainText('Azure: $20.00 net');
+    await expect(page.getByTestId('billing-service-chart')).toContainText('My database');
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$28.03');
+    await page.getByRole('button', { name: 'All providers', exact: true }).click();
+    await expect(page.getByTestId('billing-provider-total')).toContainText('$28.03 net');
+    await checkNoSample(page);
+  });
+
+  test('credit-only bills and very large totals stay readable in the original dashboard', async ({ page }) => {
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(one('-999999999999.99499999', 'USD', 'Refund')));
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('-$999,999,999,999.99');
+    await expect(page.getByTestId('scope-donut-card')).toContainText('There are no positive charges to chart');
+    const headline = page.getByTestId('billing-net-total');
+    expect(await headline.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await openSection(page, 'products', 'Services');
+    await expect(page.getByRole('region', { name: 'Uploaded service costs' })).toContainText('Not applicable');
+    await checkNoSample(page);
+  });
+
+  test('the existing header export menu downloads this bill instead of canonical sample evidence', async ({ page }) => {
+    await analyze(page, true);
+    await page.getByRole('button', { name: 'Export uploaded report', exact: true }).click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('canonical-export-json').click()]);
+    const stream = await download.createReadStream();
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const evidence = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    expect(evidence.source).toBe('uploaded');
+    expect(evidence.current.net).toBe('1310.125');
+    expect(evidence.comparison.delta).toBe('313.525');
+    expect(JSON.stringify(evidence)).not.toContain('2939.0525');
   });
 });

@@ -11,7 +11,7 @@ const percent = (part, whole) => {
   const tenths = (absolute(part) * 1000n + whole / 2n) / whole;
   return `${part < 0n ? '-' : ''}${tenths / 10n}.${tenths % 10n}`;
 };
-const summarize = (period) => {
+export const summarizeBillingPeriod = (period) => {
   let charges = 0n, credits = 0n;
   const services = new Map(), daily = new Map();
   for (const row of period.rows) {
@@ -38,10 +38,10 @@ const summarize = (period) => {
 };
 
 export function buildBillingReport(currentFiles, previousFiles = [], options = {}) {
-  const current = summarize(preparePeriod(currentFiles, options.current));
+  const current = summarizeBillingPeriod(preparePeriod(currentFiles, options.current));
   let previous = null, comparison = null;
   if (previousFiles.length) {
-    previous = summarize(preparePeriod(previousFiles, options.previous));
+    previous = summarizeBillingPeriod(preparePeriod(previousFiles, options.previous));
     if (current.currency !== previous.currency) throw new Error(`The periods use ${current.currency} and ${previous.currency}. Choose the same currency for both; no exchange rates are applied.`);
     if (previous.end > current.start) throw new Error('The previous period must end before the current period begins. These dates overlap or are reversed. Choose separate, earlier comparison records.');
     const delta = decimalUnits(current.net) - decimalUnits(previous.net);
