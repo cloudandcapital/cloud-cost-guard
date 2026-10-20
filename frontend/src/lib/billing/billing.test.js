@@ -60,6 +60,7 @@ describe('browser billing CSV ingestion', () => {
     expect(buildBillingReport([normalizeCsv(sample)]).current.net).toBe('48.6125');
     expect(() => normalizeCsv(sample.replace(',-5,EUR', ',5,EUR'))).toThrow(/positive cost/);
     expect(() => normalizeCsv(sample.replace('T00:00:00Z', 'T00:00:00-07:00'))).toThrow(/UTC timestamp/);
+    expect(() => normalizeCsv(sample.replace(',2026-09-02T00:00:00Z,', ',,'))).toThrow(/ChargePeriodEnd is empty/);
   });
   test('deduplicates stable IDs across parts but refuses conflicting records', () => {
     const one = simple(record('2026-09-01', 'Compute', '10.10', 'USD', 'id1'));

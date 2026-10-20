@@ -120,6 +120,7 @@ export function normalizeCsv(text, filename = 'billing.csv') {
       const cost = decimalString(decimalUnits(get(fields.cost)));
       if (get('chargecategory').toLowerCase() === 'credit' && decimalUnits(cost) > 0n) fail('This credit has a positive cost. Enter credits as negative amounts; the tool will not guess their sign.');
       const start = focus ? boundary(get(fields.date), 'ChargePeriodStart') : `${day(get(fields.date), 'Date')}T00:00:00.000Z`;
+      if (focus && !get(fields.end)) fail('ChargePeriodEnd is empty. Supply the exclusive end date; the tool will not assume the charge lasted one day.');
       const end = get(fields.end)
         ? (focus ? boundary(get(fields.end), 'ChargePeriodEnd') : `${day(get(fields.end), 'EndDate')}T00:00:00.000Z`)
         : `${nextDay(start.slice(0, 10))}T00:00:00.000Z`;

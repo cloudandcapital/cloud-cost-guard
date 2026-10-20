@@ -40,7 +40,7 @@ Download [the invented FOCUS example](../frontend/public/billing/focus-example.c
 ## Accounting rules
 
 - A report uses exactly one currency, also shared by its comparison. No exchange rates are inferred. Unknown or mixed codes stop the report.
-- Costs are summed with fixed-point BigInt arithmetic at 8 decimal places. No financial aggregation uses binary floating point. Cards/charts use numbers only for display; exact decimal strings survive JSON and normalized CSV downloads. Positive charges or absolute negative adjustments above one trillion per period are rejected.
+- Costs are summed with fixed-point BigInt arithmetic at 8 decimal places. No financial aggregation uses binary floating point. Chart geometry uses numbers only for display. Cards, tables, Lumen, and exports format exact decimal strings directly, preserving cent rounding even near the supported total limit; exact values survive JSON and normalized CSV downloads. Positive charges or absolute negative adjustments above one trillion per period are rejected.
 - Negative values reduce net cost. Taxes, refunds, and credits are included only when supplied; no extra tax or credit is added. FOCUS `ChargeCategory=Credit` with a positive amount is rejected rather than silently changing its sign.
 - Repeated stable record IDs within the same provider/account namespace count once when their content matches. Conflicting versions stop the report.
 - Records without IDs are checked for identical normalized billing content **and** extra source dimensions. A match requires the user to choose “Count once” (duplicate exports) or “Keep all” (separate identical charges). Extra dimensions prevent distinct resource charges being dropped; they are not retained in the report. Different IDs are treated as different charges. This cannot detect every duplicate from overlapping snapshots or differently shaped exports.
@@ -50,7 +50,7 @@ Download [the invented FOCUS example](../frontend/public/billing/focus-example.c
 
 ## Privacy and Lumen
 
-Billing files are read with browser File APIs. Normalized records and results exist only in React memory. There is no upload endpoint, browser persistence, external ingestion, or cloud login. Switching to the example, clearing data, reloading, or closing the tab drops the active uploaded report and its Lumen history. Replacing the current selection also removes its old comparison. A failed replacement leaves the earlier valid report available only via **Back to report**.
+Billing files are read with browser File APIs. Normalized records and results exist only in React memory. There is no upload endpoint, browser persistence, external ingestion, or cloud login. Switching to the example, clearing data, reloading, or closing the tab drops the active uploaded report and its Lumen history. Replacing the current selection also removes its old comparison. A failed replacement leaves the earlier valid report available only via **Back to report**. A malformed comparison file blocks review until it is corrected or explicitly removed, so it cannot silently become a current-only report.
 
 Uploaded-mode Lumen is explicitly a **local report guide**, using deterministic prepared answers for totals, services, credits, coverage, and changes. It is available without an API key. Questions, rows, filenames, and totals are not sent to an AI service. Unsupported questions get a local explanation of the boundary. It never invokes sample presets or `/api/ask-claude`.
 
