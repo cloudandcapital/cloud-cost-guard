@@ -161,6 +161,7 @@ describe('report, exports and Lumen share uploaded evidence', () => {
     }
     expect(answerBillingQuestion(report, 'Why did API compute increase?')).toMatch(/API compute.*\$240.03.*\$480.10.*\$720.13/);
     expect(answerBillingQuestion(report, 'What changed between uploads?')).toMatch(/313.53/);
+    expect(answerBillingQuestion(report, 'Where did my Data transfer costs go?')).toMatch(/Data transfer.*\$135.00 net/);
     expect(answerBillingQuestion(report, 'Are my files sent to an AI service?')).toBe(report.privacy);
     expect(answerBillingQuestion(report, 'Why did Managed database increase?')).toMatch(/Managed database.*\$40.00.*\$300.00.*\$340.00/);
     expect(answerBillingQuestion(buildBillingReport(current()), 'What changed in API compute?')).toMatch(/No earlier period was supplied/);

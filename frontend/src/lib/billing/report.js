@@ -102,7 +102,7 @@ export function answerBillingQuestion(report, question) {
   const cost = (value) => money(value, report.currency);
   if (/forecast|predict|next month|annualiz|saving|waste|utilization|roi|profit/.test(q)) return 'This upload does not establish forecasts, savings, waste, utilization, or business value. I can explain the recorded costs, credits, service breakdown, and comparison you supplied.';
   if (/delete|cancel|resize|terminate|shut down/.test(q)) return 'I can help you review these billing records. I cannot access or change your cloud account.';
-  if (/privacy|\bprivate\b|where.*(?:data|files?)|(?:send|sent|share|shared).*(?:data|files?|bills?|questions?|ai)|(?:data|files?|bills?|questions?).*(?:send|sent|stored|shared|leave|go to ai)/.test(q)) return report.privacy;
+  if (/privacy|\bprivate\b|where.*(?:stored|kept)|where.*files?.*(?:go|live)|(?:send|sent|share|shared).*(?:data|files?|bills?|questions?|ai)|(?:data|files?|bills?|questions?).*(?:send|sent|stored|shared|leave|go to ai)/.test(q)) return report.privacy;
   const service = report.current.services.find((row) => row.service.length > 2 && q.includes(row.service.toLowerCase()));
   if (!service) {
     const missingSection = /\b(saas|seats?|software subscriptions?)\b/.test(q) ? 'saas'
