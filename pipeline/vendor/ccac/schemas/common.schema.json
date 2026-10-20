@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cloudandcapital.com/schemas/ccac/1.0.0/common.schema.json",
+  "title": "CCAC common definitions",
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$", "maxLength": 160},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+    "money": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": {"type": "number"},
+        "currency": {"$ref": "#/$defs/currency"}
+      }
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": {"type": "string", "format": "date"},
+        "end": {"type": "string", "format": "date"},
+        "timezone": {"type": "string", "default": "UTC"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"enum": ["finops-lite", "finops-watchdog", "recovery-economics", "ai-cost-lens", "saas-cost-analyzer", "tech-spend-command-center"]},
+        "version": {"type": "string", "minLength": 1},
+        "commit": {"type": ["string", "null"], "pattern": "^[a-f0-9]{7,40}$"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source_type", "source_version", "content_sha256", "access", "data_classification"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "source_type": {"type": "string", "minLength": 1},
+        "source_version": {"type": "string", "minLength": 1},
+        "adapter_version": {"type": ["string", "null"]},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "access": {"enum": ["illustrative_fixture", "local_read_only", "external_read_only"]},
+        "data_classification": {"enum": ["public_illustrative", "customer_confidential", "redacted_customer"]},
+        "lossy_mapping": {"type": "boolean", "default": false},
+        "mapping_notes": {"type": "array", "items": {"type": "string"}, "default": []}
+      }
+    },
+    "quality_issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {"$ref": "#/$defs/id"},
+        "severity": {"enum": ["info", "warning", "error"]},
+        "message": {"type": "string", "minLength": 1},
+        "source_id": {"type": ["string", "null"]},
+        "field": {"type": ["string", "null"]},
+        "row_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "issues"],
+      "properties": {
+        "status": {"enum": ["valid", "partial", "invalid"]},
+        "issues": {"type": "array", "items": {"$ref": "#/$defs/quality_issue"}}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source_ids", "description"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["source_row", "source_query", "formula", "allocation_rule", "price_book", "restore_test", "contract", "invoice", "approval", "change_record", "post_change_measurement", "other"]},
+        "source_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
+        "description": {"type": "string", "minLength": 1},
+        "locator": {"type": ["string", "null"]},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "content_sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "value", "unit", "basis", "additivity", "period", "dimensions", "evidence_ids", "quality_status"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string", "minLength": 1},
+        "value": {"type": ["number", "null"]},
+        "unknown_reason": {"type": ["string", "null"]},
+        "unit": {"type": "string", "minLength": 1},
+        "currency": {"oneOf": [{"$ref": "#/$defs/currency"}, {"type": "null"}]},
+        "basis": {"enum": ["observed", "calculated", "allocated", "estimated", "verified", "unknown"]},
+        "additivity": {"enum": ["additive", "non_additive", "semi_additive", "ratio"]},
+        "period": {"$ref": "#/$defs/period"},
+        "dimensions": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean", "null"]}},
+        "formula": {"type": ["string", "null"]},
+        "input_metric_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "default": []},
+        "evidence_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true},
+        "quality_status": {"enum": ["valid", "partial", "invalid"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"value": {"type": "null"}}}, "then": {"required": ["unknown_reason"], "properties": {"basis": {"const": "unknown"}, "unknown_reason": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"basis": {"enum": ["calculated", "allocated", "estimated"]}}}, "then": {"required": ["formula"], "properties": {"formula": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"unit": {"const": "currency"}}}, "then": {"properties": {"currency": {"$ref": "#/$defs/currency"}}, "required": ["currency"]}}
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "finding_type", "title", "severity", "status", "metric_ids", "evidence_ids", "first_observed_at", "last_observed_at"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "finding_type": {"enum": ["anomaly", "data_quality", "allocation", "resilience_gap", "ai_efficiency", "saas_governance", "budget_variance", "other"]},
+        "title": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+        "status": {"enum": ["open", "acknowledged", "investigating", "expected_change", "resolved", "dismissed"]},
+        "metric_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true},
+        "evidence_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true},
+        "first_observed_at": {"type": "string", "format": "date-time"},
+        "last_observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "opportunity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "producer", "opportunity_type", "title", "scope", "estimate", "confidence", "evidence_ids", "overlap", "review", "status"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "producer": {"$ref": "#/$defs/producer"},
+        "opportunity_type": {"enum": ["rate", "usage", "architecture", "resilience", "ai_efficiency", "saas_reclaim", "contract", "other"]},
+        "title": {"type": "string", "minLength": 1},
+        "scope": {"type": "object", "minProperties": 1, "additionalProperties": {"type": ["string", "number", "boolean"]}},
+        "estimate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["basis", "period", "low", "expected", "high", "currency", "formula"],
+          "properties": {
+            "basis": {"const": "estimated"},
+            "period": {"enum": ["monthly", "annual", "one_time"]},
+            "low": {"type": "number", "minimum": 0},
+            "expected": {"type": "number", "minimum": 0},
+            "high": {"type": "number", "minimum": 0},
+            "currency": {"$ref": "#/$defs/currency"},
+            "formula": {"type": "string", "minLength": 1}
+          }
+        },
+        "confidence": {"enum": ["low", "medium", "high"]},
+        "evidence_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true},
+        "related_finding_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "default": []},
+        "related_opportunity_ids": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true, "default": []},
+        "overlap": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["disposition", "group_id", "reason"],
+          "properties": {
+            "disposition": {"enum": ["independent", "exclusive", "nested", "potential", "none_known"]},
+            "group_id": {"type": ["string", "null"]},
+            "reason": {"type": "string", "minLength": 1}
+          }
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "approval_required", "rollback_plan_required", "verification_required", "non_mutating_review_steps"],
+          "properties": {
+            "required": {"const": true},
+            "approval_required": {"const": true},
+            "rollback_plan_required": {"const": true},
+            "verification_required": {"const": true},
+            "non_mutating_review_steps": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1}
+          }
+        },
+        "status": {"enum": ["identified", "under_review", "approved", "rejected", "implemented_pending_verification", "closed"]}
+      }
+    }
+  }
+}

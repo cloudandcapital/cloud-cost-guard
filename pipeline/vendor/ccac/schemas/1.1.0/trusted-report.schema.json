@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cloudandcapital.com/schemas/ccac/1.1.0/trusted-report.schema.json",
+  "title": "CCAC trusted report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "document_type", "producer", "report_id", "run_id", "generated_at", "mode", "status", "period", "included_producers", "omitted_producers", "producer_quality", "metric_catalog", "finding_catalog", "opportunity_catalog", "opportunity_aggregates", "display", "reconciliation", "provenance"],
+  "properties": {
+    "contract": {"const": "ccac/1.1.0"},
+    "document_type": {"const": "trusted_report"},
+    "producer": {"allOf": [{"$ref": "common.schema.json#/$defs/producer"}, {"type": "object", "properties": {"name": {"const": "tech-spend-command-center"}}}]},
+    "report_id": {"$ref": "common.schema.json#/$defs/id"},
+    "run_id": {"type": "string", "format": "uuid"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "mode": {"enum": ["illustrative", "real"]},
+    "status": {"enum": ["complete", "partial", "invalid"]},
+    "period": {"$ref": "common.schema.json#/$defs/period"},
+    "included_producers": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/producer"}, "minItems": 1},
+    "producer_quality": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["producer", "quality"],
+        "properties": {
+          "producer": {"$ref": "common.schema.json#/$defs/producer"},
+          "quality": {"$ref": "common.schema.json#/$defs/quality"}
+        }
+      }
+    },
+    "omitted_producers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "reason"],
+        "properties": {
+          "name": {"enum": ["finops-lite", "finops-watchdog", "recovery-economics", "ai-cost-lens", "saas-cost-analyzer"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "metric_catalog": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/metric"}},
+    "finding_catalog": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/finding"}},
+    "opportunity_catalog": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/opportunity"}},
+    "opportunity_aggregates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "opportunity_ids", "excluded_opportunity_ids", "period", "low", "expected", "high", "currency", "inclusion_rule"],
+        "properties": {
+          "id": {"$ref": "common.schema.json#/$defs/id"},
+          "label": {"type": "string", "minLength": 1},
+          "opportunity_ids": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "uniqueItems": true},
+          "excluded_opportunity_ids": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "uniqueItems": true},
+          "period": {"enum": ["monthly", "annual", "one_time"]},
+          "low": {"type": "number", "minimum": 0},
+          "expected": {"type": "number", "minimum": 0},
+          "high": {"type": "number", "minimum": 0},
+          "currency": {"$ref": "common.schema.json#/$defs/currency"},
+          "inclusion_rule": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "display": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headline_metric_ids", "section_metric_ids", "finding_ids", "opportunity_aggregate_ids", "disclosures"],
+      "properties": {
+        "headline_metric_ids": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "uniqueItems": true},
+        "section_metric_ids": {"type": "object", "additionalProperties": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "uniqueItems": true}},
+        "finding_ids": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "uniqueItems": true},
+        "opportunity_aggregate_ids": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "uniqueItems": true},
+        "disclosures": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+      }
+    },
+    "reconciliation": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "assertion", "input_metric_ids", "output_metric_id", "difference", "tolerance", "status"],
+        "properties": {
+          "id": {"$ref": "common.schema.json#/$defs/id"},
+          "reconciliation_type": {"const": "technology_spend_total"},
+          "assertion": {"type": "string", "minLength": 1},
+          "input_metric_ids": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/id"}, "minItems": 1, "uniqueItems": true},
+          "output_metric_id": {"$ref": "common.schema.json#/$defs/id"},
+          "difference": {"type": "number"},
+          "tolerance": {"type": "number", "minimum": 0},
+          "status": {"enum": ["passed", "failed"]}
+        },
+        "allOf": [
+          {"if": {"required": ["reconciliation_type"]}, "then": {"properties": {"input_metric_ids": {"minItems": 3, "maxItems": 3}}}}
+        ]
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_sha256", "artifact_sha256s"],
+      "properties": {
+        "manifest_sha256": {"$ref": "common.schema.json#/$defs/sha256"},
+        "artifact_sha256s": {"type": "object", "additionalProperties": {"$ref": "common.schema.json#/$defs/sha256"}, "minProperties": 1}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "complete"}}}, "then": {"properties": {"omitted_producers": {"type": "array", "maxItems": 0}}}},
+    {"if": {"properties": {"status": {"const": "partial"}}}, "then": {"properties": {"omitted_producers": {"type": "array", "minItems": 1}}, "required": ["omitted_producers"]}},
+    {"if": {"properties": {"mode": {"const": "illustrative"}}}, "then": {"properties": {"display": {"type": "object", "properties": {"disclosures": {"type": "array", "contains": {"type": "string", "pattern": "[Ii]llustrative"}}}}}}}
+  ]
+}

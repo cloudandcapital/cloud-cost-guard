@@ -133,7 +133,7 @@ export function normalizeCsv(text, filename = 'billing.csv') {
       return { ...row, fingerprint: JSON.stringify([start, end, service, provider, currency, cost, accountId, get('chargecategory'), extras]) };
     } catch (error) { return fail(`${filename}, line ${line}: ${error.message}`); }
   });
-  return { name: filename, format: focus ? 'FOCUS BilledCost' : 'Simple billing CSV', rows };
+  return { name: filename, text, format: focus ? 'FOCUS BilledCost' : 'Simple billing CSV', rows };
 }
 
 export async function readBillingFiles(fileList) {
@@ -144,7 +144,9 @@ export async function readBillingFiles(fileList) {
   const data = [];
   for (const file of files) {
     let text;
-    try { text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()); }
+    // Preserve a UTF-8 BOM in the original text for the producer's file hash.
+    // The CSV parser separately accepts/removes it from the first header.
+    try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(await file.arrayBuffer()); }
     catch { fail(`${file.name}: save this file as UTF-8 CSV and try again.`); }
     data.push(normalizeCsv(text, file.name));
   }

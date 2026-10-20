@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cloudandcapital.com/schemas/ccac/1.0.0/verified-outcome.schema.json",
+  "title": "CCAC verified outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "document_type", "outcome_id", "opportunity_id", "producer", "status", "approved_at", "implemented_at", "verification_period", "baseline", "observed_post_change", "verified_amount", "method", "evidence", "rollback_status"],
+  "properties": {
+    "contract": {"const": "ccac/1.0.0"},
+    "document_type": {"const": "verified_outcome"},
+    "outcome_id": {"$ref": "common.schema.json#/$defs/id"},
+    "opportunity_id": {"$ref": "common.schema.json#/$defs/id"},
+    "producer": {"$ref": "common.schema.json#/$defs/producer"},
+    "status": {"enum": ["verified", "not_verified", "reverted"]},
+    "approved_at": {"type": "string", "format": "date-time"},
+    "implemented_at": {"type": "string", "format": "date-time"},
+    "verification_period": {"$ref": "common.schema.json#/$defs/period"},
+    "baseline": {"$ref": "common.schema.json#/$defs/money"},
+    "observed_post_change": {"$ref": "common.schema.json#/$defs/money"},
+    "verified_amount": {"$ref": "common.schema.json#/$defs/money"},
+    "method": {"type": "string", "minLength": 1},
+    "evidence": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/evidence"}, "minItems": 3},
+    "rollback_status": {"enum": ["not_needed", "available", "executed", "unavailable"]}
+  }
+}

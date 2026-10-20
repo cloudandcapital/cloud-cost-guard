@@ -11,6 +11,10 @@ import * as exampleModel from '../../lib/ccac11PresentationModel';
 // CRA's Jest resolver predates conditional package exports. Supply Radix's
 // production diagnostic flag while retaining its real interactive components.
 jest.mock('@radix-ui/primitive/is-development', () => ({ IS_DEVELOPMENT: false }), { virtual: true });
+jest.mock('../../lib/billing/pipeline', () => ({
+  ...jest.requireActual('../../lib/billing/pipeline'),
+  runBillingPipeline: async (...args) => require('../../lib/billing/nativePipelineTestHelper').nativeBillingReport(...args),
+}));
 jest.mock('recharts', () => ({ ResponsiveContainer: () => null, BarChart: () => null, Bar: () => null, XAxis: () => null, YAxis: () => null, CartesianGrid: () => null, Tooltip: () => null, LineChart: () => null, Line: () => null, ReferenceLine: () => null, PieChart: () => null, Pie: () => null, Cell: () => null }));
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;

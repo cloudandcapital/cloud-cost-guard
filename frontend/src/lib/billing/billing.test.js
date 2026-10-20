@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { TextEncoder, TextDecoder } from 'util';
 import { decimalUnits, decimalString, normalizeCsv, parseCsv, preparePeriod, readBillingFiles } from './csv';
-import { answerBillingQuestion, buildBillingReport, money, periodLabel } from './report';
+import { answerBillingQuestion, money, periodLabel } from './report';
 import { buildBillingExports } from './export';
+import { nativeBillingReport as buildBillingReport } from './nativePipelineTestHelper';
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
@@ -134,7 +135,7 @@ describe('report, exports and Lumen share uploaded evidence', () => {
   test('single, zero and credits-only uploads do not invent a baseline or positive charge shares', () => {
     const single = buildBillingReport(current());
     expect(single.comparison).toBeNull();
-    expect(answerBillingQuestion(single, 'why did it grow?')).toMatch(/no measured increase/);
+    expect(answerBillingQuestion(single, 'why did it grow?')).toMatch(/increase or decrease cannot be measured/);
     for (const value of ['0', '-5']) {
       const report = buildBillingReport([simple(record('2026-09-01', 'Credit', value))]);
       expect(report.current.services[0].chargeShare).toBeNull();

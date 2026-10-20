@@ -1,6 +1,6 @@
 # Architecture and trust boundaries
 
-Cloud Cost Guard's draft upload flow and optional CCAC example share the dashboard interface but currently use different report models. Uploaded CSVs do not yet enter the existing analytical pipeline; [pipeline reuse is a release requirement](pipeline-upload-integration.md). Neither path connects to cloud accounts, credentials, production resources, or live billing systems. The [billing upload rules](billing-upload.md) describe the current draft. The sections below document the existing canonical analysis and trust path that the upload integration needs to preserve and reuse.
+Cloud Cost Guard's draft upload flow runs the actual analytical pipeline locally in a Python/WebAssembly worker and presents its validated partial Cloud report. The optional complete CCAC example retains its original pinned artifacts and validators. [Pipeline ownership and verification](pipeline-upload-integration.md) and [upload rules](billing-upload.md) explain the supported data and privacy boundary. Neither path connects to customer cloud accounts or credentials. Producer changes remain linked drafts pending a coordinated release approval.
 
 ## System architecture
 

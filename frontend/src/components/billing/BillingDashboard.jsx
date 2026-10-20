@@ -3,8 +3,7 @@ import { ArrowDownToLine, CheckCircle, FileText, Info, PieChart as PieIcon } fro
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { BILLING_EVIDENCE_LIMITS, money, periodLabel, summarizeBillingPeriod } from '../../lib/billing/report';
-import { decimalString, decimalUnits } from '../../lib/billing/csv';
+import { BILLING_EVIDENCE_LIMITS, money, periodLabel } from '../../lib/billing/report';
 
 // These sections occupy the existing dashboard shell and tabs. They never load
 // the illustrative CCAC model: every amount comes from the active upload.
@@ -33,15 +32,9 @@ export function BillingSummary({ report }) {
   const cost = (value) => money(value, currency);
   const large = [current.net, current.charges, current.credits].some((value) => cost(value).length > 11);
   const groups = useMemo(() => {
-    const services = current.services.filter((row) => decimalUnits(row.charges) > 0n)
-      .sort((a, b) => {
-        const difference = decimalUnits(b.charges) - decimalUnits(a.charges);
-        return difference > 0n ? 1 : difference < 0n ? -1 : a.key.localeCompare(b.key);
-      });
-    const entries = services.slice(0, 4).map((row) => ({ name: row.service, provider: row.provider, exact: row.charges }));
-    if (services.length > 4) entries.push({ name: 'Other services', provider: '', exact: decimalString(services.slice(4).reduce((sum, row) => sum + decimalUnits(row.charges), 0n)) });
+    const entries = current.chargeChart;
     return entries.map((row, index) => ({ ...row, value: Number(row.exact), fill: COLORS[index] }));
-  }, [current.services]);
+  }, [current.chargeChart]);
 
   return <section className={`executive-summary billing-dashboard-summary${large ? ' billing-dashboard-large-values' : ''}`} data-testid="executive-summary">
     <Card className="hero-card"><CardContent className="hero-content">
@@ -81,8 +74,8 @@ export function BillingComparison({ report, onReplace }) {
 
 export function BillingFindings({ report }) {
   return <><div className="section-heading"><div><div className="eyebrow">From your billing records</div><h2>Your cost findings</h2><p>Where the money went, and what the supplied comparison can explain.</p></div></div>
-    <div className="finding-list billing-upload-findings">{report.findings.map((finding, index) => <article className="finding-row" key={finding.title}>
-      <div className="finding-severity"><span className="billing-finding-number">{String(index + 1).padStart(2, '0')}</span><span>{finding.title === 'Before you act' ? 'Coverage & context' : 'Billing review'}</span></div>
+    <div className="finding-list billing-upload-findings">{report.findings.map((finding, index) => <article className="finding-row" key={finding.id}>
+      <div className="finding-severity"><span className="billing-finding-number">{String(index + 1).padStart(2, '0')}</span><span>{finding.producer === 'finops-watchdog' ? 'Watchdog · ' + finding.severity : finding.title === 'Before you act' ? 'Coverage & context' : 'Billing review'}</span></div>
       <div className="finding-summary"><h3>{finding.title}</h3><p>{finding.text}</p></div>
     </article>)}</div>
     {report.comparison && <BillingChanges report={report}/>}
@@ -124,8 +117,8 @@ export function BillingServices({ report }) {
 export function BillingClouds({ report }) {
   const [provider, setProvider] = useState('');
   const { current, currency } = report;
-  const providers = useMemo(() => [...new Set(current.rows.map((row) => row.provider))].sort(), [current.rows]);
-  const period = useMemo(() => provider ? summarizeBillingPeriod({ ...current, rows: current.rows.filter((row) => row.provider === provider) }) : current, [current, provider]);
+  const providers = Object.keys(current.providerSummaries);
+  const period = provider ? current.providerSummaries[provider] : current;
   const cost = (value) => money(value, currency);
   const topServices = period.services.slice(0, 8).map((service) => ({ ...service, label: compact(service.service), cost: Number(service.net) }));
   const daily = useMemo(() => {
@@ -153,7 +146,7 @@ export function BillingUnavailable({ section, onServices }) {
 
 export function BillingOverview({ report }) {
   return <section className="billing-overview"><div className="section-heading"><div><div className="eyebrow">Coverage & cost basis</div><h2>What this dashboard includes</h2><p>Calculated from your uploaded records, with its limits kept visible.</p></div></div>
-    <Card className="kpi-card"><CardContent className="billing-overview-copy"><h3>One bill, one consistent report</h3><p>{report.costBasis}</p><p>Service totals add up to the net cost. This checks the calculation; it does not reconcile your upload against a provider invoice or prove every account is covered.</p><p>{report.previous ? 'The earlier upload supplies the comparison baseline. Differences locate cost changes; usage and pricing evidence are needed to explain their cause.' : 'No earlier bill was supplied. A cost change, trend or anomaly cannot be established from this single period.'}</p><p>Forecasts, potential savings, resilience tests, Kubernetes utilization, direct AI invoices and SaaS seats are not inferred from cloud billing amounts.</p><p>{report.privacy}</p></CardContent></Card>
+    <Card className="kpi-card"><CardContent className="billing-overview-copy"><h3>One bill, one consistent report</h3><p>{report.costBasis}</p><p>Service totals add up to the net cost. This checks the calculation; it does not reconcile your upload against a provider invoice or prove every account is covered.</p><p>{report.previous ? 'The earlier upload supplies the comparison baseline. Differences locate cost changes; usage and pricing evidence are needed to explain their cause.' : 'No earlier bill was supplied for a period comparison. Watchdog separately checks eligible daily records when enough history is present.'}</p><p>Forecasts, potential savings, resilience tests, Kubernetes utilization, direct AI invoices and SaaS seats are not inferred from cloud billing amounts.</p><p>{report.privacy}</p><p data-testid="billing-pipeline-status">FinOps Lite → Watchdog → Command Center · CCAC validated · Cloud-only partial report.</p><p>Watchdog reviewed {report.pipeline.watchdog.series_evaluated} eligible daily series and reported {report.pipeline.watchdog.anomalies_detected} unusual movements. {report.pipeline.watchdog.insufficient_history_series.length} series need more history; {report.pipeline.watchdog.excluded_daily_series.length} lack suitable daily records. Missing days and monthly amounts are not filled in.</p></CardContent></Card>
   </section>;
 }
 

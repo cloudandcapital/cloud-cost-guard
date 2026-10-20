@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CloudUpload, FileCheck2, LockKeyhole, ArrowRight, X } from 'lucide-react';
 import { readBillingFiles } from '../../lib/billing/csv';
-import { buildBillingReport } from '../../lib/billing/report';
+import { runBillingPipeline } from '../../lib/billing/pipeline';
 
 export function BillingInstructions() {
   return <details className="billing-instructions">
@@ -17,7 +17,7 @@ export function BillingInstructions() {
         <li><strong>Other exports:</strong> copy the date, service, signed billed cost, and currency into the simple template. Check that credits and taxes match the source bill. Cost Explorer summary tables, native CUR, generic Azure/GCP exports, PDFs, Excel, ZIP, Gzip, and Parquet need conversion first; they are not read automatically.</li>
       </ul>
       <p>Select <strong>all CSV parts from one export run</strong> for the current period, then an earlier run for a comparison. A partial export produces a partial total. Use the same accounts, cost basis, currency, and comparable dates for both.</p>
-      <p>Each period supports up to 20 files, 10 MB combined, 50,000 rows, and 366 days. Repeated stable IDs count once; conflicting IDs stop the upload. Identical rows without IDs need your choice. Extra columns are not analyzed, but are checked when detecting duplicates.</p>
+      <p>Each period supports up to 20 files, 10 MB combined, 50,000 rows, 1,000 service groups, and 366 days. Repeated stable IDs count once; conflicting IDs stop the upload. Identical rows without IDs need your choice. Extra columns are not analyzed, but are checked when detecting duplicates.</p>
       <p>FOCUS rows with no service name need a label (for example “Account credit” or “Tax”) before uploading. Optional simple EndDate is exclusive; otherwise each Date covers that one day. BillingAccountId helps scope stable IDs. This reader checks the supported billing fields, not full FOCUS conformance.</p>
       <div className="billing-inline-links"><a href="/billing/current-example.csv" download>Current-period example</a><a href="/billing/previous-example.csv" download>Earlier-period example</a></div>
     </div>
@@ -28,13 +28,13 @@ const blankOptions = () => ({ start: '', end: '', duplicatePolicy: 'review' });
 
 function PeriodInput({ kind, files, options, onOptions, onFiles, loading }) {
   const current = kind === 'current';
-  return <section className="billing-period-input" aria-label={`${current ? 'Current' : 'Previous'} period upload`}>
+  return <fieldset disabled={loading} className="billing-period-input" aria-label={`${current ? 'Current' : 'Previous'} period upload`}>
     <div className="billing-step-heading"><span className="billing-step">{current ? '1' : '2'}</span><div><h3>{current ? 'Your current bill' : 'An earlier bill'}{!current && <span className="billing-optional">Optional</span>}</h3><p>{current ? 'Choose the CSV file, or all parts of one export.' : 'Add a separate, earlier period to see what changed.'}</p></div></div>
     <label className="billing-file-label" htmlFor={`${kind}-files`}>{current ? 'Current billing CSV files' : 'Previous billing CSV files'}</label>
     <input id={`${kind}-files`} type="file" multiple accept=".csv,text/csv" onChange={(event) => { const picked = [...event.target.files]; event.target.value = ''; if (picked.length) onFiles(kind, picked); }} disabled={loading} />
     {!!files.length && <div className="billing-selected" role="status"><FileCheck2 size={18} aria-hidden="true"/><div>{files.map((file, index) => <div key={`${file.name}-${index}`}>{file.name} <span>· {file.rows.length.toLocaleString()} rows · {file.format}</span></div>)}</div>{!current && <button type="button" onClick={() => onFiles(kind, [])} aria-label="Remove previous period"><X size={16}/></button>}</div>}
     {!!files.length && <details className="billing-period-options"><summary>Period dates &amp; identical rows</summary><p>Leave dates blank to use the range covered by your records. Set the full billing window if the first or last day has no charges. The selected end date is inclusive.</p><div className="billing-date-fields"><label htmlFor={`${kind}-start`}>Start date<input id={`${kind}-start`} type="date" value={options.start} onChange={(event) => onOptions({ ...options, start: event.target.value })}/></label><label htmlFor={`${kind}-end`}>End date<input id={`${kind}-end`} type="date" value={options.end} onChange={(event) => onOptions({ ...options, end: event.target.value })}/></label></div><label htmlFor={`${kind}-duplicates`}>Identical rows without a RecordId</label><select id={`${kind}-duplicates`} value={options.duplicatePolicy} onChange={(event) => onOptions({ ...options, duplicatePolicy: event.target.value })}><option value="review">Ask me if any are found</option><option value="drop">Count once · repeated exports</option><option value="keep">Keep all · separate charges</option></select></details>}
-  </section>;
+  </fieldset>;
 }
 
 export default function BillingUpload({ onAnalyze, onExample, onCancel, initial }) {
@@ -43,11 +43,13 @@ export default function BillingUpload({ onAnalyze, onExample, onCancel, initial 
   const [currentOptions, setCurrentOptions] = useState(initial?.options?.current || blankOptions());
   const [previousOptions, setPreviousOptions] = useState(initial?.options?.previous || blankOptions());
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
   const [fileError, setFileError] = useState(null);
   const request = useRef(0);
+  const analysis = useRef(null);
   const errorRef = useRef(null);
-  useEffect(() => () => { request.current += 1; }, []);
+  useEffect(() => () => { request.current += 1; analysis.current?.abort(); }, []);
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
   const selectFiles = async (kind, files) => {
     const id = ++request.current;
@@ -64,14 +66,20 @@ export default function BillingUpload({ onAnalyze, onExample, onCancel, initial 
     } catch (err) { if (id === request.current) { setError(err.message); setFileError(kind); } }
     finally { if (id === request.current) setLoading(false); }
   };
-  const analyze = (event) => {
+  const analyze = async (event) => {
     event.preventDefault();
     if (fileError || loading) return;
     setError('');
+    const id = ++request.current;
+    const controller = new AbortController();
+    analysis.current = controller;
+    setLoading(true); setProgress('Preparing the analysis tools on your device…');
     try {
       const options = { current: currentOptions, previous: previousOptions };
-      onAnalyze(buildBillingReport(current, previous, options), { current, previous, options });
-    } catch (err) { setError(err.message); }
+      const report = await runBillingPipeline(current, previous, options, { signal: controller.signal, onProgress: setProgress });
+      if (id === request.current) onAnalyze(report, { current, previous, options });
+    } catch (err) { if (id === request.current && err.name !== 'AbortError') setError(err.message); }
+    finally { if (id === request.current) { setLoading(false); setProgress(''); } }
   };
   return <main className="billing-main" data-testid="billing-upload">
     <section className="billing-intro"><div><p className="billing-eyebrow">A clearer view of your cloud costs</p><h2>Let’s make sense<br className="billing-desktop-break"/> of your cloud bill.</h2><p>Upload your cloud billing export to see where your money went and what changed.</p><div className="billing-privacy-pill"><LockKeyhole size={16} aria-hidden="true"/>On your device. No cloud login needed.</div></div><div className="billing-intro-art" aria-hidden="true"><CloudUpload strokeWidth={1.2}/><span>From billing rows<br/>to a clearer picture.</span></div></section>
@@ -79,7 +87,8 @@ export default function BillingUpload({ onAnalyze, onExample, onCancel, initial 
       <div className="billing-form-heading"><h2>Review my cloud bill</h2><p>Choose a billing CSV to open your Cloud Cost Guard dashboard with your totals, services, and findings.</p><p>FOCUS exports or the simple CSV template · UTF-8, comma-separated</p><div className="billing-inline-links"><a href="/billing/template.csv" download>Download template</a><a href="/billing/current-example.csv" download>See a filled-in example</a></div></div>
       <div className="billing-upload-grid"><PeriodInput kind="current" files={current} options={currentOptions} onOptions={setCurrentOptions} onFiles={selectFiles} loading={loading}/><PeriodInput kind="previous" files={previous} options={previousOptions} onOptions={setPreviousOptions} onFiles={selectFiles} loading={loading}/></div>
       {error && <div className="billing-error" ref={errorRef} tabIndex={-1} role="alert"><strong>Let’s check that file</strong><p>{error}</p><span>No report has been created from this selection. {onCancel ? 'Your earlier report is available with “Back to report”.' : 'You can fix the file or choose another one.'}</span>{fileError === 'previous' && <div><button type="button" className="billing-link-button" onClick={() => { setError(''); setFileError(null); }}>Remove invalid comparison selection</button></div>}</div>}
-      <div className="billing-submit-row"><button type="submit" className="billing-primary" disabled={!current.length || loading || !!fileError}>{loading ? 'Reading your files…' : 'Review my bill'}<ArrowRight size={17} aria-hidden="true"/></button><button className="billing-link-button" type="button" onClick={onExample}>Try an example</button>{onCancel && <button className="billing-link-button" type="button" onClick={onCancel}>Back to report</button>}</div>
+      {progress && <p className="billing-check-note" role="status">{progress} The first review downloads the tools; your billing records stay on your device.</p>}
+      <div className="billing-submit-row"><button type="submit" className="billing-primary" disabled={!current.length || loading || !!fileError}>{loading ? (progress ? 'Reviewing your bill…' : 'Reading your files…') : 'Review my bill'}<ArrowRight size={17} aria-hidden="true"/></button><button className="billing-link-button" type="button" onClick={onExample}>Try an example</button>{onCancel && <button className="billing-link-button" type="button" onClick={onCancel}>Back to report</button>}</div>
       <p className="billing-smallprint">Up to 10 MB and 50,000 rows per period. Your files, results, and Lumen questions stay in this tab’s memory. Reloading or closing the tab clears them. Download a report if you want to keep it.</p>
     </form>
     <BillingInstructions/>

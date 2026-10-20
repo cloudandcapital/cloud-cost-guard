@@ -120,6 +120,12 @@ test.describe('browser-local billing upload experience', () => {
     }
     expect(files['Printable report']).toContain('USD 1310.125');
     const evidence = JSON.parse(files['Evidence JSON']);
+    expect(evidence.pipeline.validator).toBe('cloudandcapital-ccac/0.2.0');
+    expect(evidence.pipeline.included_producers.map(item => item.name)).toEqual(['finops-lite', 'finops-watchdog']);
+    expect(evidence.pipeline.omitted_producers).toHaveLength(3);
+    const trusted = JSON.parse(evidence.pipeline.artifacts['report.json']);
+    expect(trusted.status).toBe('partial');
+    expect(trusted.metric_catalog.find(item => item.id === evidence.current.metric_ids.net).value).toBe(1310.125);
     expect(evidence.current.net).toBe('1310.125');
     expect(evidence.previous.net).toBe('996.6');
     expect(evidence.comparison.delta).toBe('313.525');
@@ -259,6 +265,38 @@ test.describe('browser-local billing upload experience', () => {
     expect(await headline.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await openSection(page, 'products', 'Services');
     await expect(page.getByRole('region', { name: 'Uploaded service costs' })).toContainText('Not applicable');
+    await checkNoSample(page);
+  });
+
+  test('the real Watchdog detects supplied daily history and Lumen uses that finding', async ({ page }) => {
+    const requests = [];
+    page.on('request', request => { if (request.method() !== 'GET') requests.push(request.url()); });
+    const rows = Array.from({length:21}, (_,i) => `2026-09-${String(i+1).padStart(2,'0')},Shop compute,${i===20?250:100},USD,AWS,day${i}`).join('\n');
+    await page.getByLabel('Current billing CSV files', {exact:true}).setInputFiles(payload('Date,Service,Cost,Currency,Provider,RecordId\n'+rows));
+    await page.getByRole('button', {name:'Review my bill',exact:true}).click();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$2,250.00');
+    await expect(page.getByRole('heading', {name:/detected for/})).toBeVisible();
+    await openSection(page, 'overview', 'Overview');
+    await expect(page.getByTestId('billing-pipeline-status')).toContainText('CCAC validated');
+    await expect(page.locator('body')).toContainText('reported 1 unusual movements');
+    await page.getByTestId('lumen-trigger').click();
+    const input = page.getByLabel('Ask Lumen about your uploaded report');
+    await input.fill('Did Watchdog find a spike?'); await input.press('Enter');
+    await expect(page.getByTestId('lumen-panel')).toContainText('Observed 250.0 USD');
+    await expect(page.getByTestId('lumen-panel')).toContainText('not a savings estimate or root-cause claim');
+    expect(requests).toEqual([]);
+    await input.press('Escape');
+    await checkNoSample(page);
+  });
+
+  test('leaving a running analysis terminates its worker and drops the selection', async ({ page }) => {
+    await page.getByLabel('Current billing CSV files', {exact:true}).setInputFiles(csv('current'));
+    await page.getByRole('button', {name:'Review my bill',exact:true}).click();
+    await expect.poll(() => page.workers().length).toBe(1);
+    await page.getByRole('button', {name:'Try an example',exact:true}).click();
+    await expect.poll(() => page.workers().length).toBe(0);
+    await page.getByRole('button', {name:'Review my own cloud bill →',exact:true}).click();
+    await expect(page.getByRole('button', {name:'Review my bill',exact:true})).toBeDisabled();
     await checkNoSample(page);
   });
 

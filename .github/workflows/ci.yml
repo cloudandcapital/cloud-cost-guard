@@ -27,6 +27,22 @@ jobs:
         working-directory: frontend
         run: npm ci --no-audit --no-fund
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install local pipeline test dependencies
+        run: python -m pip install "jsonschema==4.23.0"
+
+      - name: Prepare self-hosted Python runtime
+        run: node scripts/prepare_billing_runtime.cjs
+
+      - name: Verify browser and native analytical pipeline parity
+        run: node --test scripts/billing-runtime.test.mjs
+
+      - name: Test billing producer lineage, partial runs and adversarial artifacts
+        run: python -m unittest tests.test_billing_pipeline -v
+
       - name: Audit production dependencies
         working-directory: frontend
         run: npm audit --omit=dev --audit-level=high

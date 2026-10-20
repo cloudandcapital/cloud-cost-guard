@@ -10,7 +10,7 @@
 
 [**Cloud Cost Guard →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
-**Draft integration status:** uploaded CSVs currently populate the dashboard through a separate billing model. Connecting them to the existing analytical producer, CCAC and Command Center pipeline remains a release requirement. See [pipeline preservation and integration](docs/pipeline-upload-integration.md). The working upload preview is not proof that this connection is complete.
+**Draft integration:** uploads now run the existing FinOps Lite → Watchdog → released CCAC validation → Command Center pipeline locally, then populate this dashboard. Producer changes are in linked draft PRs; no production release is approved. See [pipeline ownership and verification](docs/pipeline-upload-integration.md).
 
 ---
 

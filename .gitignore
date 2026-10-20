@@ -81,6 +81,9 @@ agenthub/agents/youtube/db
 
 # Build caches
 .cache/
+frontend/public/billing-pipeline/runtime/
+frontend/public/billing-pipeline/sources.json
+frontend/public/billing-pipeline/provenance.json
 
 # Mobile development
 android-sdk/ frontend/node_modules/.cache/default-development/1.pack

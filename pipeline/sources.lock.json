@@ -1,0 +1,165 @@
+{
+  "profile": "billing_csv/1.0",
+  "sources": [
+    {
+      "repository": "https://github.com/cloudandcapital/finops-lite",
+      "revision": "ab4ba9ae2e206204ca7f9e3b45449b627e0da8e5",
+      "uncommitted": false,
+      "files": {
+        "finops_lite/__init__.py": {
+          "path": "finops_lite/__init__.py",
+          "sha256": "459f6dda1c75e8c62a2fecc5cc9536f25f28e0ce27dfcf618162b4da46351ec4"
+        },
+        "finops_lite/ccac.py": {
+          "path": "finops_lite/ccac.py",
+          "sha256": "727222656d81a5966802a294a71c96cb9f8aa81a21a007f238f7674bcf932206"
+        },
+        "finops_lite/ccac_json.py": {
+          "path": "finops_lite/ccac_json.py",
+          "sha256": "127a1ede15920d130655f168350e1689ff3025c4fef3b06827d7f1a3fb5da512"
+        },
+        "finops_lite/billing.py": {
+          "path": "finops_lite/billing.py",
+          "sha256": "fa5c12ef7b54c5d43c452752ae84a4f988b9c5e64b0a1d6f8fd3c044b845ce4f"
+        },
+        "finops_lite/billing_currencies.json": {
+          "path": "finops_lite/billing_currencies.json",
+          "sha256": "aa41e58b1a238f4fb463f46483b17659465139423cc25fc0cf7865538c87e7b9"
+        },
+        "LICENSE": {
+          "path": "licenses/finops-lite.txt",
+          "sha256": "5c2de38f038906d816847d512d4813c96a069ab3de67f6ede71f447ca10a2a6f"
+        }
+      }
+    },
+    {
+      "repository": "https://github.com/cloudandcapital/finops-watchdog",
+      "revision": "02b533e8dc52c9d97a3a623aca23f2eeb5415607",
+      "uncommitted": false,
+      "files": {
+        "finops_watchdog/__init__.py": {
+          "path": "finops_watchdog/__init__.py",
+          "sha256": "6b1b85239e3ee714a77a8d94ad44edcc3827075b6c481f79403173f209139642"
+        },
+        "finops_watchdog/ccac.py": {
+          "path": "finops_watchdog/ccac.py",
+          "sha256": "f2a365eaae5fe98eaceb2843b516bf07d4c62e52bd8c832494858784b84c4f94"
+        },
+        "finops_watchdog/billing.py": {
+          "path": "finops_watchdog/billing.py",
+          "sha256": "04d78eaf9489d0d8ec772c3061ef45dc70001ed36a08617054d386e7c5d24023"
+        },
+        "finops_watchdog/data/illustrative-finops-lite-1.1.json": {
+          "path": "finops_watchdog/data/illustrative-finops-lite-1.1.json",
+          "sha256": "ae40d79949a0f6abccaf0f810e602eae8649b02c9a1379af405af2a1fc97b3ac"
+        },
+        "LICENSE": {
+          "path": "licenses/finops-watchdog.txt",
+          "sha256": "49528cdf95fed59306fadaaed78a57635348add68853e3e92afb4a14a346ebfb"
+        }
+      }
+    },
+    {
+      "repository": "https://github.com/cloudandcapital/tech-spend-command-center",
+      "revision": "0e5b27eda8fc3b427375e6bb11c990a176b59d4c",
+      "uncommitted": false,
+      "files": {
+        "tech_spend_command_center/__init__.py": {
+          "path": "tech_spend_command_center/__init__.py",
+          "sha256": "56b5e91c3bb77ab933c25fd65eba883419bdc5691cc94cb9dc840e8f4e3674eb"
+        },
+        "tech_spend_command_center/trusted.py": {
+          "path": "tech_spend_command_center/trusted.py",
+          "sha256": "c659533de831badf16d173eb0aca1741e37566ba73fd9dc6fe5537a2ba2d7c0f"
+        },
+        "tech_spend_command_center/ccac11.py": {
+          "path": "tech_spend_command_center/ccac11.py",
+          "sha256": "94bfc5e58c433ffdf4bd9e50ea4c810db361c94687ead63090383c3871c6a279"
+        },
+        "tech_spend_command_center/billing.py": {
+          "path": "tech_spend_command_center/billing.py",
+          "sha256": "383ba72ef9baa9a513e471f28e290ee3a428c47603b7e03ca0a9e1d6fb2b5259"
+        },
+        "LICENSE": {
+          "path": "licenses/tech-spend-command-center.txt",
+          "sha256": "37272dee52eaf8871ee4753842a8eb39d5b5f407508926612e61c44cd334e5df"
+        }
+      }
+    },
+    {
+      "repository": "https://github.com/cloudandcapital/cloud-capital-analysis-contract",
+      "revision": "6bf2e0c617536260a279fb53cc07b98f844e4a8a",
+      "uncommitted": false,
+      "files": {
+        "src/ccac/__init__.py": {
+          "path": "ccac/__init__.py",
+          "sha256": "373e38e6fc792385a871c207fd94cb508a4f2dd60c767e10d72b1b0452170c43"
+        },
+        "src/ccac/errors.py": {
+          "path": "ccac/errors.py",
+          "sha256": "9e79c4c08e9515c1c012f439e44432ecdcfda84d9e30c15e86a1bee36b8455fe"
+        },
+        "src/ccac/schema.py": {
+          "path": "ccac/schema.py",
+          "sha256": "bf76c510868813549fbd8ce31ec3e9985d62e1cb2c3eea8446256cc9bed95c2f"
+        },
+        "src/ccac/semantic.py": {
+          "path": "ccac/semantic.py",
+          "sha256": "25f59f0514b106d11c4482aef030b007d82d66e1a1a9951211de0a8e43366cc7"
+        },
+        "src/ccac/validator.py": {
+          "path": "ccac/validator.py",
+          "sha256": "94b258a9eefe943f0fa90ccbff33a6bb012a6f4700c620dc13ba9c4f93360298"
+        },
+        "src/ccac/schemas/__init__.py": {
+          "path": "ccac/schemas/__init__.py",
+          "sha256": "8f426501e5009fab0e956e1fc4951419853608680065245a6a19665bf22981d0"
+        },
+        "schemas/1.1.0/common.schema.json": {
+          "path": "ccac/schemas/1.1.0/common.schema.json",
+          "sha256": "b89fcd471354ca9258dfe510f63a96280c9c8bd24db5cc6eb32354213e06a60e"
+        },
+        "schemas/1.1.0/pipeline-manifest.schema.json": {
+          "path": "ccac/schemas/1.1.0/pipeline-manifest.schema.json",
+          "sha256": "1f5c1abcbda8a65cb8186aa7a8af606ddaa33064fffd311b931aeedfb06e3af3"
+        },
+        "schemas/1.1.0/tool-result.schema.json": {
+          "path": "ccac/schemas/1.1.0/tool-result.schema.json",
+          "sha256": "0b22c3b872ca32169ed9f0674ef1121bbfac8197dc9447344d61be1c41b87d4f"
+        },
+        "schemas/1.1.0/trusted-report.schema.json": {
+          "path": "ccac/schemas/1.1.0/trusted-report.schema.json",
+          "sha256": "ca437b343446e6f8da32a50607bbe8d270ff826a22550ed082908a9435f3571a"
+        },
+        "schemas/1.1.0/verified-outcome.schema.json": {
+          "path": "ccac/schemas/1.1.0/verified-outcome.schema.json",
+          "sha256": "6e85345c56b1cb2dafa2d97c5813f34009191f69a036724340c0e652612ae7c4"
+        },
+        "schemas/common.schema.json": {
+          "path": "ccac/schemas/common.schema.json",
+          "sha256": "5a539adbad0128911b05a7c0f8bcd832e4b5f8b5fc74f236a60baacfff09fe5a"
+        },
+        "schemas/pipeline-manifest.schema.json": {
+          "path": "ccac/schemas/pipeline-manifest.schema.json",
+          "sha256": "c81beaa4d82d47e31fffc2849f7c06bbb2016127642d85615f39f02d10745f17"
+        },
+        "schemas/tool-result.schema.json": {
+          "path": "ccac/schemas/tool-result.schema.json",
+          "sha256": "4d91e2ef7d87b93fbcae445737fc8bf8e4bf11713f1db5d17da49fb32aa0fb0d"
+        },
+        "schemas/trusted-report.schema.json": {
+          "path": "ccac/schemas/trusted-report.schema.json",
+          "sha256": "521790e6faca095da49238dc47adc0993c6810b7d75f7d531c4b3a5b44abda03"
+        },
+        "schemas/verified-outcome.schema.json": {
+          "path": "ccac/schemas/verified-outcome.schema.json",
+          "sha256": "491deec58c062ede7e41d7a125b9a53da32b6642809d6314db51df77f92f1422"
+        },
+        "LICENSE": {
+          "path": "licenses/cloud-capital-analysis-contract.txt",
+          "sha256": "8a8c56289f1f318051ed527facad7d93ac25ced9e4f33b8dc08292c5039bbc82"
+        }
+      }
+    }
+  ]
+}

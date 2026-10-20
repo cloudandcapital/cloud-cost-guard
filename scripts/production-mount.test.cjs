@@ -13,6 +13,7 @@ const CONTENT_TYPES = {
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
   ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
 };
 
 function createStaticServer() {
@@ -64,7 +65,7 @@ test("optimized production bundle routes uploaded bills into the existing dashbo
   await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(path.resolve(__dirname, '../frontend/public/billing/current-example.csv'));
   await page.getByLabel('Previous billing CSV files', { exact: true }).setInputFiles(path.resolve(__dirname, '../frontend/public/billing/previous-example.csv'));
   await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
-  await page.getByTestId('billing-report').waitFor({ state: 'visible' });
+  await page.getByTestId('billing-report').waitFor({ state: 'visible', timeout: 120000 });
   assert.equal(await page.getByTestId('approved-dashboard').getAttribute('data-source'), 'uploaded');
   assert.equal(await page.getByTestId('billing-net-total').innerText(), '$1,310.13');
   assert.match(await page.getByTestId('billing-comparison').innerText(), /\$313\.53/);
@@ -82,6 +83,9 @@ test("optimized production bundle routes uploaded bills into the existing dashbo
   assert.equal(evidence.current.net, '1310.125');
   assert.equal(evidence.previous.net, '996.6');
   assert.equal(evidence.comparison.delta, '313.525');
+  assert.equal(evidence.pipeline.validator, 'cloudandcapital-ccac/0.2.0');
+  assert.deepEqual(evidence.pipeline.included_producers.map(item => item.name), ['finops-lite','finops-watchdog']);
+  assert.equal(JSON.parse(evidence.pipeline.artifacts['report.json']).status, 'partial');
   await page.getByTestId('lumen-trigger').click();
   await page.getByRole('button', { name: 'Summarize my spending', exact: true }).click();
   assert.match(await page.getByTestId('lumen-panel').innerText(), /\$1,310\.13/);

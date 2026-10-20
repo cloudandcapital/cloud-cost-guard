@@ -1,4 +1,3 @@
-import { decimalString, decimalUnits, preparePeriod } from './csv';
 
 // Intl formats decimal strings directly, preserving cent rounding even for large totals.
 export const money = (value, currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
@@ -10,92 +9,6 @@ export const BILLING_EVIDENCE_LIMITS = {
   'ai-spend': { title: 'AI spending detail', text: 'Provider-billed AI charges may appear under Services. This CSV does not separately identify direct AI vendor invoices, models, tokens or usage. Those records are needed for a complete AI spending view.' },
   saas: { title: 'SaaS invoices and seats', text: 'A cloud billing export does not establish your separate SaaS invoices or seat usage. Those records are needed to show SaaS totals and review unused seats.' },
 };
-const absolute = (value) => value < 0n ? -value : value;
-const compare = (a, b) => a > b ? -1 : a < b ? 1 : 0;
-const percent = (part, whole) => {
-  if (whole <= 0n) return null;
-  const tenths = (absolute(part) * 1000n + whole / 2n) / whole;
-  return `${part < 0n ? '-' : ''}${tenths / 10n}.${tenths % 10n}`;
-};
-export const summarizeBillingPeriod = (period) => {
-  let charges = 0n, credits = 0n;
-  const services = new Map(), daily = new Map();
-  for (const row of period.rows) {
-    const units = decimalUnits(row.cost);
-    if (units >= 0n) charges += units; else credits += units;
-    const key = JSON.stringify([row.provider, row.service]);
-    if (!services.has(key)) services.set(key, { key, provider: row.provider, service: row.service, net: 0n, charges: 0n, credits: 0n, records: 0 });
-    const service = services.get(key);
-    service.net += units; service.records += 1;
-    if (units >= 0n) service.charges += units; else service.credits += units;
-    const date = row.start.slice(0, 10);
-    daily.set(date, (daily.get(date) || 0n) + units);
-  }
-  if (charges > decimalUnits('1000000000000') || -credits > decimalUnits('1000000000000')) throw new Error('This period exceeds the supported total of one trillion in charges or credits. Export a smaller period.');
-  return {
-    ...period,
-    net: decimalString(charges + credits), charges: decimalString(charges), credits: decimalString(credits),
-    services: [...services.values()].sort((a, b) => compare(a.net, b.net) || a.key.localeCompare(b.key)).map((service) => ({
-      ...service, net: decimalString(service.net), charges: decimalString(service.charges), credits: decimalString(service.credits),
-      chargeShare: percent(service.charges, charges),
-    })),
-    daily: [...daily].sort(([a], [b]) => a.localeCompare(b)).map(([date, units]) => ({ date, cost: decimalString(units) })),
-  };
-};
-
-export function buildBillingReport(currentFiles, previousFiles = [], options = {}) {
-  const current = summarizeBillingPeriod(preparePeriod(currentFiles, options.current));
-  let previous = null, comparison = null;
-  if (previousFiles.length) {
-    previous = summarizeBillingPeriod(preparePeriod(previousFiles, options.previous));
-    if (current.currency !== previous.currency) throw new Error(`The periods use ${current.currency} and ${previous.currency}. Choose the same currency for both; no exchange rates are applied.`);
-    if (previous.end > current.start) throw new Error('The previous period must end before the current period begins. These dates overlap or are reversed. Choose separate, earlier comparison records.');
-    const delta = decimalUnits(current.net) - decimalUnits(previous.net);
-    const keys = new Set([...current.services, ...previous.services].map((row) => row.key));
-    const currentByKey = new Map(current.services.map((row) => [row.key, row]));
-    const previousByKey = new Map(previous.services.map((row) => [row.key, row]));
-    const drivers = [...keys].map((key) => {
-      const now = currentByKey.get(key), before = previousByKey.get(key);
-      const change = decimalUnits(now?.net || '0') - decimalUnits(before?.net || '0');
-      return {
-        key, service: (now || before).service, provider: (now || before).provider,
-        current: now?.net || '0', previous: before?.net || '0', delta: decimalString(change),
-        coverage: !before ? 'Not in previous upload' : !now ? 'Not in current upload' : 'In both uploads',
-      };
-    }).sort((a, b) => compare(absolute(decimalUnits(a.delta)), absolute(decimalUnits(b.delta))) || a.key.localeCompare(b.key));
-    const warnings = [];
-    if (current.days !== previous.days) warnings.push(`The periods cover ${current.days} and ${previous.days} days. Changes compare period totals, not daily spending rates.`);
-    const providers = (period) => [...new Set(period.rows.map((row) => row.provider))].sort().join(', ');
-    if (providers(current) !== providers(previous)) warnings.push('Provider coverage differs between uploads. An absent service or provider means no records were supplied, not that it was switched on or off.');
-    comparison = { delta: decimalString(delta), percent: percent(delta, decimalUnits(previous.net)), drivers, warnings };
-  }
-  const currency = current.currency;
-  const cost = (value) => money(value, currency);
-  const largest = current.services[0];
-  const findings = [{
-    title: 'Where your money went',
-    text: `${cost(current.net)} net cost comes from ${cost(current.charges)} in positive charges and ${cost(current.credits)} in credits or negative adjustments across ${current.rows.length} records.`,
-  }];
-  if (decimalUnits(current.charges) > 0n) {
-    const leader = [...current.services].sort((a, b) => compare(decimalUnits(a.charges), decimalUnits(b.charges)))[0];
-    findings.push({ title: 'Largest source of charges', text: `${leader.service} (${leader.provider}) accounts for ${leader.chargeShare}% of positive charges: ${cost(leader.charges)} before credits. Its net cost is ${cost(leader.net)}.` });
-  } else findings.push({ title: 'No positive charges', text: 'These records contain only credits, zero costs, or negative adjustments. There is no positive spending share to calculate.' });
-  if (comparison) {
-    const delta = decimalUnits(comparison.delta);
-    const changeText = delta === 0n ? 'Net cost is unchanged from the previous upload' : `Net cost is ${cost(decimalString(absolute(delta)))} ${delta > 0n ? 'higher' : 'lower'} than the previous upload`;
-    findings.push({ title: 'What changed', text: `${changeText}${comparison.percent !== null ? ` (${comparison.percent}%)` : '. A percentage is not meaningful when the previous net cost is zero or negative'}.${comparison.warnings.length ? ` ${comparison.warnings.join(' ')}` : ''}` });
-    const driver = comparison.drivers.find((row) => row.delta !== '0');
-    if (driver) findings.push({ title: 'Biggest movement', text: `${driver.service} (${driver.provider}) changed by ${cost(driver.delta)}, from ${cost(driver.previous)} to ${cost(driver.current)}. ${driver.coverage}. This locates the change; billing amounts alone do not establish its cause.` });
-  } else findings.push({ title: 'Want to know what changed?', text: 'Add an earlier billing CSV to compare totals and service costs. With one upload, there is no measured increase, decrease, or anomaly baseline.' });
-  findings.push({ title: 'Before you act', text: 'These are the records you supplied, not a verified invoice or a savings estimate. Check the period, account coverage, and billed-cost basis against your provider bill. Utilization, pricing changes, and business activity are needed to explain why costs moved.' });
-  return {
-    schema: 'cloud-cost-guard.billing-upload.v1', source: 'uploaded', currency, current, previous, comparison, findings,
-    largestService: largest?.service || null,
-    privacy: 'Calculated in this browser. Billing files and Lumen questions are not sent to a server or AI service. Data is kept in memory until you clear it, switch to the example, reload, or close this tab.',
-    costBasis: 'Sum of supplied signed Cost or FOCUS BilledCost values. Negative amounts reduce the total. No conversion, amortization, tax, or credit is inferred or added. This is not a full FOCUS conformance check.',
-  };
-}
-
 // This is intentionally a deterministic local guide. It never calls the sample API.
 export function answerBillingQuestion(report, question) {
   const q = question.trim().toLowerCase();
@@ -103,7 +16,14 @@ export function answerBillingQuestion(report, question) {
   if (/forecast|predict|next month|annualiz|saving|waste|utilization|roi|profit/.test(q)) return 'This upload does not establish forecasts, savings, waste, utilization, or business value. I can explain the recorded costs, credits, service breakdown, and comparison you supplied.';
   if (/delete|cancel|resize|terminate|shut down/.test(q)) return 'I can help you review these billing records. I cannot access or change your cloud account.';
   if (/privacy|\bprivate\b|where.*(?:stored|kept)|where.*files?.*(?:go|live)|(?:send|sent|share|shared).*(?:data|files?|bills?|questions?|ai)|(?:data|files?|bills?|questions?).*(?:send|sent|stored|shared|leave|go to ai)/.test(q)) return report.privacy;
-  const service = report.current.services.find((row) => row.service.length > 2 && q.includes(row.service.toLowerCase()));
+  if (/anomal|spike|unusual|watchdog/.test(q)) {
+    const diagnostic = report.pipeline.watchdog;
+    const findings = report.findings.filter(finding => finding.producer === 'finops-watchdog');
+    return `${findings.map(finding => finding.text).join('\n\n')}${findings.length ? '\n\n' : ''}Watchdog evaluated ${diagnostic.series_evaluated} eligible daily series and produced ${diagnostic.anomalies_detected} anomaly findings. ${diagnostic.insufficient_history_series.length} series need more history; ${diagnostic.excluded_daily_series.length} lack suitable daily evidence. Missing days and monthly charges are not filled in. No finding is not proof that all costs are normal. This is not a savings or root-cause conclusion.`;
+  }
+  const matches = report.current.services.filter((row) => row.service.length > 2 && q.includes(row.service.toLowerCase()));
+  const service = matches.find(row => q.includes(row.provider.toLowerCase())) || (matches.length === 1 ? matches[0] : null);
+  if (matches.length > 1 && !service) return `That service appears in more than one provider group: ${matches.map(row => `${row.service} (${row.provider})`).join(', ')}. Include the provider in your question, or review the separate rows in Services.`;
   if (!service) {
     const missingSection = /\b(saas|seats?|software subscriptions?)\b/.test(q) ? 'saas'
       : /\b(kubernetes|k8s|clusters?|namespaces?|pods?|workloads?)\b/.test(q) ? 'kubernetes'

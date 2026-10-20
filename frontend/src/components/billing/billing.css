@@ -26,7 +26,7 @@
 .billing-app a:not(.billing-brand){color:#516d58;text-underline-offset:4px;text-decoration-thickness:1px}
 .billing-inline-links a{font-size:12px}
 .billing-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:28px}
-.billing-period-input{min-width:0}
+.billing-period-input{min-width:0;border:0;padding:0;margin:0}
 .billing-period-input+.billing-period-input{border-left:1px solid #e9e1d9;padding-left:30px}
 .billing-step-heading{display:flex;gap:12px;align-items:flex-start;margin-bottom:22px}
 .billing-step{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:#e7ecdf;color:#516852;display:grid;place-items:center;font-size:12px;font-weight:700}
