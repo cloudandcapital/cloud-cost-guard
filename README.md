@@ -10,11 +10,11 @@
 
 [**Cloud Cost Guard →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
-**Draft integration:** uploads now run the existing FinOps Lite → Watchdog → released CCAC validation → Command Center pipeline locally, then populate this dashboard. Producer changes are in linked draft PRs; no production release is approved. See [pipeline ownership and verification](docs/pipeline-upload-integration.md).
+Uploads run the FinOps Lite → Watchdog → CCAC validation → Command Center pipeline locally and open its validated result in the dashboard. The [pipeline ownership and verification](docs/pipeline-upload-integration.md) and [source lock](pipeline/sources.lock.json) document the released implementation.
 
 ---
 
-**Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, privacy and release coordination →](docs/billing-upload.md)
+**Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, and privacy →](docs/billing-upload.md)
 
 The main flow supports FOCUS BilledCost CSVs and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Sections that need other evidence explain what is missing instead of displaying example metrics. “Try an example” opens the preserved deterministic CCAC report in the same dashboard. Its Refresh button only reloads that example; it does not synchronize a cloud account. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
 

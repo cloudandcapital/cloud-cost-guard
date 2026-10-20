@@ -6,8 +6,8 @@ code, not customer records. There is no hosted ingestion endpoint or cloud login
 
 `vendor/` contains verbatim reviewed source and licenses from the revisions in
 `sources.lock.json`. It is a reproducible browser distribution of those projects,
-not an independent cost calculator. Producer changes live in their companion
-draft PRs: [FinOps Lite #19](https://github.com/cloudandcapital/finops-lite/pull/19),
+not an independent cost calculator. The producer changes were reviewed in
+[FinOps Lite #19](https://github.com/cloudandcapital/finops-lite/pull/19),
 [Watchdog #8](https://github.com/cloudandcapital/finops-watchdog/pull/8), and
 [Command Center #8](https://github.com/cloudandcapital/tech-spend-command-center/pull/8).
 The unchanged CCAC source matches the released 0.2.0 validator tree.
