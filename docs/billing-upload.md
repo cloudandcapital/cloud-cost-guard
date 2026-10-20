@@ -1,12 +1,12 @@
 # Review your own cloud bill
 
-**Draft integration:** uploads run FinOps Lite → Watchdog → released CCAC validation → Command Center locally, using the reviewed source snapshots in [the pipeline lock](../pipeline/sources.lock.json). The dashboard and Lumen receive the validated read-only presentation. [Ownership, evidence and release coordination](pipeline-upload-integration.md) remain documented; production release requires approval.
+Uploads run FinOps Lite → Watchdog → released CCAC validation → Command Center locally, using the reviewed source snapshots in [the pipeline lock](../pipeline/sources.lock.json). The dashboard and Lumen receive the validated read-only presentation. [Ownership and evidence](pipeline-upload-integration.md) are documented separately.
 
 The start screen accepts billing CSVs without cloud credentials. Select the current period's files, optionally add a separate earlier period, and choose **Review my bill**. Your records populate the existing Cloud Cost Guard dashboard: the same header, summary cards, section navigation, charts, export menu and Lumen panel. There is no separate result-page product. **Try an example** opens this dashboard in a clearly labeled CCAC example mode; it is never used to complete missing upload data.
 
 **Findings** explains totals, service drivers and supplied comparisons. **Services** accounts for all service groups and signed credits. **Clouds** charts the uploaded records and filters only providers actually present, with explicit filtered subtotals; the headline, exports and Lumen continue to cover the whole upload. **Overview** explains the cost basis and coverage. **Kubernetes**, **AI Spend** and **SaaS** explain what additional workload, direct-vendor or invoice data is needed, without filling those sections with example metrics. Provider-billed AI can still be present in the supplied service costs.
 
-GitHub Actions tests, validates and builds the app and its tracked illustrative fixtures. That CI workflow is distinct from the Cloud & Capital analysis pipeline, whose producers own calculations, evidence and findings. The upload draft invokes those actual Python producers in a local WebAssembly worker, not in a public GitHub workflow. The reference cloud connectors remain disconnected from production ingestion.
+GitHub Actions tests, validates and builds the app and its tracked illustrative fixtures. That CI workflow is distinct from the Cloud & Capital analysis pipeline, whose producers own calculations, evidence and findings. Billing review invokes those Python producers in a local WebAssembly worker, not in a public GitHub workflow. The reference cloud connectors remain disconnected from production ingestion.
 
 ## Supported files
 
@@ -66,13 +66,7 @@ HTML reports escape all supplied text and contain no scripts or external resourc
 
 ## Implementation and reuse
 
-`csv.js` provides file preflight; `pipeline.js` invokes the local worker and formats its validated presentation. Financial aggregation, provider filters, chart groups, changes and findings are owned by the actual Python producers in `pipeline/vendor`, copied verbatim from pinned upstream drafts. `report.js` now contains only formatting and the deterministic local Lumen guide; the parallel JavaScript calculator was removed. `export.js` renders the same report to HTML/JSON/CSV. `BillingApp` manages selection/reset; the original `Dashboard`, cards, tabs, export utility and `AskClaude` dialog remain shared. The complete example loader and API are never used to complete upload data. See [runtime packaging](../pipeline/README.md).
-
-## Release coordination
-
-Keep this work in draft PR #32 on `codex/interface-polish` until Diana approves. Its original visual-polish commit remains in history. Preview deploys are authorized; production deployment and merging are not.
-
-After approval, release the Guard upload flow and verify the production entry screen, template download and one invented upload **before** publishing the homepage promise “Upload your cloud billing export to see where your money went and what changed.” The homepage link should open Guard's root URL with **Review my cloud bill**. If the website draft is already ready, coordinate both releases so the promise never leads to the old sample-only tool. Do not change the production homepage as part of this PR.
+`csv.js` provides file preflight; `pipeline.js` invokes the local worker and formats its validated presentation. Financial aggregation, provider filters, chart groups, changes and findings are owned by the Python producers in `pipeline/vendor`, copied verbatim from pinned upstream revisions. `report.js` contains formatting and the deterministic local Lumen guide; there is no parallel JavaScript calculator. `export.js` renders the same report to HTML/JSON/CSV. `BillingApp` manages selection/reset; the dashboard, cards, tabs, export utility and `AskClaude` dialog are shared. The complete example loader and API are never used to complete upload data. See [runtime packaging](../pipeline/README.md).
 
 ## Reproducible checks
 
