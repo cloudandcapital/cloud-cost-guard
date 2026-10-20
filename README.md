@@ -10,6 +10,8 @@
 
 [**Cloud Cost Guard →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
+**Draft integration status:** uploaded CSVs currently populate the dashboard through a separate billing model. Connecting them to the existing analytical producer, CCAC and Command Center pipeline remains a release requirement. See [pipeline preservation and integration](docs/pipeline-upload-integration.md). The working upload preview is not proof that this connection is complete.
+
 ---
 
 **Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, privacy and release coordination →](docs/billing-upload.md)

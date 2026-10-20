@@ -1,6 +1,6 @@
 # Architecture and trust boundaries
 
-Cloud Cost Guard has a browser-local billing CSV review and a separate optional CCAC illustrative dashboard. Neither connects to cloud accounts, credentials, production resources, or live billing systems. The [billing upload architecture and rules](billing-upload.md) describe the main flow. The sections below describe the preserved CCAC example only.
+Cloud Cost Guard's draft upload flow and optional CCAC example share the dashboard interface but currently use different report models. Uploaded CSVs do not yet enter the existing analytical pipeline; [pipeline reuse is a release requirement](pipeline-upload-integration.md). Neither path connects to cloud accounts, credentials, production resources, or live billing systems. The [billing upload rules](billing-upload.md) describe the current draft. The sections below document the existing canonical analysis and trust path that the upload integration needs to preserve and reuse.
 
 ## System architecture
 

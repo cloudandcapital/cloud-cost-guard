@@ -1,10 +1,12 @@
 # Review your own cloud bill
 
+**Draft integration status:** the current upload flow uses the existing dashboard but calculates its own billing report. It does not yet reuse the analytical producer → CCAC → Command Center path. [Pipeline preservation requirements and release evidence](pipeline-upload-integration.md) govern the next integration step. Do not treat the passing CSV checks as proof of pipeline reuse or release readiness.
+
 The start screen accepts billing CSVs without cloud credentials. Select the current period's files, optionally add a separate earlier period, and choose **Review my bill**. Your records populate the existing Cloud Cost Guard dashboard: the same header, summary cards, section navigation, charts, export menu and Lumen panel. There is no separate result-page product. **Try an example** opens this dashboard in a clearly labeled CCAC example mode; it is never used to complete missing upload data.
 
 **Findings** explains totals, service drivers and supplied comparisons. **Services** accounts for all service groups and signed credits. **Clouds** charts the uploaded records and filters only providers actually present, with explicit filtered subtotals; the headline, exports and Lumen continue to cover the whole upload. **Overview** explains the cost basis and coverage. **Kubernetes**, **AI Spend** and **SaaS** explain what additional workload, direct-vendor or invoice data is needed, without filling those sections with example metrics. Provider-billed AI can still be present in the supplied service costs.
 
-The GitHub pipeline tests, validates and builds the app and its tracked illustrative fixtures. It is not a customer billing ingestion service, and visitors do not need a GitHub workflow run or a human to upload on their behalf. CSV processing runs locally when they use the app. The reference cloud connectors remain disconnected from production ingestion. Assisted interpretation is an optional Cloud & Capital service linked below the dashboard; the self-service flow stands on its own.
+GitHub Actions tests, validates and builds the app and its tracked illustrative fixtures. That CI workflow is distinct from the Cloud & Capital analysis pipeline, whose producers own calculations, evidence and findings. The current CSV draft runs locally without invoking those producers. Connecting visitor evidence to the existing analytical pipeline remains a release requirement. The reference cloud connectors remain disconnected from production ingestion.
 
 ## Supported files
 
