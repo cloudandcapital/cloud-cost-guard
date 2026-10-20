@@ -1,17 +1,15 @@
 # Changelog
 
-All notable changes to Cloud Cost Guard are documented here.
+## October 2026 · Billing review release
 
-## [Unreleased]
+- Added browser-local FOCUS and simple billing CSV review with exact signed totals, service and provider breakdowns, optional earlier-period comparison, diagnostic Watchdog findings, and explicit coverage limits.
+- Ran the pinned FinOps Lite, Watchdog, CCAC validator, and Command Center analysis in a local WebAssembly worker. Kept upload results in tab memory and provided local Lumen answers and HTML, JSON, and CSV downloads.
+- Preserved the validated CCAC 1.1 illustrative Cloud, direct-AI, and SaaS example, with separate server-grounded Lumen explanations.
+- Pinned Node 24.x for deployment and expanded CI, browser, pipeline parity, and adversarial validation checks.
 
-### Added
-- **Pipeline framing** — README rewritten to open with the Visibility → Variance → Tradeoffs system context; updated data pipeline section to reference all four tools including their newest features (FOCUS 1.0 export, `--report` flag, `compare` subcommand).
-- **GitHub Actions CI** — npm install + build runs on Node 24 on every push.
+The [upload documentation](docs/billing-upload.md) lists supported inputs and accounting rules. The [architecture document](docs/architecture-and-trust.md) describes provenance and capability boundaries.
 
-## [0.1.0] — Initial release
+## 0.1.0 · Initial release
 
-- React dashboard: spend trends, unit economics, savings coverage
-- Findings cards with evidence (resource, region, type)
-- CSV export of findings with savings
-- Reads normalized `report.json` aggregated from FinOps Lite, Watchdog, and Recovery Economics
-- Vercel deployment
+- Introduced the React dashboard, findings cards, CSV exports, and Vercel hosting.
+- Used normalized reports from FinOps Lite, Watchdog, and Recovery Economics in the early dashboard.
