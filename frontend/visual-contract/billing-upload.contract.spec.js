@@ -99,6 +99,11 @@ test.describe('browser-local billing upload experience', () => {
     expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
     await checkNoSample(page);
     if (testInfo.project.name !== 'tablet-768x1024') await expect(panel).toHaveScreenshot('billing-lumen.png');
+    await input.fill('What are my SaaS costs?'); await input.press('Enter');
+    await expect(panel).toContainText('does not establish your separate SaaS invoices');
+    await input.fill('Why did Managed database increase?'); await input.press('Enter');
+    await expect(panel).toContainText('changed by $40.00, from $300.00 to $340.00');
+    expect(requests).toEqual([]);
     await input.press('Escape');
     await expect(page.getByTestId('lumen-trigger')).toBeFocused();
   });

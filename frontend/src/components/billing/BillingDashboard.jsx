@@ -3,7 +3,7 @@ import { ArrowDownToLine, CheckCircle, FileText, Info, PieChart as PieIcon } fro
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { money, periodLabel, summarizeBillingPeriod } from '../../lib/billing/report';
+import { BILLING_EVIDENCE_LIMITS, money, periodLabel, summarizeBillingPeriod } from '../../lib/billing/report';
 import { decimalString, decimalUnits } from '../../lib/billing/csv';
 
 // These sections occupy the existing dashboard shell and tabs. They never load
@@ -146,13 +146,8 @@ export function BillingClouds({ report }) {
   </section>;
 }
 
-const MISSING = {
-  kubernetes: { title: 'Kubernetes cost and utilization', text: 'Your cloud bill can include compute charges, but it does not allocate them to clusters, namespaces or workloads, or show utilization. Workload allocation and usage data are needed for this section.' },
-  'ai-spend': { title: 'AI spending detail', text: 'Provider-billed AI charges may appear under Services. This CSV does not separately identify direct AI vendor invoices, models, tokens or usage. Those records are needed for a complete AI spending view.' },
-  saas: { title: 'SaaS invoices and seats', text: 'A cloud billing export does not establish your separate SaaS invoices or seat usage. Those records are needed to show SaaS totals and review unused seats.' },
-};
 export function BillingUnavailable({ section, onServices }) {
-  const missing = MISSING[section];
+  const missing = BILLING_EVIDENCE_LIMITS[section];
   return <Card className="unavailable-card billing-missing-section" data-testid={`billing-unavailable-${section}`}><CardContent className="unavailable-content"><Info className="h-5 w-5" aria-hidden="true"/><div><p className="eyebrow">Additional data needed</p><h2>{missing.title}</h2><p>{missing.text}</p><p>Only your supplied cloud costs are included in the dashboard total.</p><Button variant="outline" className="btn-brand-outline" onClick={onServices}>Review uploaded services</Button></div></CardContent></Card>;
 }
 

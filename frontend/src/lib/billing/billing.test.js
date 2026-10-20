@@ -152,6 +152,21 @@ describe('report, exports and Lumen share uploaded evidence', () => {
     expect(unsupported).not.toMatch(/2939/);
     for (const question of ['total', 'credits', 'what changed', 'date', 'privacy']) expect(answerBillingQuestion(report, question)).not.toMatch(/2939|2194|736.77|CCAC|canonical|EC2 anomaly/);
   });
+  test('Lumen distinguishes unsupported dashboard categories and explains only the requested service movement', () => {
+    const report = buildBillingReport(current(), previous());
+    for (const question of ['What are my SaaS costs?', 'What changed in Kubernetes?', 'How much did AI cost?', 'Show token usage']) {
+      const answer = answerBillingQuestion(report, question);
+      expect(answer).toContain('not a total for this separate category');
+      expect(answer).not.toContain('$1,310');
+    }
+    expect(answerBillingQuestion(report, 'Why did API compute increase?')).toMatch(/API compute.*\$240.03.*\$480.10.*\$720.13/);
+    expect(answerBillingQuestion(report, 'What changed between uploads?')).toMatch(/313.53/);
+    expect(answerBillingQuestion(report, 'Are my files sent to an AI service?')).toBe(report.privacy);
+    expect(answerBillingQuestion(report, 'Why did Managed database increase?')).toMatch(/Managed database.*\$40.00.*\$300.00.*\$340.00/);
+    expect(answerBillingQuestion(buildBillingReport(current()), 'What changed in API compute?')).toMatch(/No earlier period was supplied/);
+    const aiService = buildBillingReport([simple('2026-09-01,Amazon Bedrock,4,USD,AWS,ai1')]);
+    expect(answerBillingQuestion(aiService, 'Amazon Bedrock AI costs')).toMatch(/Amazon Bedrock.*\$4.00 net/);
+  });
   test('exports exact uploaded records with no sample facts; CSV round-trips without losing decimals', () => {
     const report = buildBillingReport(current(), previous());
     const files = buildBillingExports(report);
