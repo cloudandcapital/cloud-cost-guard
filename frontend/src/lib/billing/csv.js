@@ -90,10 +90,12 @@ const knownCurrencies = typeof Intl.supportedValuesOf === 'function'
 
 export function normalizeCsv(text, filename = 'billing.csv') {
   if (!/\.csv$/i.test(filename)) fail(`${filename}: choose an uncompressed .csv file. Excel, ZIP, Gzip, and Parquet files are not supported.`);
-  const parsed = parseCsv(text);
+  let parsed;
+  try { parsed = parseCsv(text); }
+  catch (error) { fail(`${filename}: ${error.message}`); }
   const headers = parsed[0].cells.map((value) => value.trim().toLowerCase());
   if (new Set(headers).size !== headers.length || headers.some((header) => !header)) fail(`${filename}: every column needs a unique header.`);
-  const focus = headers.some((header) => ['billedcost', 'chargeperiodstart', 'serviceName'.toLowerCase()].includes(header));
+  const focus = headers.some((header) => ['billedcost', 'chargeperiodstart', 'servicename'].includes(header));
   const fields = focus
     ? { date: 'chargeperiodstart', end: 'chargeperiodend', service: 'servicename', cost: 'billedcost', currency: 'billingcurrency', provider: 'providername' }
     : { date: 'date', end: 'enddate', service: 'service', cost: 'cost', currency: 'currency', provider: 'provider' };
@@ -150,6 +152,7 @@ export async function readBillingFiles(fileList) {
 }
 
 export function preparePeriod(files, { duplicatePolicy = 'review', start = '', end = '' } = {}) {
+  if (!['review', 'keep', 'drop'].includes(duplicatePolicy)) fail('Choose how identical rows should be handled before reviewing the bill.');
   if (!files?.length) fail('Choose your current billing CSV first.');
   const sourceRows = files.flatMap((file) => file.rows);
   if (!sourceRows.length || sourceRows.length > LIMITS.rows) fail('Use between 1 and 50,000 billing records per period.');

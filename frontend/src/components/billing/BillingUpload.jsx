@@ -44,13 +44,14 @@ export default function BillingUpload({ onAnalyze, onExample, onCancel, initial 
   const [previousOptions, setPreviousOptions] = useState(initial?.options?.previous || blankOptions());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fileError, setFileError] = useState(null);
   const request = useRef(0);
   const errorRef = useRef(null);
   useEffect(() => () => { request.current += 1; }, []);
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
   const selectFiles = async (kind, files) => {
     const id = ++request.current;
-    setError('');
+    setError(''); setFileError(null);
     if (kind === 'current') {
       setCurrent([]); setCurrentOptions(blankOptions());
       setPrevious([]); setPreviousOptions(blankOptions());
@@ -60,11 +61,13 @@ export default function BillingUpload({ onAnalyze, onExample, onCancel, initial 
     try {
       const parsed = await readBillingFiles(files);
       if (id === request.current) (kind === 'current' ? setCurrent : setPrevious)(parsed);
-    } catch (err) { if (id === request.current) setError(err.message); }
+    } catch (err) { if (id === request.current) { setError(err.message); setFileError(kind); } }
     finally { if (id === request.current) setLoading(false); }
   };
   const analyze = (event) => {
-    event.preventDefault(); setError('');
+    event.preventDefault();
+    if (fileError || loading) return;
+    setError('');
     try {
       const options = { current: currentOptions, previous: previousOptions };
       onAnalyze(buildBillingReport(current, previous, options), { current, previous, options });
@@ -75,8 +78,8 @@ export default function BillingUpload({ onAnalyze, onExample, onCancel, initial 
     <form onSubmit={analyze} className="billing-upload-card">
       <div className="billing-form-heading"><h2>Review my cloud bill</h2><p>FOCUS exports or the simple CSV template · UTF-8, comma-separated</p><div className="billing-inline-links"><a href="/billing/template.csv" download>Download template</a><a href="/billing/current-example.csv" download>See a filled-in example</a></div></div>
       <div className="billing-upload-grid"><PeriodInput kind="current" files={current} options={currentOptions} onOptions={setCurrentOptions} onFiles={selectFiles} loading={loading}/><PeriodInput kind="previous" files={previous} options={previousOptions} onOptions={setPreviousOptions} onFiles={selectFiles} loading={loading}/></div>
-      {error && <div className="billing-error" ref={errorRef} tabIndex={-1} role="alert"><strong>Let’s check that file</strong><p>{error}</p><span>No report has been created from this selection. {onCancel ? 'Your earlier report is available with “Back to report”.' : 'You can fix the file or choose another one.'}</span></div>}
-      <div className="billing-submit-row"><button type="submit" className="billing-primary" disabled={!current.length || loading}>{loading ? 'Reading your files…' : 'Review my bill'}<ArrowRight size={17} aria-hidden="true"/></button><button className="billing-link-button" type="button" onClick={onExample}>Try an example</button>{onCancel && <button className="billing-link-button" type="button" onClick={onCancel}>Back to report</button>}</div>
+      {error && <div className="billing-error" ref={errorRef} tabIndex={-1} role="alert"><strong>Let’s check that file</strong><p>{error}</p><span>No report has been created from this selection. {onCancel ? 'Your earlier report is available with “Back to report”.' : 'You can fix the file or choose another one.'}</span>{fileError === 'previous' && <div><button type="button" className="billing-link-button" onClick={() => { setError(''); setFileError(null); }}>Remove invalid comparison selection</button></div>}</div>}
+      <div className="billing-submit-row"><button type="submit" className="billing-primary" disabled={!current.length || loading || !!fileError}>{loading ? 'Reading your files…' : 'Review my bill'}<ArrowRight size={17} aria-hidden="true"/></button><button className="billing-link-button" type="button" onClick={onExample}>Try an example</button>{onCancel && <button className="billing-link-button" type="button" onClick={onCancel}>Back to report</button>}</div>
       <p className="billing-smallprint">Up to 10 MB and 50,000 rows per period. Your files, results, and Lumen questions stay in this tab’s memory. Reloading or closing the tab clears them. Download a report if you want to keep it.</p>
     </form>
     <BillingInstructions/>

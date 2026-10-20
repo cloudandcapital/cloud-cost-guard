@@ -1,23 +1,28 @@
 const { expect, test } = require("@playwright/test");
 const crypto = require('node:crypto');
 const path = require('node:path');
+const fs = require('node:fs');
 
 // Preserve a reviewable image when a CI-only browser has no approved baseline.
 // The assertion still fails; no baseline is accepted or changed automatically.
 async function captureVisual(locator, name, options = {}) {
+  const targetPath = test.info().snapshotPath(name);
+  const missing = !fs.existsSync(targetPath);
+  const emit = async () => {
+    if (process.env.CCG_EXPORT_VISUAL_EVIDENCE !== 'true') return;
+    const bytes = await locator.screenshot({ animations: 'disabled', caret: 'hide', ...options });
+    const target = path.relative(process.cwd(), targetPath).replaceAll(path.sep, '/');
+    const data = bytes.toString('base64');
+    const sha = crypto.createHash('sha256').update(bytes).digest('hex');
+    console.log(`CCG_VISUAL_META ${JSON.stringify({ target, sha, parts: Math.ceil(data.length / 12000) })}`);
+    for (let part = 0; part * 12000 < data.length; part += 1) console.log(`CCG_VISUAL_CHUNK ${JSON.stringify({ target, sha, part, data: data.slice(part * 12000, (part + 1) * 12000) })}`);
+  };
   try { await expect(locator).toHaveScreenshot(name, options); }
   catch (error) {
-    if (process.env.CCG_EXPORT_VISUAL_EVIDENCE === 'true') {
-      const bytes = await locator.screenshot({ animations: 'disabled', caret: 'hide', ...options });
-      const info = test.info();
-      const target = path.relative(process.cwd(), info.snapshotPath(name)).replaceAll(path.sep, '/');
-      const data = bytes.toString('base64');
-      const sha = crypto.createHash('sha256').update(bytes).digest('hex');
-      console.log(`CCG_VISUAL_META ${JSON.stringify({ target, sha, parts: Math.ceil(data.length / 12000) })}`);
-      for (let part = 0; part * 12000 < data.length; part += 1) console.log(`CCG_VISUAL_CHUNK ${JSON.stringify({ target, sha, part, data: data.slice(part * 12000, (part + 1) * 12000) })}`);
-    }
+    await emit();
     throw error;
   }
+  if (missing) await emit();
 }
 
 const PRIMARY_TABS = ["Findings", "Products", "Clouds", "Kubernetes", "Overview", "AI Spend", "SaaS"];

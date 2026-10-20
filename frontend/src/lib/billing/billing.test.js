@@ -90,6 +90,11 @@ describe('browser billing CSV ingestion', () => {
 });
 
 describe('report, exports and Lumen share uploaded evidence', () => {
+  test('billing pages contain no analytics capture script', () => {
+    const html = fs.readFileSync(path.join(__dirname, '../../../public/index.html'), 'utf8');
+    expect(html).not.toMatch(/posthog|<script|analytics/i);
+    expect(html).toContain('no-referrer');
+  });
   test('invented current and previous bills reconcile to independently specified exact totals', () => {
     const report = buildBillingReport(current(), previous());
     expect(report.current.net).toBe('1310.125');
