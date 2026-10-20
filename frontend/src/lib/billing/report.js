@@ -1,6 +1,7 @@
 import { decimalString, decimalUnits, preparePeriod } from './csv';
 
-export const money = (value, currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(value));
+// Intl formats decimal strings directly, preserving cent rounding even for large totals.
+export const money = (value, currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 export const endInclusive = (period) => new Date(Date.parse(`${period.end}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
 export const periodLabel = (period) => `${period.start} to ${endInclusive(period)} · ${period.days} ${period.days === 1 ? 'day' : 'days'} · UTC`;
 const absolute = (value) => value < 0n ? -value : value;

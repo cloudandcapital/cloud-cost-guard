@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { test, expect } = require('@playwright/test');
-const { captureVisual, expectExactPageOverflow, expectNoBrokenDisplayValues } = require('./helpers');
+const { expectExactPageOverflow, expectNoBrokenDisplayValues } = require('./helpers');
 
 const csv = (name) => path.resolve(__dirname, `../public/billing/${name}-example.csv`);
 const payload = (text, name = 'billing.csv') => ({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
@@ -41,7 +41,7 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
     await expect(page.getByText('Get your billing records', { exact: true })).toBeVisible();
     await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
-    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(page, 'billing-upload.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-upload.png', { fullPage: true });
   });
 
   test('reconciles current spending, negative adjustments, services, charts and missing baseline', async ({ page }, testInfo) => {
@@ -54,7 +54,7 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('billing-service-chart').locator('svg.recharts-surface')).toBeVisible();
     await expect(page.getByTestId('billing-date-chart').locator('svg.recharts-surface')).toBeVisible();
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(page, 'billing-current-report.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
   });
 
   test('compares earlier totals and services while disclosing different duration', async ({ page }, testInfo) => {
@@ -65,7 +65,7 @@ test.describe('browser-local billing upload experience', () => {
     const changes = page.getByRole('region', { name: 'Uploaded service comparisons' });
     await expect(changes).toContainText('$240.03');
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(page, 'billing-comparison-report.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-comparison-report.png', { fullPage: true });
   });
 
   test('Lumen answers locally without any data requests or example facts', async ({ page }, testInfo) => {
@@ -86,7 +86,7 @@ test.describe('browser-local billing upload experience', () => {
     expect(requests).toEqual([]);
     expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await captureVisual(panel, 'billing-lumen.png');
+    if (testInfo.project.name !== 'tablet-768x1024') await expect(panel).toHaveScreenshot('billing-lumen.png');
     await input.press('Escape');
     await expect(page.getByTestId('lumen-trigger')).toBeFocused();
   });

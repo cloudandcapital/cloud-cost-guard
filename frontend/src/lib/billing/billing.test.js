@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { TextEncoder, TextDecoder } from 'util';
 import { decimalUnits, decimalString, normalizeCsv, parseCsv, preparePeriod, readBillingFiles } from './csv';
-import { answerBillingQuestion, buildBillingReport, periodLabel } from './report';
+import { answerBillingQuestion, buildBillingReport, money, periodLabel } from './report';
 import { buildBillingExports } from './export';
 
 global.TextEncoder = TextEncoder;
@@ -19,6 +19,8 @@ describe('browser billing CSV ingestion', () => {
     expect(decimalString(decimalUnits('-0.00000001') + decimalUnits('1.00000001'))).toBe('1');
     expect(decimalString(decimalUnits('1,234.5000'))).toBe('1234.5');
     for (const value of ['1e3', '$1', 'NaN', 'Infinity', '1,23', '0.000000001', '', '1000000000001']) expect(() => decimalUnits(value)).toThrow();
+    expect(money('999999999999.99499999', 'USD')).toBe('$999,999,999,999.99');
+    expect(money('-999999999999.99499999', 'USD')).toBe('-$999,999,999,999.99');
   });
   test('RFC 4180 quotes, BOM, CRLF, empty lines and multiline service names', () => {
     const file = normalizeCsv('\uFEFFDate,Service,Cost,Currency\r\n2026-09-01,"Storage, \"\"cold\"\"\narchive","1,234.56",usd\r\n\r\n');

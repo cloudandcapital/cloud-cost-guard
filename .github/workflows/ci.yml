@@ -57,8 +57,6 @@ jobs:
 
       - name: Run structural, interaction, and visual contract tests
         working-directory: frontend
-        env:
-          CCG_EXPORT_VISUAL_EVIDENCE: 'true'
         run: npm run test:visual
 
       - name: Upload visual-contract failure evidence
