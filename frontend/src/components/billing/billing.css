@@ -140,7 +140,7 @@
 
 /* Uploaded records use the existing Cloud Cost Guard dashboard layout. */
 .billing-dashboard{color:#2d332f;line-height:1.6}
-.billing-dashboard .hero-copy{background:#e1e8dc}
+.billing-dashboard .hero-copy{background:#fffdfb}
 .billing-dashboard .hero-total{color:#324c39;white-space:nowrap}
 .billing-dashboard .scope-card{background:#fffdf9}
 .billing-dashboard .scope-stack .kpi-card{min-width:0;background:#fffdf9}
