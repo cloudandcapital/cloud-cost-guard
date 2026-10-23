@@ -10,9 +10,9 @@ GitHub Actions tests, validates and builds the app and its tracked illustrative 
 
 ## Supported files
 
-UTF-8 comma-separated `.csv`, with a header and at least one record. Quoted commas, escaped quotes, embedded newlines, BOM, LF, and CRLF are supported. Headers are case-insensitive and trimmed. Every row must have the same number of cells. The entire selection fails on any invalid row; rows are never silently skipped.
+UTF-8 comma-separated `.csv` or locally expanded `.csv.gz`, with a header and at least one record. Quoted commas, escaped quotes, embedded newlines, BOM, LF, and CRLF are supported. Headers are case-insensitive and trimmed. Every row must have the same number of cells. The entire selection fails on any invalid row; rows are never silently skipped.
 
-Each period accepts up to 20 parts, 10 MB combined, 50,000 input records, 1,000 service groups, and 366 calendar days. Choose all parts of **one** export run. This reader cannot establish whether an export includes every account or charge. Do not combine daily snapshots of a month-to-date export: those snapshots often repeat charges.
+Each period accepts up to 20 parts, 10 MB combined before and after decompression, 50,000 input records, 1,000 service groups, and 366 calendar days. Choose all parts of **one** export run. This reader cannot establish whether an export includes every account or charge. Do not combine daily snapshots of a month-to-date export: those snapshots often repeat charges.
 
 ### Simple format
 
@@ -20,7 +20,7 @@ Each period accepts up to 20 parts, 10 MB combined, 50,000 input records, 1,000 
 | --- | --- |
 | `Date` | Required charge start date, `YYYY-MM-DD` |
 | `Service` | Required service or adjustment label |
-| `Cost` | Required signed billed amount; decimal point, up to 8 places |
+| `Cost` | Required signed billed amount; decimal point, up to 18 places |
 | `Currency` | Required supported three-letter currency code, such as USD or EUR |
 | `Provider` | Optional; missing values display as “Not specified” |
 | `RecordId` | Optional stable line-item identity, unique within Provider + BillingAccountId |
@@ -33,20 +33,20 @@ Download [the template](../frontend/public/billing/template.csv), [an invented c
 
 Required headers: `ChargePeriodStart`, `ChargePeriodEnd`, `ServiceName`, `BilledCost`, `BillingCurrency`. Optional `ProviderName`, `RecordId`, `BillingAccountId`, and `ChargeCategory` are read. The reader supports these stable columns from FOCUS exports; it does **not** assert full FOCUS conformance. `EffectiveCost` and `ListCost` never substitute for `BilledCost`.
 
-UTC timestamps (for example `2026-09-01T13:00:00Z`) and ISO dates are accepted. UTC `+00:00` is accepted; local times and other offsets are rejected. Dates must be real calendar dates between 1900 and 2199. ChargePeriodEnd is exclusive. A non-empty service label is required even for account-level tax or credit lines; label those records before uploading if the source leaves them empty.
+UTC timestamps (for example `2026-09-01T13:00:00Z`) and ISO dates are accepted. UTC `+00:00` is accepted; other offsets are rejected. Timezone-less timestamps stop preflight until the visitor explicitly confirms that this export uses UTC. This choice is passed to the producer, recorded in report warnings and source mapping notes, and does not rewrite the source text. Dates must be real calendar dates between 1900 and 2199. ChargePeriodEnd is exclusive. A non-empty service label is required even for account-level tax or credit lines; label those records before uploading if the source leaves them empty.
 
 Download [the invented FOCUS example](../frontend/public/billing/focus-example.csv).
 
 ## Export instructions
 
-- **AWS:** Billing and Cost Management → Data Exports → FOCUS export → CSV delivery to S3. Download and decompress all CSV parts belonging to one run. Follow the [AWS Data Exports instructions](https://docs.aws.amazon.com/cur/latest/userguide/dataexports-create.html). FOCUS schema details are in [AWS's table dictionary](https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-focus-1-0-aws-columns.html).
+- **AWS:** Billing and Cost Management → Data Exports → FOCUS export → CSV delivery to S3. Download and select all `.csv.gz` parts belonging to one run; Guard expands them locally. Follow the [AWS Data Exports instructions](https://docs.aws.amazon.com/cur/latest/userguide/dataexports-create.html). FOCUS schema details are in [AWS's table dictionary](https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-focus-1-0-aws-columns.html).
 - **Azure:** Cost Management → Exports → Cost and usage details (FOCUS) → CSV. Download the export from Azure storage. Follow the [Azure export instructions](https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-improved-exports) and [FOCUS column reference](https://learn.microsoft.com/en-us/azure/cost-management-billing/dataset-schema/cost-usage-details-focus).
-- **Other providers:** map billed-cost rows to the simple template. Preserve signed credits, taxes, currency, and coverage. Native AWS CUR, Cost Explorer pivots, generic Azure/GCP exports, Excel, invoice PDFs, Gzip, ZIP, and Parquet are not automatically ingested.
+- **Other providers:** map billed-cost rows to the simple template. Preserve signed credits, taxes, currency, and coverage. Native AWS CUR, Cost Explorer pivots, generic Azure/GCP exports, Excel, invoice PDFs, ZIP, and Parquet are not automatically ingested.
 
 ## Accounting rules
 
 - A report uses exactly one currency, also shared by its comparison. No exchange rates are inferred. Unknown or mixed codes stop the report.
-- FinOps Lite sums costs with exact Decimal arithmetic and accepts up to 8 decimal places. No financial aggregation uses binary floating point. Chart geometry uses numbers only for display. Cards, tables, Lumen, and exports format exact decimal strings directly, preserving cent rounding even near the supported total limit; exact values survive JSON and normalized CSV downloads. Positive charges or absolute negative adjustments above one trillion per period are rejected.
+- FinOps Lite sums costs with exact Decimal arithmetic and accepts up to 18 decimal places. No financial aggregation uses binary floating point. Chart geometry uses numbers only for display. Cards, tables, Lumen, and exports format exact decimal strings directly, preserving cent rounding even near the supported total limit; exact values survive JSON and normalized CSV downloads. Positive charges or absolute negative adjustments above one trillion per period are rejected.
 - Negative values reduce net cost. Taxes, refunds, and credits are included only when supplied; no extra tax or credit is added. FOCUS `ChargeCategory=Credit` with a positive amount is rejected rather than silently changing its sign.
 - Repeated stable record IDs within the same provider/account namespace count once when their content matches. Conflicting versions stop the report.
 - Records without IDs are checked for identical normalized billing content **and** extra source dimensions. A match requires the user to choose “Count once” (duplicate exports) or “Keep all” (separate identical charges). Extra dimensions prevent distinct resource charges being dropped; they are not retained in the report. Different IDs are treated as different charges. This cannot detect every duplicate from overlapping snapshots or differently shaped exports.
@@ -56,7 +56,7 @@ Download [the invented FOCUS example](../frontend/public/billing/focus-example.c
 
 ## Privacy and Lumen
 
-Billing files are read with browser File APIs. Records and results exist only in tab memory; Python temporary artifacts use the worker’s memory filesystem. The worker is terminated after success, error, cancellation or timeout. There is no upload endpoint, browser persistence, external ingestion, or cloud login. Switching to the example, clearing data, reloading, or closing the tab drops the active uploaded report and its Lumen history. Replacing the current selection also removes its old comparison. A failed replacement leaves the earlier valid report available only via **Back to report**. A malformed comparison file blocks review until it is corrected or explicitly removed, so it cannot silently become a current-only report.
+Billing files are read with browser File APIs. Native browser Gzip decompression is bounded by the combined expanded-byte limit, checks the archive checksum, and preserves original expanded CSV text including BOM and line endings. Evidence source hashes identify that expanded CSV, not the compressed archive. Browsers without decompression support get an explicit extraction instruction. Records and results exist only in tab memory; Python temporary artifacts use the worker’s memory filesystem. The worker is terminated after success, error, cancellation or timeout. There is no upload endpoint, browser persistence, external ingestion, or cloud login. Switching to the example, clearing data, reloading, or closing the tab drops the active uploaded report and its Lumen history. Replacing the current selection also removes its old comparison. A failed replacement leaves the earlier valid report available only via **Back to report**. A malformed comparison file blocks review until it is corrected or explicitly removed, so it cannot silently become a current-only report.
 
 Uploaded-mode Lumen is explicitly a **local report guide**, using deterministic prepared answers for totals, services, credits, coverage, changes, and producer-owned Watchdog findings. It is available without an API key. Questions, rows, filenames, and totals are not sent to an AI service. Unsupported questions get a local explanation of the boundary. It never invokes sample presets or `/api/ask-claude`.
 
@@ -81,3 +81,9 @@ npm run test:visual
 ```
 
 The main invented fixtures have exact current charges `1362.375`, adjustments `-52.25`, net `1310.125`, previous net `996.6`, and delta `313.525` USD. The largest service movement is API compute, `240.025` USD. The FOCUS fixture is `48.6125` EUR net. These are test records, not customer data or savings evidence.
+
+## Provider compatibility regression
+
+The attributed public FOCUS fixture under `tests/fixtures/provider-inputs` contains 1,000 unchanged historical AWS/Microsoft/Oracle rows, with 11-place amounts and timezone-less timestamps. Without a UTC choice it must stop. With an explicit UTC test interpretation, exact net is USD `20.52022672899`; each provider subtotal reconciles. It is not a current native export or a Google Cloud test. The separate 10,000-row public extract reconciles to USD `151.43009124197`.
+
+Run `node --test scripts/billing-inputs.test.mjs` for bounded plain/Gzip transport tests, `python -m unittest tests.test_billing_pipeline -v` for canonical evidence checks, and `node --test scripts/billing-runtime.test.mjs` for native/WebAssembly parity.

@@ -40,6 +40,9 @@ jobs:
       - name: Verify browser and native analytical pipeline parity
         run: node --test scripts/billing-runtime.test.mjs
 
+      - name: Verify billing CSV and bounded Gzip imports
+        run: node --test scripts/billing-inputs.test.mjs
+
       - name: Test billing producer lineage, partial runs and adversarial artifacts
         run: python -m unittest tests.test_billing_pipeline -v
 

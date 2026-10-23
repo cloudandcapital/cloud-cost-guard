@@ -35,7 +35,7 @@ SaaS and resilience producers are explicitly omitted with reasons. No absent
 producer is replaced with zeros or sample artifacts. The default complete-run
 policy still requires all five producers.
 
-FinOps Lite preserves signed credits, eight-place money precision, date coverage,
+FinOps Lite preserves signed credits, 18-place money precision, date coverage,
 currency separation and deliberate duplicate handling. An earlier non-overlapping
 upload supplies period comparisons. Monthly amounts are charted on their charge
 start date, never spread into synthetic daily spend. Watchdog receives only
@@ -76,5 +76,7 @@ invalid files, credits, currency, duplicates, replacement/clear, worker
 cancellation, switching examples, and desktop/mobile layout. The approved
 illustrative run retains its original exact pins and validation/grounding tests.
 
-The public billing upload uses these pinned revisions. Review their source hashes
+Provider precision and explicit UTC confirmation are extended in FinOps Lite #20; exact daily lineage is extended in Watchdog #9. Source snapshots are still copied verbatim, not patched in Guard.
+
+The public billing upload uses the revisions in the current source lock. Review their source hashes
 and the production upload flow again whenever the vendor snapshots change.

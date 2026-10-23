@@ -16,11 +16,12 @@ const current = () => [fixture('current')];
 const previous = () => [fixture('previous')];
 
 describe('browser billing CSV ingestion', () => {
-  test('exact decimals include credits and eight-place precision without floating point drift', () => {
+  test('exact decimals include credits and eighteen-place precision without floating point drift', () => {
     expect(decimalString(decimalUnits('0.1') + decimalUnits('0.2') - decimalUnits('0.3'))).toBe('0');
     expect(decimalString(decimalUnits('-0.00000001') + decimalUnits('1.00000001'))).toBe('1');
     expect(decimalString(decimalUnits('1,234.5000'))).toBe('1234.5');
-    for (const value of ['1e3', '$1', 'NaN', 'Infinity', '1,23', '0.000000001', '', '1000000000001']) expect(() => decimalUnits(value)).toThrow();
+    expect(decimalString(decimalUnits('+0.000000000000000001') + decimalUnits('1.234567890123456789'))).toBe('1.23456789012345679');
+    for (const value of ['1e3', '$1', 'NaN', 'Infinity', '1,23', '0.0000000000000000001', '', '1000000000001']) expect(() => decimalUnits(value)).toThrow();
     expect(money('999999999999.99499999', 'USD')).toBe('$999,999,999,999.99');
     expect(money('-999999999999.99499999', 'USD')).toBe('-$999,999,999,999.99');
   });
@@ -55,8 +56,22 @@ describe('browser billing CSV ingestion', () => {
     await expect(readBillingFiles([{ name: 'large.csv', size: 11000000 }])).rejects.toThrow(/10 MB/);
     await expect(readBillingFiles(Array.from({ length: 21 }, () => ({ size: 0 })))).rejects.toThrow(/20 CSV/);
     await expect(readBillingFiles([{ name: 'bad.csv', size: 1, arrayBuffer: async () => new Uint8Array([0xff]).buffer }])).rejects.toThrow(/UTF-8/);
-    expect(() => normalizeCsv('a,b\n1,2', 'bill.xlsx')).toThrow(/uncompressed/);
+    expect(() => normalizeCsv('a,b\n1,2', 'bill.xlsx')).toThrow(/conversion first/);
     expect(() => parseCsv(`Date,Service,Cost,Currency\n${'2026-09-01,Storage,1,USD\n'.repeat(50001)}`)).toThrow(/50,000/);
+  });
+  test('timezone-less FOCUS timestamps require an explicit UTC choice without rewriting the CSV', () => {
+    const text = 'ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency\n2024-09-01 01:00:00,2024-09-01 02:00:00,Compute,0.00012345678,USD';
+    expect(() => normalizeCsv(text)).toThrow(/no timezone/);
+    const file = normalizeCsv(text, 'focus.csv.gz', { timestampBasis: 'UTC' });
+    expect(file.text).toBe(text);
+    expect(() => buildBillingReport([file])).toThrow(/Confirm UTC/);
+    const report = buildBillingReport([file], [], { current: { timestampBasis: 'UTC' } });
+    expect(report.current.net).toBe('0.00012345678');
+    expect(report.current.warnings.join(' ')).toMatch(/confirmed.*UTC/);
+    const source = JSON.parse(report.pipeline.artifacts['finops-lite.json']).inputs[0];
+    expect(source.content_sha256).toBe(createHash('sha256').update(text).digest('hex'));
+    expect(source.mapping_notes.join(' ')).toMatch(/confirmed UTC/);
+    expect(() => normalizeCsv(text.replace('01:00:00', '01:00:00-07:00'), 'focus.csv', { timestampBasis: 'UTC' })).toThrow(/UTC timestamp/);
   });
   test('FOCUS uses BilledCost, preserves hourly UTC boundaries and ignores alternative monetary fields', () => {
     const focus = normalizeCsv('ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,EffectiveCost,ListCost\n2026-09-01T01:00:00Z,2026-09-01T02:00:00Z,Compute,2.125,USD,999,888');

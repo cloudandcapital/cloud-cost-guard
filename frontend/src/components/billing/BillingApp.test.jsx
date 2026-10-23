@@ -48,6 +48,24 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => { root.unmount(); }); host.remove(); sampleSpy.mockRestore(); });
 
+test('timezone confirmation is explicit for the selection and resets when files are replaced', async () => {
+  const csv = 'ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency\n2024-09-01 00:00:00,2024-09-02 00:00:00,Compute,0.00012345678,USD';
+  await choose(csv);
+  expect(document.querySelector('[role="alert"]').textContent).toContain('has no timezone');
+  expect(button('Review my bill').disabled).toBe(true);
+  await click(button('Yes, these timestamps are UTC'));
+  expect(text()).toContain('You confirmed UTC');
+  expect(button('Review my bill').disabled).toBe(false);
+  await choose(csv);
+  expect(button('Review my bill').disabled).toBe(true);
+  expect(button('Yes, these timestamps are UTC')).toBeTruthy();
+  await click(button('Yes, these timestamps are UTC'));
+  await click(button('Review my bill'));
+  expect(text()).toContain('Exact: USD 0.00012345678');
+  expect(sampleSpy).not.toHaveBeenCalled();
+  expect(global.fetch).not.toHaveBeenCalled();
+});
+
 test('real uploads, comparison and local Lumen share one report without a network call', async () => {
   expect(document.querySelector('[data-testid="billing-upload"]')).toBeTruthy();
   await choose(fixture('current'));

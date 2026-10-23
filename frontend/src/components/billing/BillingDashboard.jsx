@@ -58,7 +58,7 @@ export function BillingSummary({ report }) {
         </CardContent>
       </Card>
     </CardContent></Card>
-    <p className="billing-rounding">Supplied billed cost in {currency}; no currency conversion or amortization. Display values are rounded. Exact totals and downloads retain up to 8 decimal places.</p>
+    <p className="billing-rounding">Supplied billed cost in {currency}; no currency conversion or amortization. Display values are rounded. Exact totals and downloads retain up to 18 decimal places.</p>
   </section>;
 }
 

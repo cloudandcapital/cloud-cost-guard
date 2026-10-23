@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const base = path.join(root, 'frontend/public/billing-pipeline');
@@ -57,4 +58,23 @@ test('Watchdog uses its existing detector on supplied consecutive daily observat
 test('invalid bills fail before a report; no sample or zero-value substitution', () => {
   python.globals.set('test_input',JSON.stringify({...identity,current:[{name:'invalid.csv',text:'Date,Service,Cost,Currency\n2026-09-01,Compute,42,ABC'}]}));
   assert.throws(()=>python.runPython('run_billing_pipeline(loads_exact(test_input))'),/Currency/);
+});
+
+test('precise provider input keeps exact native/WASM artifacts and UTC evidence', () => {
+  const text = gunzipSync(fs.readFileSync(path.join(root, 'tests/fixtures/provider-inputs/focus-sample-1000.csv.gz'))).toString('utf8');
+  const payload = {...identity, current:[{name:'focus-sample-1000.csv.gz',text}], options:{current:{timestampBasis:'UTC'}}};
+  const browser = run(payload);
+  const native = JSON.parse(execFileSync('python', [path.join(root,'scripts/run_billing_pipeline.py')], {input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser, native);
+  assert.equal(browser.presentation.current.net, '20.52022672899');
+  assert.equal(browser.presentation.current.rows.length, 1000);
+  assert.deepEqual(Object.fromEntries(Object.entries(browser.presentation.current.providerSummaries).map(([provider, period]) => [provider, period.net])), {AWS:'18.0066386184',Microsoft:'1.97651418586',Oracle:'0.53707392473'});
+  assert.ok(browser.presentation.current.warnings.some(value => /confirmed.*UTC/.test(value)));
+  assert.equal(JSON.parse(browser.files['finops-lite.json']).inputs[0].content_sha256, createHash('sha256').update(text).digest('hex'));
+});
+
+test('large amounts preserve all eighteen places through browser Python validation', () => {
+  const text = 'Date,Service,Cost,Currency,RecordId\n2026-09-01,A,999999999999.123456789012345678,USD,a\n2026-09-01,B,0.000000000000000001,USD,b';
+  const result = run({...identity, current:[{name:'precise.csv',text}]});
+  assert.equal(result.presentation.current.net, '999999999999.123456789012345679');
 });
