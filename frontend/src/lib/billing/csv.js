@@ -151,7 +151,15 @@ async function expandedBytes(file, remaining) {
   }
   if (!isGzip) fail(`${file.name}: this is not a valid Gzip file. Choose the original .csv.gz export or an uncompressed .csv.`);
   if (typeof DecompressionStream === 'undefined') fail(`${file.name}: this browser cannot open Gzip. Update your browser or decompress the file to CSV first.`);
-  const stream = new ReadableStream({ start(controller) { controller.enqueue(bytes); controller.close(); } });
+  // Feed small compressed chunks so the byte-limit check can stop expansion
+  // without handing the decompressor the whole archive at once.
+  let compressedOffset = 0;
+  const stream = new ReadableStream({ pull(controller) {
+    const end = Math.min(compressedOffset + 1024, bytes.byteLength);
+    controller.enqueue(bytes.subarray(compressedOffset, end));
+    compressedOffset = end;
+    if (end === bytes.byteLength) controller.close();
+  } });
   const reader = stream.pipeThrough(new DecompressionStream('gzip')).getReader();
   const chunks = [];
   let size = 0;
