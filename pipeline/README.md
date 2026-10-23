@@ -10,6 +10,7 @@ not an independent cost calculator. The producer changes were reviewed in
 [FinOps Lite #19](https://github.com/cloudandcapital/finops-lite/pull/19),
 [Watchdog #8](https://github.com/cloudandcapital/finops-watchdog/pull/8), and
 [Command Center #8](https://github.com/cloudandcapital/tech-spend-command-center/pull/8).
+Provider precision and UTC confirmation are updated through [FinOps Lite #20](https://github.com/cloudandcapital/finops-lite/pull/20), with exact lineage checks in [Watchdog #9](https://github.com/cloudandcapital/finops-watchdog/pull/9).
 The unchanged CCAC source matches the released 0.2.0 validator tree.
 
 To refresh approved snapshots, check out those exact revisions side by side and

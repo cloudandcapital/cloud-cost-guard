@@ -54,6 +54,9 @@
 .billing-smallprint{font-size:11px;color:#797067;max-width:790px;line-height:1.8}
 .billing-error{background:#fff3ee;border:1px solid #d9aa96;border-radius:10px;padding:16px;margin-top:24px;color:#814b3b;overflow-wrap:anywhere}
 .billing-error p{margin:6px 0}.billing-error span{font-size:12px}
+.billing-timezone-check{margin:12px 0;padding:12px;border:1px solid #d9aa96;border-radius:8px;background:#fffaf7}
+.billing-timezone-check .billing-link-button{white-space:normal;text-align:left;min-height:44px}
+.billing-timezone-note{font-size:13px;color:#526b59;line-height:1.5}
 .billing-instructions{border:1px solid #ddd7cc;border-radius:12px;background:#faf7f1;margin-top:24px;overflow:hidden}
 .billing-instructions>summary{padding:18px 22px;cursor:pointer;color:#565f52;font-size:13px;line-height:1.6;font-weight:600}
 .billing-instruction-body{padding:6px 24px 26px;color:#69665b;font-size:13px}

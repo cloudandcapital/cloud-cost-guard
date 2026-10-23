@@ -2,6 +2,7 @@
 from copy import deepcopy
 from decimal import Decimal
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import sys
@@ -25,6 +26,29 @@ def supplied(body, header='Date,Service,Cost,Currency,Provider,RecordId'):
     return [{'name':'invented.csv','text':header+'\n'+body}]
 
 class BillingPipelineTests(unittest.TestCase):
+    def test_public_focus_rows_keep_exact_provider_totals_and_expanded_source_hash(self):
+        original=gzip.decompress((ROOT/'tests/fixtures/provider-inputs/focus-sample-1000.csv.gz').read_bytes())
+        current=[{'name':'focus-sample-1000.csv.gz','text':original.decode('utf-8')}]
+        with self.assertRaisesRegex(CCACBuildError,'Confirm UTC'):
+            run_billing_pipeline(dict(**IDENTITY,current=current))
+        result=run_billing_pipeline(dict(**IDENTITY,current=current,options={'current':{'timestampBasis':'UTC'}}))
+        view=result['presentation']['current']
+        self.assertEqual(view['net'],'20.52022672899')
+        self.assertEqual(len(view['rows']),1000)
+        self.assertEqual(view['identicalRows'],0)
+        self.assertEqual({key:item['net'] for key,item in view['providerSummaries'].items()}, {'AWS':'18.0066386184','Microsoft':'1.97651418586','Oracle':'0.53707392473'})
+        source=loads_exact(result['files']['finops-lite.json'])
+        self.assertEqual(source['inputs'][0]['content_sha256'],hashlib.sha256(original).hexdigest())
+        self.assertTrue(any('confirmed UTC' in item for item in source['inputs'][0]['mapping_notes']))
+        self.assertEqual(result['status'],'partial')
+
+    def test_large_eighteen_place_amount_survives_every_pipeline_stage(self):
+        result=run_billing_pipeline(dict(**IDENTITY,current=supplied('2026-09-01,A,999999999999.123456789012345678,USD,AWS,a\n2026-09-01,B,0.000000000000000001,USD,AWS,b')))
+        self.assertEqual(result['presentation']['current']['net'],'999999999999.123456789012345679')
+        report=loads_exact(result['files']['report.json'])
+        value=next(item['value'] for item in report['metric_catalog'] if item['id']=='metric.tech-spend.scope.cloud')
+        self.assertEqual(value,Decimal('999999999999.123456789012345679'))
+
     @classmethod
     def setUpClass(cls):
         cls.bundle=run_billing_pipeline(dict(**IDENTITY,current=[fixture('current')],previous=[fixture('previous')]))

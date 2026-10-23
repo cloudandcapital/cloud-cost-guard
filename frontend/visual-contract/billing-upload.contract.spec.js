@@ -37,6 +37,34 @@ test.describe('browser-local billing upload experience', () => {
     expect(problems).toEqual([]);
   });
 
+  test('Gzip provider data asks for UTC then reconciles exact totals and exports', async ({ page }) => {
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(path.resolve(__dirname, '../../tests/fixtures/provider-inputs/focus-sample-1000.csv.gz'));
+    await expect(page.getByRole('alert')).toContainText('has no timezone');
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Yes, these timestamps are UTC', exact: true }).click();
+    await expect(page.getByText('You confirmed UTC for timestamps without a timezone. Choose the files again to change this.', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-report')).toBeVisible();
+    await expect(page.getByText('Exact: USD 20.52022672899', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$20.52');
+    await checkNoSample(page);
+    await page.getByRole('button', { name: 'Export uploaded report', exact: true }).click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('canonical-export-json').click()]);
+    const stream = await download.createReadStream();
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const evidence = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    expect(evidence.current.net).toBe('20.52022672899');
+    expect(evidence.current.timestampBasis).toBe('UTC');
+    const source = JSON.parse(evidence.pipeline.artifacts['finops-lite.json']);
+    expect(source.inputs[0].content_sha256).toBe('e91e5ac7edf01ed2c9d926f37ef7dc1ae2aae97956fea8da6c9ee488b1c2839e');
+    expect(source.inputs[0].mapping_notes.join(' ')).toContain('confirmed UTC');
+    await openSection(page, 'clouds', 'Clouds');
+    await expect(page.getByText('AWS', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Microsoft', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Oracle', { exact: true }).first()).toBeVisible();
+  });
+
   test('starts with upload instructions, working templates and an optional example', async ({ page }, testInfo) => {
     await expect(page.getByTestId('billing-upload')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
