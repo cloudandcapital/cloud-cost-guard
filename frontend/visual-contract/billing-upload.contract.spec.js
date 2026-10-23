@@ -87,15 +87,17 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('approved-dashboard')).toHaveAttribute('data-source', 'uploaded');
     await expect(page.getByRole('heading', { name: 'Cloud+ Cost Guard', exact: true })).toBeVisible();
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
+    // Collect every affected view when disclosure copy changes. Soft image
+    // assertions still fail the test while preserving the remaining evidence.
+    if (testInfo.project.name !== 'tablet-768x1024') await expect.soft(page).toHaveScreenshot('billing-current-report.png', { fullPage: true });
     await openSection(page, 'products', 'Services');
     await expect(page.getByRole('region', { name: 'Uploaded service costs' })).toContainText('API compute');
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-services.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await expect.soft(page).toHaveScreenshot('billing-services.png', { fullPage: true });
     await openSection(page, 'clouds', 'Clouds');
     await expect(page.getByTestId('billing-service-chart').locator('svg.recharts-surface')).toBeVisible();
     await expect(page.getByTestId('billing-date-chart').locator('svg.recharts-surface')).toBeVisible();
     await checkNoSample(page);
-    if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-clouds.png', { fullPage: true });
+    if (testInfo.project.name !== 'tablet-768x1024') await expect.soft(page).toHaveScreenshot('billing-clouds.png', { fullPage: true });
   });
 
   test('compares earlier totals and services while disclosing different duration', async ({ page }, testInfo) => {
