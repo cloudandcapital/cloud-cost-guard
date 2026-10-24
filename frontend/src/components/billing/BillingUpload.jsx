@@ -37,12 +37,12 @@ function GoogleCostTableCheck({ check, loading, onConfirm, onCancel }) {
   useEffect(() => { heading.current?.focus(); }, []);
   return <section className="billing-source-check" aria-labelledby="google-bill-check-title">
     <h3 id="google-bill-check-title" ref={heading} tabIndex={-1}>A quick check for your Google bill</h3>
+    <p className="billing-smallprint">Selected: {check.files.map(file => file.name).join(', ')}</p>
     <p>Confirm these details from your invoice or statement. Usage dates can fall outside the invoice month.</p>
     <div className="billing-date-fields">
-      <label htmlFor="google-invoice-month">Invoice month<input id="google-invoice-month" type="month" min="1900-01" max="2199-11" value={month} disabled={loading} onChange={event => setMonth(event.target.value)}/></label>
-      <label htmlFor="google-billing-currency">Billing currency<input id="google-billing-currency" type="text" placeholder="For example, USD" maxLength={3} autoComplete="off" value={currency} disabled={loading} onChange={event => setCurrency(event.target.value.trim().toUpperCase())} aria-describedby="google-currency-hint"/></label>
+      <div className="billing-source-field"><label htmlFor="google-invoice-month">Invoice month</label><input id="google-invoice-month" type="month" min="1900-01" max="2199-11" placeholder="YYYY-MM" value={month} disabled={loading} onChange={event => setMonth(event.target.value)} aria-describedby="google-month-hint"/><p id="google-month-hint" className="billing-smallprint">Use YYYY-MM if a month picker isn’t shown.</p></div>
+      <div className="billing-source-field"><label htmlFor="google-billing-currency">Billing currency</label><input id="google-billing-currency" type="text" placeholder="For example, USD" maxLength={3} autoComplete="off" value={currency} disabled={loading} onChange={event => setCurrency(event.target.value.trim().toUpperCase())} aria-describedby="google-currency-hint"/><p id="google-currency-hint" className="billing-smallprint">Use the three-letter code on your bill. A $ symbol alone could mean several currencies.</p></div>
     </div>
-    <p id="google-currency-hint" className="billing-smallprint">Use the three-letter currency code on your bill. A $ symbol alone could mean several currencies.</p>
     <p>{unrounded ? 'Uses the Unrounded cost values for accuracy.' : 'This file only supplies rounded Cost values. Include Unrounded cost for a more precise review.'} Credits stay as separate rows, and the Total row is not counted again.</p>
     <div className="billing-submit-row"><button type="button" className="billing-primary" disabled={loading || !validMonth || !validBillingCurrency(currency)} onClick={() => onConfirm({ month, currency, confirmed: true })}>Use these bill details<ArrowRight size={17} aria-hidden="true"/></button><button type="button" className="billing-link-button" onClick={onCancel}>Cancel this selection</button></div>
   </section>;

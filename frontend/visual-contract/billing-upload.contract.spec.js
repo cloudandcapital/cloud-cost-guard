@@ -65,13 +65,15 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByText('Oracle', { exact: true }).first()).toBeVisible();
   });
 
-  test('Google Cost table confirms invoice context and preserves exact evidence without a daily chart', async ({ page }) => {
+  test('Google Cost table confirms invoice context and preserves exact evidence without a daily chart', async ({ page }, testInfo) => {
     const sourcePath = path.resolve(__dirname, '../../tests/fixtures/provider-inputs/google-cost-table.csv');
     await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(sourcePath);
     await expect(page.getByRole('heading', { name: 'A quick check for your Google bill', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
     await page.getByLabel('Invoice month', { exact: true }).fill('2026-09');
     await page.getByLabel('Billing currency', { exact: true }).fill('USD');
+    await expectExactPageOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath('google-bill-details.png'), fullPage: true });
     await page.getByRole('button', { name: 'Use these bill details', exact: true }).click();
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
     await expect(page.getByTestId('billing-report')).toBeVisible();
@@ -80,6 +82,8 @@ test.describe('browser-local billing upload experience', () => {
     await openSection(page, 'clouds', 'Clouds');
     await expect(page.getByTestId('billing-invoice-month-view')).toBeVisible();
     await expect(page.getByTestId('billing-date-chart')).toHaveCount(0);
+    await expectExactPageOverflow(page);
+    await page.screenshot({ path: testInfo.outputPath('google-invoice-month.png'), fullPage: true });
     await page.getByRole('button', { name: 'Export uploaded report', exact: true }).click();
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('canonical-export-json').click()]);
     const stream = await download.createReadStream();

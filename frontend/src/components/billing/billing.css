@@ -61,6 +61,7 @@
 .billing-source-check h3{margin:0 0 10px;font-family:Georgia,serif;font-size:25px;font-weight:400;line-height:1.25}
 .billing-source-check p{max-width:64ch;line-height:1.6}
 .billing-source-check .billing-date-fields{max-width:620px;gap:18px;margin:18px 0 8px}
+.billing-source-field{min-width:0;display:flex;flex-direction:column;gap:5px}.billing-source-field .billing-smallprint{margin:2px 0 0}
 .billing-source-check .billing-primary{white-space:normal;min-height:44px}
 .billing-chart-card .billing-monthly-net{font-family:Georgia,serif;font-size:36px;line-height:1.2;color:#4d6a56;margin:28px 0 20px}
 @media(max-width:480px){.billing-source-check{padding:18px}.billing-source-check .billing-date-fields{grid-template-columns:1fr;gap:14px}}
