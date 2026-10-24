@@ -136,7 +136,7 @@ memos. An explicit Invoice month header must match confirmation; invoice dates
 do not infer that month. Cost-column symbols reject impossible currency pairs.
 
 Template total/subtotal lines and positive credit/refund/discount labels stop
-preflight. Comma grouping is disclosed as thousands separators; no sign or locale
+preflight. Ambiguous comma-only costs stop instead of guessing; explicit thousands grouping with a decimal point is disclosed in bounded notes; no sign or locale
 is guessed. EndDate is included in the blank template. A first-of-month file
 without charge ends asks whether it contains daily records or monthly totals.
 

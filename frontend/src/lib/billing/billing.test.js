@@ -110,7 +110,7 @@ describe('browser billing CSV ingestion', () => {
     expect(decimalString(decimalUnits('-0.00000001') + decimalUnits('1.00000001'))).toBe('1');
     expect(decimalString(decimalUnits('1,234.5000'))).toBe('1234.5');
     expect(decimalString(decimalUnits('+0.000000000000000001') + decimalUnits('1.234567890123456789'))).toBe('1.23456789012345679');
-    for (const value of ['1e3', '$1', 'NaN', 'Infinity', '1,23', '0.0000000000000000001', '', '1000000000001']) expect(() => decimalUnits(value)).toThrow();
+    for (const value of ['1e3', '1,500', '$1', 'NaN', 'Infinity', '1,23', '0.0000000000000000001', '', '1000000000001']) expect(() => decimalUnits(value)).toThrow();
     expect(money('999999999999.99499999', 'USD')).toBe('$999,999,999,999.99');
     expect(money('-999999999999.99499999', 'USD')).toBe('-$999,999,999,999.99');
   });
@@ -327,6 +327,7 @@ describe('independent bill audit regressions', () => {
     expect(html).toContain('$5,000.00');
   });
   test('total lines, positive credits and impossible Google currencies fail before review', () => {
+    expect(() => normalizeCsv('Date,Service,Cost,Currency\n2026-09-01,Compute,"1,500",EUR')).toThrow(/ambiguous/);
     for (const label of ['Total', 'Grand total', 'Subtotal', 'Credits', 'Refund']) expect(() => normalizeCsv(`Date,Service,Cost,Currency\n2026-09-01,${label},100,USD`)).toThrow(/total line|positive cost/);
     expect(() => normalizeCsv('Service description,Cost type,Cost ($)\nCompute,Usage,59', 'google.csv', { googleCostTable: { month: '2026-09', currency: 'EUR', confirmed: true } })).toThrow(/currency does not match/);
   });

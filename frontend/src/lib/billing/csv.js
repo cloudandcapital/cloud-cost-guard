@@ -13,6 +13,7 @@ const fail = (message, code) => { const error = new Error(message); if (code) er
 
 export function decimalUnits(value) {
   const text = String(value).trim();
+  if (text.includes(',') && !text.includes('.')) fail('Cost is ambiguous: a comma alone could mean a decimal or thousands separator. Use 1500 for one thousand five hundred, or 1.50 for one and a half.');
   if (!/^[+-]?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,18})?$/.test(text)) {
     fail('Cost must be a signed number with up to 18 decimal places, such as 12.50 or -2.50. Leave out currency symbols and scientific notation.');
   }

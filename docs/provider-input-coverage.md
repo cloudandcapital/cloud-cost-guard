@@ -59,7 +59,7 @@ no general bill-import promise follows from the paths above.
 
 ## Independent-audit acceptance follow-up
 
-FinOps Lite PR25/26 add post-duplicate Google Total enforcement, separately
+FinOps Lite PR25/26/27 add post-duplicate Google Total enforcement, separately
 visible invoice header comparisons, explicit month/symbol/sign/summary-row
 checks, confirmed monthly templates, invoice billing periods and labelled daily
 averages. Combined provider billing windows remain supported with a warning.
