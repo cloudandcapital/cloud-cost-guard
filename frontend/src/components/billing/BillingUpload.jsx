@@ -7,7 +7,7 @@ export function BillingInstructions() {
   return <details className="billing-instructions">
     <summary>What can I upload? Export instructions &amp; CSV format</summary>
     <div className="billing-instruction-body">
-      <h3>Start with a FOCUS export or the simple template</h3>
+      <h3>Choose a supported billing export</h3>
       <p>A FOCUS export standardizes billing columns across providers. We read its <strong>BilledCost</strong> column, not EffectiveCost or ListCost. This is a billed-cost review, without amortization or currency conversion.</p>
       <div className="billing-format-grid"><div><strong>Simple CSV · 4 required columns</strong><code>Date,Service,Cost,Currency</code><p>Dates use YYYY-MM-DD. Costs use a decimal point; credits are negative. Add Provider and a unique RecordId when you have them.</p><a href="/billing/template.csv" download>Download the blank template</a></div><div><strong>FOCUS CSV · 5 required columns</strong><code>ChargePeriodStart, ChargePeriodEnd,<br/>ServiceName, BilledCost, BillingCurrency</code><p>Use UTC timestamps or YYYY-MM-DD. ChargePeriodEnd is exclusive. ProviderName and a stable RecordId are optional.</p><a href="/billing/focus-example.csv" download>Download a FOCUS example</a></div></div>
       <h3>Get your billing records</h3>
