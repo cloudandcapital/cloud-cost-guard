@@ -258,7 +258,7 @@ const AskClaude = ({ billingReport = null }) => {
                 {billingReport ? 'Lumen uses prepared answers from your uploaded report, calculated on this device. Your file and questions are not sent to an AI service.' : 'Lumen explains the validated CCAC 1.1 illustrative report. It cannot access customer accounts or external resources. Free-form questions and this sample context are sent to Anthropic; uploaded bills use a separate local guide.'}
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {(billingReport ? ['Summarize my spending', 'What changed?', 'Explain my credits', 'What dates are covered?'] : SAMPLE_QUESTIONS).map((q, i) => (
+                {(billingReport ? ['Summarize my spending', 'What changed?', 'Explain negative adjustments', 'What dates are covered?'] : SAMPLE_QUESTIONS).map((q, i) => (
                   <button key={i} className="ask-claude-chip" onClick={() => sendMessage(q)}>
                     {q}
                   </button>

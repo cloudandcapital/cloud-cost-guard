@@ -6,7 +6,7 @@
 [![AI for FinOps](https://img.shields.io/badge/AI-Lumen-ff6b35)](https://github.com/cloudandcapital/cloud-cost-guard)
 [![Local CSV review](https://img.shields.io/badge/data-browser--local%20CSV-6b8f71)](docs/billing-upload.md)
 
-**Upload a billing CSV to populate the Cloud Cost Guard dashboard with your totals, services, credits, and optional earlier-period comparison. The optional example uses the same dashboard with validated illustrative Cloud, direct-AI, and SaaS evidence.**
+**Upload a billing CSV to populate the Cloud Cost Guard dashboard with your totals, services, credits, and optional earlier-period comparison. The quick example reviews the two invented billing CSVs through the same local pipeline as your files. A separate full technology spend demo remains available under the upload instructions.**
 
 [**Cloud Cost Guard →**](https://guard.cloudandcapital.com) · [**Architecture & trust →**](docs/architecture-and-trust.md) · [**GitHub**](https://github.com/cloudandcapital/cloud-cost-guard)
 
@@ -16,7 +16,7 @@ Uploads run the FinOps Lite → Watchdog → CCAC validation → Command Center 
 
 **Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, and privacy →](docs/billing-upload.md)
 
-The main flow supports FOCUS BilledCost CSVs, English Google Cloud Cost table CSVs with confirmed invoice month/currency, and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Sections that need other evidence explain what is missing instead of displaying example metrics. “Try an example” opens the preserved deterministic CCAC report in the same dashboard. Its Refresh button only reloads that example; it does not synchronize a cloud account. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
+The main flow supports FOCUS BilledCost CSVs, English Google Cloud Cost table CSVs with confirmed invoice month/currency, and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Overview explains missing Kubernetes, direct AI and SaaS evidence in one card. “Try an example” runs the two invented bills through the same dashboard in illustrative mode. The separate full technology spend demo retains the original CCAC report and its example-only Refresh action. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
 
 **CSV review:**
 - Exact decimal totals, signed credits, service breakdowns, charge-date charts, and period comparisons
@@ -59,7 +59,7 @@ npm ci
 npm start
 ```
 
-The application starts with the browser-local billing upload flow. No cloud credentials or backend are required. Uploaded-report Lumen uses local prepared answers. “Try an example” loads the tracked, validated CCAC 1.1 illustrative report; its free-form Lumen additionally requires the deployed serverless API.
+The application starts with the browser-local billing upload flow. No cloud credentials or backend are required. Uploaded-report Lumen uses local prepared answers. “Try an example” runs the same local bill review in illustrative mode. Only the separate full technology spend demo uses the serverless Lumen API for free-form questions.
 
 ### Local environment configuration
 

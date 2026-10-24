@@ -307,3 +307,37 @@ describe('report, exports and Lumen share uploaded evidence', () => {
     expect(files.current.content).toContain('"\'=HYPERLINK');
   });
 });
+
+
+describe('independent bill audit regressions', () => {
+  test('the quick sample uses the two actual downloadable bills', () => {
+    const { SAMPLE_BILLS } = require('./examples');
+    expect(SAMPLE_BILLS.map(file => file.text)).toEqual(['current', 'previous'].map(name => fixture(name).text));
+  });
+  test('Google duplicate handling cannot contradict its Total and a header difference stays visible', () => {
+    const options = { googleCostTable: { month: '2026-09', currency: 'USD', confirmed: true }, duplicatePolicy: 'drop' };
+    const text = 'Invoice total,5000\nService description,Cost type,Unrounded cost,Cost\nCompute,Usage,50.004,50\nCompute,Usage,50.004,50\n,Tax,9,9\n,Total,,109.01';
+    const file = normalizeCsv(text, 'google.csv', options);
+    expect(() => buildBillingReport([file], [], { current: options })).toThrow(/Count once.*Google's Total/);
+    const report = buildBillingReport([file], [], { current: { ...options, duplicatePolicy: 'keep' } });
+    expect(report.current.net).toBe('109.008');
+    expect(report.current.invoiceChecks.map(check => check.status)).toEqual(['matched', 'different']);
+    const html = buildBillingExports(report).html.content;
+    expect(html).toContain('A total needs your attention');
+    expect(html).toContain('$5,000.00');
+  });
+  test('total lines, positive credits and impossible Google currencies fail before review', () => {
+    for (const label of ['Total', 'Grand total', 'Subtotal', 'Credits', 'Refund']) expect(() => normalizeCsv(`Date,Service,Cost,Currency\n2026-09-01,${label},100,USD`)).toThrow(/total line|positive cost/);
+    expect(() => normalizeCsv('Service description,Cost type,Cost ($)\nCompute,Usage,59', 'google.csv', { googleCostTable: { month: '2026-09', currency: 'EUR', confirmed: true } })).toThrow(/currency does not match/);
+  });
+  test('daily average and forecast/tax boundaries answer the question asked', () => {
+    const report = buildBillingReport(current(), previous());
+    expect(answerBillingQuestion(report, 'daily average')).toContain('$43.67');
+    expect(answerBillingQuestion(report, 'what is my run rate and what will October cost?')).toContain('cannot tell what a future month will cost');
+    expect(answerBillingQuestion(report, 'Is the tax amount on this bill correct?')).toContain('cannot verify tax correctness');
+    const files = buildBillingExports(report);
+    expect(files.html.content).toContain('$1,310.13');
+    expect(files.html.filename).toContain('2026-09-01-to-2026-09-30');
+    expect(files.previous.filename).toContain('2026-08-01-to-2026-08-31');
+  });
+});

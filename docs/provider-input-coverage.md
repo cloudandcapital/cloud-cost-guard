@@ -56,3 +56,15 @@ taxes, Total controls, periods and account coverage. Keep these results separate
 from invented contract fixtures and historical public FOCUS data. Localized CSVs,
 ZIP/Parquet, invoice PDFs and arbitrary native layouts require separate support;
 no general bill-import promise follows from the paths above.
+
+## Independent-audit acceptance follow-up
+
+FinOps Lite PR25/26 add post-duplicate Google Total enforcement, separately
+visible invoice header comparisons, explicit month/symbol/sign/summary-row
+checks, confirmed monthly templates, invoice billing periods and labelled daily
+averages. Combined provider billing windows remain supported with a warning.
+These are format/control fixes, not new current-customer export certification.
+AWS instructions now choose FOCUS 1.2 Daily/Gzip CSV; Azure MOSP is explicitly
+unsupported for native FOCUS export. Manifests remain unread and completeness
+not verified. Wider-file capacity, hourly-to-daily evidence, provider manifest
+checks and scientific notation remain bounded future work requiring evidence.

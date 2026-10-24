@@ -2,9 +2,9 @@
 
 Uploads run FinOps Lite → Watchdog → released CCAC validation → Command Center locally, using the reviewed source snapshots in [the pipeline lock](../pipeline/sources.lock.json). The dashboard and Lumen receive the validated read-only presentation. [Ownership and evidence](pipeline-upload-integration.md) are documented separately.
 
-The start screen accepts billing CSVs without cloud credentials. Select the current period's files, optionally add a separate earlier period, and choose **Review my bill**. Your records populate the existing Cloud Cost Guard dashboard: the same header, summary cards, section navigation, charts, export menu and Lumen panel. There is no separate result-page product. **Try an example** opens this dashboard in a clearly labeled CCAC example mode; it is never used to complete missing upload data.
+The start screen accepts billing CSVs without cloud credentials. Select the current period's files, optionally add a separate earlier period, and choose **Review my bill**. Your records populate the existing Cloud Cost Guard dashboard: the same header, summary cards, section navigation, charts, export menu and Lumen panel. There is no separate result-page product. **Try an example** reviews the downloadable current/previous invented CSVs through this same local pipeline in illustrative mode; it is never used to complete missing upload data. The original full technology spend demo is a separate secondary action inside the export instructions.
 
-**Findings** explains totals, service drivers and supplied comparisons. **Services** accounts for all service groups and signed credits. **Clouds** charts the uploaded records and filters only providers actually present, with explicit filtered subtotals; the headline, exports and Lumen continue to cover the whole upload. **Overview** explains the cost basis and coverage. **Kubernetes**, **AI Spend** and **SaaS** explain what additional workload, direct-vendor or invoice data is needed, without filling those sections with example metrics. Provider-billed AI can still be present in the supplied service costs.
+**Findings** explains totals, service drivers and supplied comparisons. **Services** accounts for all service groups and signed credits. **Clouds** charts the uploaded records and filters only providers actually present, with explicit filtered subtotals; the headline, exports and Lumen continue to cover the whole upload. **Overview** explains the cost basis and coverage. A single **Not in this file** card in Overview explains missing workload, direct-vendor AI and SaaS evidence and links to Technology Cost Review. Upload mode has four tabs, without three empty category tabs. Provider-billed AI can still be present in the supplied service costs.
 
 GitHub Actions tests, validates and builds the app and its tracked illustrative fixtures. That CI workflow is distinct from the Cloud & Capital analysis pipeline, whose producers own calculations, evidence and findings. Billing review invokes those Python producers in a local WebAssembly worker, not in a public GitHub workflow. The reference cloud connectors remain disconnected from production ingestion.
 
@@ -25,13 +25,13 @@ Each period accepts up to 20 parts, 10 MB combined before and after decompressio
 | `Provider` | Optional; missing values display as “Not specified” |
 | `RecordId` | Optional stable line-item identity, unique within Provider + BillingAccountId |
 | `BillingAccountId` | Optional identity namespace for RecordId |
-| `EndDate` | Optional exclusive charge end; otherwise Date covers one day |
+| `EndDate` | Optional exclusive charge end; monthly totals use the next month start. Ambiguous first-of-month records require an explicit one-day/monthly UI choice |
 
 Download [the template](../frontend/public/billing/template.csv), [an invented current bill](../frontend/public/billing/current-example.csv), and [its earlier comparison](../frontend/public/billing/previous-example.csv).
 
 ### FOCUS billing CSV
 
-Required headers: `ChargePeriodStart`, `ChargePeriodEnd`, `ServiceName`, `BilledCost`, `BillingCurrency`. Optional `ProviderName`, `RecordId`, `BillingAccountId`, and `ChargeCategory` are read. The reader supports these stable columns from FOCUS exports; it does **not** assert full FOCUS conformance. `EffectiveCost` and `ListCost` never substitute for `BilledCost`.
+Required headers: `ChargePeriodStart`, `ChargePeriodEnd`, `ServiceName`, `BilledCost`, `BillingCurrency`. Optional `ProviderName`, `RecordId`, `BillingAccountId`, `ChargeCategory`, `BillingPeriodStart`, `BillingPeriodEnd` and `InvoiceId` are read. Billing-period boundaries define comparison dates while earlier usage corrections retain their charge dates; different billing windows use their combined range with a warning. The reader supports these stable columns from FOCUS exports; it does **not** assert full FOCUS conformance. `EffectiveCost` and `ListCost` never substitute for `BilledCost`.
 
 UTC timestamps (for example `2026-09-01T13:00:00Z`) and ISO dates are accepted. UTC `+00:00` is accepted; other offsets are rejected. Timezone-less timestamps stop preflight until the visitor explicitly confirms that this export uses UTC. This choice is passed to the producer, recorded in report warnings and source mapping notes, and does not rewrite the source text. Dates must be real calendar dates between 1900 and 2199. ChargePeriodEnd is exclusive. FOCUS rows with no service name retain their amounts under a flagged service-not-supplied label, based on their supplied ChargeCategory. No service is inferred. Explicit BigQuery timestamps ending in UTC and up to six fractional-second digits are supported without dropping microseconds.
 
@@ -59,7 +59,7 @@ alone does not establish USD. Replacing files clears those choices.
 
 Credits are already separate signed rows. Taxes, adjustments and rounding rows
 remain in the review. A single `Cost type=Total` row is a reconciliation control,
-not another charge: FinOps Lite checks it at two-decimal invoice precision and
+not another charge: FinOps Lite checks it at two-decimal invoice precision both before and after duplicate handling, and
 excludes it from financial totals. A mismatch or multiple Total rows stops the
 review. If Unrounded cost is missing for a row, its supplied Cost value can be
 used with a warning; missing values are never replaced with zero.
@@ -96,7 +96,7 @@ Billing files are read with browser File APIs. Native browser Gzip decompression
 
 Uploaded-mode Lumen is explicitly a **local report guide**, using deterministic prepared answers for totals, services, credits, coverage, changes, and producer-owned Watchdog findings. It is available without an API key. Questions, rows, filenames, and totals are not sent to an AI service. Unsupported questions get a local explanation of the boundary. It never invokes sample presets or `/api/ask-claude`.
 
-The optional CCAC example still has its original server-grounded Lumen. Its free-form questions and example context are sent to Anthropic, as the UI explains. The server still rejects client-supplied report context. The example component is unmounted when returning to uploads, and pending sample requests are aborted. The previous PostHog script has been removed; Google font requests do not contain billing data. External help links use no-referrer behavior.
+The quick billing example uses the same local prepared Lumen answers. Only the separate full technology spend demo has the original server-grounded Lumen. Its free-form questions and example context are sent to Anthropic, as the UI explains. The server still rejects client-supplied report context. The example component is unmounted when returning to uploads, and pending sample requests are aborted. The previous PostHog script has been removed; Google font requests do not contain billing data. External help links use no-referrer behavior.
 
 HTML reports escape all supplied text and contain no scripts or external resources. JSON carries exact normalized records, coverage, source revisions, metric/finding references and original canonical artifact strings with hashes. Keep those strings intact to preserve exact monetary numeric tokens when revalidating. Separate current/previous CSV downloads preserve signed numeric amounts and neutralize formula-like **text** cells with an apostrophe; those protected labels may differ if reimported. Unknown source columns are not exported.
 
@@ -125,3 +125,35 @@ The attributed public FOCUS fixture under `tests/fixtures/provider-inputs` conta
 Run `node --test scripts/billing-inputs.test.mjs` for bounded plain/Gzip transport tests, `python -m unittest tests.test_billing_pipeline -v` for canonical evidence checks, and `node --test scripts/billing-runtime.test.mjs` for native/WebAssembly parity.
 
 The documented-layout Google contract fixture reconciles six counted records and one excluded Total control to exact USD `108.830007`; the rounded invoice control is USD `108.83`. It is invented, not a captured customer export. Current provider/download coverage and remaining checks are tracked in [the coverage matrix](provider-input-coverage.md).
+
+## Independent audit fixes, October 23
+
+Google Count once cannot invalidate a Total control. Invoice/statement header
+totals are compared separately and visible differences are retained, including
+in print/JSON exports. They are review warnings, not proof of missing charges:
+Google documents legitimate differences caused by timing, multiple invoices and
+memos. An explicit Invoice month header must match confirmation; invoice dates
+do not infer that month. Cost-column symbols reject impossible currency pairs.
+
+Template total/subtotal lines and positive credit/refund/discount labels stop
+preflight. Comma grouping is disclosed as thousands separators; no sign or locale
+is guessed. EndDate is included in the blank template. A first-of-month file
+without charge ends asks whether it contains daily records or monthly totals.
+
+The daily average is a producer-owned metric: net cost divided by reporting days.
+It is not a forecast or measured daily usage. Lumen states forecast and tax/rate
+verification limits explicitly. Findings give owner questions without assigning
+unproven causes. The headline has a neutral calculation note, not a provider-
+reconciliation tick. The separate bill-check panel shows supplied controls or
+says none were supplied.
+
+AWS instructions recommend FOCUS 1.2, Daily, Gzip CSV, Overwrite and all parts of
+one run. MOSP Azure accounts cannot export FOCUS; some pay-as-you-go accounts
+are MCA and can. Provider manifests are not read or used to certify completeness.
+Wide files can reach the existing 10 MB cap before the 50,000-row limit.
+
+Downloads use inclusive dates in filenames and formatted currencies in the
+printable report, while records/evidence retain exact amounts and exclusive
+timestamps. An open personal bill adds the browser's standard leave/reload
+warning; clearing data removes it. Physical print/Safari/real-device checks and
+current customer provider exports remain separate unverified acceptance work.

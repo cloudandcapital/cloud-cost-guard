@@ -71,7 +71,8 @@ async function waitForChartsStable(page) {
 
 async function openApprovedDashboard(page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try an example", exact: true }).click();
+  await page.getByText("What can I upload? Export instructions & CSV format", {exact:true}).click();
+  await page.getByRole("button", { name: "See the full technology spend demo", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Cloud+ Cost Guard" })).toBeVisible();
   await page.evaluate(async () => {
     if (document.fonts?.ready) await document.fonts.ready;

@@ -103,3 +103,23 @@ test('published Microsoft minute-precision export matches exact native artifacts
   assert.equal(browser.presentation.current.identicalRows, 0);
   assert.equal(JSON.parse(browser.files['finops-lite.json']).inputs[0].content_sha256, '5766878f44ac4a143a6c45c401ab2bd736876ca2ff70a290a82d25dd2344d6ed');
 });
+
+
+test('audit controls and labelled daily average survive the actual WebAssembly pipeline', () => {
+  const text = 'Invoice total,5000\nService description,Cost type,Unrounded cost,Cost\nCompute,Usage,50.004,50\nCompute,Usage,50.004,50\n,Tax,9,9\n,Total,,109.01';
+  const payload = {...identity,current:[{name:'audit-google.csv',text}],options:{current:{googleCostTable:{month:'2026-09',currency:'USD',confirmed:true},duplicatePolicy:'keep'}}};
+  const browser = run(payload);
+  const native = JSON.parse(execFileSync('python', [path.join(root,'scripts/run_billing_pipeline.py')], {input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser,native);
+  assert.equal(browser.presentation.current.net,'109.008');
+  assert.equal(browser.presentation.current.dailyAverage,'3.6336');
+  assert.deepEqual(browser.presentation.current.invoiceChecks.map(check=>check.status),['matched','different']);
+  python.globals.set('test_input',JSON.stringify({...payload,options:{current:{...payload.options.current,duplicatePolicy:'drop'}}}));
+  assert.throws(()=>python.runPython('run_billing_pipeline(loads_exact(test_input))'),/Count once.*Google's Total/);
+});
+
+test('the quick example follows the same pipeline in explicitly illustrative mode', () => {
+  const result = run({...identity,current:[fixture('current')],previous:[fixture('previous')],mode:'illustrative'});
+  assert.equal(result.presentation.current.net,'1310.125');
+  for (const file of Object.values(result.files)) assert.equal(JSON.parse(file).mode,'illustrative');
+});

@@ -26,7 +26,7 @@ async function verifyTransfer(bundle) {
   }
 }
 
-export function runBillingPipeline(current, previous = [], options = {}, { signal, onProgress } = {}) {
+export function runBillingPipeline(current, previous = [], options = {}, { signal, onProgress, mode = 'real' } = {}) {
   return new Promise((resolve, reject) => {
     const worker = new Worker('/billing-pipeline/worker.js');
     let settled = false;
@@ -54,6 +54,6 @@ export function runBillingPipeline(current, previous = [], options = {}, { signa
     };
     // Original CSV text goes only to this same-origin local worker, not an API.
     const files = items => items.map(({ name, text }) => ({ name, text }));
-    worker.postMessage({ current: files(current), previous: files(previous), options, mode: 'real' });
+    worker.postMessage({ current: files(current), previous: files(previous), options, mode });
   });
 }

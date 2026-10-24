@@ -98,6 +98,7 @@ jobs:
           path: |
             frontend/test-results/**/google-*.png
             frontend/test-results/**/azure-*.png
+            frontend/test-results/**/audit-*.png
 
   backend:
     runs-on: ubuntu-latest
