@@ -37,7 +37,22 @@ test('earlier corrections retain exact totals without suppressing in-window spik
   assert.equal(browser.presentation.current.rows.length,31);
   assert.equal(browser.presentation.pipeline.watchdog.series_evaluated,1);
   assert.equal(browser.presentation.pipeline.watchdog.anomalies_detected,1);
+  const finding=browser.presentation.findings.find(item=>item.producer==='finops-watchdog');
+  assert.equal(finding.title,'EC2 spending spike on Sep 25, 2026');
+  assert.ok(finding.text.includes('cost 250 USD on Sep 25, 2026'));
   assert.ok(browser.presentation.current.warnings.some(note=>note.includes('1 record is wholly outside')));
+});
+
+test('possible summary warning preserves all records and matches native evidence', () => {
+  const text='Date,Service,Cost,Currency\n2026-09-02,EC2,100,USD\n2026-09-02,S3,20,USD\n2026-09-02,Tax,9.60,USD\n2026-09-02,All items combined,129.60,USD';
+  const payload={...identity,current:[{name:'bill.csv',text}]};
+  const browser=run(payload);
+  const native=JSON.parse(execFileSync('python',[path.join(root,'scripts/run_billing_pipeline.py')],{input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser,native);
+  assert.equal(browser.presentation.current.net,'259.2');
+  assert.equal(browser.presentation.current.rows.length,4);
+  assert.equal(browser.presentation.current.potentialSummaryRowCount,1);
+  assert.deepEqual(browser.presentation.current.potentialSummaryRows,[{source:'bill.csv',line:5,service:'All items combined'}]);
 });
 
 test('browser Python runs the actual pipeline and exactly matches native artifacts', () => {

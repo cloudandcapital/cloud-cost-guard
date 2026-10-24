@@ -3,7 +3,7 @@
   "sources": [
     {
       "repository": "https://github.com/cloudandcapital/finops-lite",
-      "revision": "974baf7430067da0e64186c93c658235ca307b97",
+      "revision": "20134835a613bea2df324ec89a063769cab5d6fe",
       "uncommitted": false,
       "files": {
         "finops_lite/__init__.py": {
@@ -20,7 +20,7 @@
         },
         "finops_lite/billing.py": {
           "path": "finops_lite/billing.py",
-          "sha256": "0c9f2a9a8b5cdf06523fff1d3da24106576be53a6b81807182a2fa4ed1038fb6"
+          "sha256": "9d453c95c094e5259e3e1fe1d7d71107c8ba4a8ce5c93208ee8e937c8fe6b720"
         },
         "finops_lite/billing_currencies.json": {
           "path": "finops_lite/billing_currencies.json",
@@ -34,7 +34,7 @@
     },
     {
       "repository": "https://github.com/cloudandcapital/finops-watchdog",
-      "revision": "274e854b55199f78d12373d499227847e0f560e7",
+      "revision": "182817d691c5fe79dd534aced000a66ee4601190",
       "uncommitted": false,
       "files": {
         "finops_watchdog/__init__.py": {
@@ -47,7 +47,7 @@
         },
         "finops_watchdog/billing.py": {
           "path": "finops_watchdog/billing.py",
-          "sha256": "0c99f84ca184a1c431301e845b8992fc75f7250b5524c8389015e85b3924ce34"
+          "sha256": "80451e7d726ec0493b26b56370f1c7b1cf932b356fcb88ef0f41fc9543863431"
         },
         "finops_watchdog/data/illustrative-finops-lite-1.1.json": {
           "path": "finops_watchdog/data/illustrative-finops-lite-1.1.json",

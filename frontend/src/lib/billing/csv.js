@@ -111,6 +111,23 @@ const knownCurrencies = typeof Intl.supportedValuesOf === 'function'
 
 export const validBillingCurrency = value => knownCurrencies.has(value);
 
+function summaryServiceLabel(value) {
+  const tokens = value.replace(/[().:_-]/g, ' ').split(/\s+/).filter(Boolean);
+  if (tokens.length && (knownCurrencies.has(tokens.at(-1).toUpperCase()) || Object.hasOwn(SYMBOL_CURRENCIES, tokens.at(-1)))) tokens.pop();
+  const words = tokens.map(token => token.toLowerCase());
+  if (['amount due', 'balance due'].includes(words.join(' '))) return true;
+  const totals = words.map((word, index) => ['total', 'totals', 'subtotal', 'subtotals'].includes(word) ? index : -1).filter(index => index >= 0);
+  if (totals.length !== 1) return false;
+  const prefix = new Set('grand net invoice statement final service monthly annual yearly daily period account billing bill sub'.split(' '));
+  const suffix = new Set('cost costs charge charges amount due payable for this the invoice statement bill month period service incl including excl excluding with without tax taxes vat'.split(' '));
+  return words.slice(0, totals[0]).every(word => prefix.has(word)) && words.slice(totals[0] + 1).every(word => suffix.has(word));
+}
+
+function positiveCreditLabel(value) {
+  const remainder = value.replace(/\bcredit[ -]card\s+(?:(?:processing|transaction|merchant)\s+)?fees?\b/gi, '');
+  return /\b(?:credits?|refunds?|discounts?)\b/i.test(remainder);
+}
+
 export function googleCostColumn(headers) {
   const found = {};
   for (const base of ['unrounded cost', 'cost']) {
@@ -241,13 +258,13 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, g
       const service = get(fields.service) || (focus ? `${get('chargecategory') || 'Charge'} · service not supplied` : '');
       if (!service) fail('Service is empty. Give each record a service name, including tax or account-level adjustments.');
       if (service.length > 200) fail('Service names must be 200 characters or fewer.');
-      if (!focus && /^(?:(?:(?:grand|net|invoice|statement|final)\s+|sub\s*)?totals?(?:\s+(?:costs?|charges?|amount(?:\s+due)?|due|payable))?|(?:amount|balance)\s+due)$/i.test(service.trim().replace(/:\s*$/, '').replace(/\s*\((?:[a-z]{3}|[$€£¥￥₹₩])\)\s*$/i, '').trim().replace(/:$/, ''))) fail(`${service} looks like a total line. Remove it so it is not counted twice; keep the individual charges, taxes and negative credits.`);
+      if (!focus && summaryServiceLabel(service)) fail(`${service} looks like a total line. Remove it so it is not counted twice; keep the individual charges, taxes and negative credits.`);
       const provider = get(fields.provider) || 'Not specified';
       if (provider.length > 200) fail('Provider names must be 200 characters or fewer.');
       const currency = get(fields.currency).toUpperCase();
       if (!knownCurrencies.has(currency)) fail('Currency needs a supported three-letter code such as USD, EUR, or GBP. Currency symbols are ambiguous.');
       const cost = decimalString(decimalUnits(get(fields.cost)));
-      if (!focus && decimalUnits(cost) > 0n && /\b(?:credits?|refunds?|discounts?)\b/i.test(service) && !/^credit[ -]card\s+(?:(?:processing|transaction|merchant)\s+)?fees?$/i.test(service)) fail(`${service} has a positive cost. Check the bill and enter credits, refunds or discounts as negative amounts; their sign is never guessed.`);
+      if (!focus && decimalUnits(cost) > 0n && positiveCreditLabel(service)) fail(`${service} has a positive cost. Check the bill and enter credits, refunds or discounts as negative amounts; their sign is never guessed.`);
       if (get('chargecategory').toLowerCase() === 'credit' && decimalUnits(cost) > 0n) fail('This credit has a positive cost. Enter credits as negative amounts; the tool will not guess their sign.');
       const start = focus ? boundary(get(fields.date), 'ChargePeriodStart', timestampBasis) : `${day(get(fields.date), 'Date')}T00:00:00.000Z`;
       if (focus && !get(fields.end)) fail('ChargePeriodEnd is empty. Supply the exclusive end date; the tool will not assume the charge lasted one day.');

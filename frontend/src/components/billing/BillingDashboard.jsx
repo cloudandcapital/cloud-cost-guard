@@ -3,7 +3,7 @@ import { ArrowDownToLine, FileText, Info, PieChart as PieIcon } from 'lucide-rea
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { BILLING_EVIDENCE_LIMITS, invoiceCheckGap, money, periodLabel } from '../../lib/billing/report';
+import { BILLING_EVIDENCE_LIMITS, invoiceCheckGap, money, periodLabel, summaryRowWarning } from '../../lib/billing/report';
 
 // These sections occupy the existing dashboard shell and tabs. They never load
 // the illustrative CCAC model: every amount comes from the active upload.
@@ -43,6 +43,7 @@ export function BillingSummary({ report }) {
         <div className="eyebrow">Net cloud cost · {report.example ? 'invented sample bill' : 'your uploaded bill'}</div>
         <div className="hero-total" data-testid="billing-net-total">{cost(current.net)}</div>
         <div className="exact-value">Exact: {currency} {current.net}</div>{attention > 0 && <p className="billing-total-attention" role="status">{attention} {attention === 1 ? 'total needs' : 'totals need'} your attention. Check the bill comparisons below.</p>}
+        {current.potentialSummaryRowCount > 0 && <p className="billing-total-attention" role="status">A possible total row needs review. All rows are still included; check the bill details below.</p>}
         <p className="text-sm text-brand-muted mt-2">{periodLabel(current)}</p>
         <div className="billing-calculation-note"><Info size={18} aria-hidden="true"/><div><strong>Calculated from the supplied rows</strong><span>This is a file review. Check the bill totals and coverage below.</span></div></div>
         <p className="billing-daily-average"><strong>{cost(current.dailyAverage)} per reporting day</strong><span>Net total ÷ {current.days} days. A period average, not daily usage or a forecast.</span></p>
@@ -64,9 +65,14 @@ export function BillingSummary({ report }) {
   </section>;
 }
 
+function PotentialSummaryCheck({ period }) {
+  const warning = summaryRowWarning(period);
+  return warning ? <article className="billing-invoice-check billing-invoice-suspected" data-testid="billing-potential-total"><strong>Check a possible total row</strong><p>{warning}</p></article> : null;
+}
+
 export function BillingBillChecks({ report }) {
   const periods = [['Current upload', report.current], ...(report.previous ? [['Earlier upload', report.previous]] : [])];
-  return <section className="billing-bill-checks" aria-labelledby="bill-match-title" data-testid="billing-bill-checks"><p className="billing-eyebrow">Before you use this total</p><h2 id="bill-match-title">Does this match your bill?</h2><p>The rows were added exactly. These separate checks compare totals actually supplied in a Google file. They do not prove every account, invoice or export part is included.</p>{periods.map(([label, period]) => <div key={label}><h3>{label}</h3>{[...new Set(period.warnings)].filter(warning => warning.includes('thousands separators')).map(warning => <p className="billing-check-note" key={warning}>{warning}</p>)}{period.invoiceChecks?.length ? period.invoiceChecks.map((check, index) => <article key={`${check.source}-${index}`} className={`billing-invoice-check billing-invoice-${check.status}`}><strong>{check.status === 'matched' ? 'Matches the supplied rows' : check.status === 'different' ? 'A total needs your attention' : 'A total could not be checked'}</strong><p>{check.source} · {check.kind}</p><p>Counted rows: {money(check.actual, report.currency)}{check.expected !== null && <> · File total: {money(check.expected, report.currency)}</>}. {check.status === 'unreadable' ? 'Header total not compared.' : 'Compared at two decimal places.'}</p>{check.status === 'different' && <p><strong>{invoiceCheckGap(check, report.currency)}</strong> Check for filters, another invoice, or a credit/debit memo. Google’s invoice header and Cost table can legitimately differ. Resolve the gap before treating these rows as the full bill.</p>}{check.status === 'unreadable' && <p>The header total is not a supported plain decimal. Compare it with your source document.</p>}</article>) : <p className="billing-check-note">No provider control total was supplied. Compare {money(period.net, report.currency)} with your original bill and check that every export part is included.</p>}</div>)}</section>;
+  return <section className="billing-bill-checks" aria-labelledby="bill-match-title" data-testid="billing-bill-checks"><p className="billing-eyebrow">Before you use this total</p><h2 id="bill-match-title">Does this match your bill?</h2><p>The rows were added exactly. These separate checks compare totals actually supplied in a Google file. They do not prove every account, invoice or export part is included.</p>{periods.map(([label, period]) => <div key={label}><h3>{label}</h3><PotentialSummaryCheck period={period}/>{[...new Set(period.warnings)].filter(warning => warning.includes('thousands separators')).map(warning => <p className="billing-check-note" key={warning}>{warning}</p>)}{period.invoiceChecks?.length ? period.invoiceChecks.map((check, index) => <article key={`${check.source}-${index}`} className={`billing-invoice-check billing-invoice-${check.status}`}><strong>{check.status === 'matched' ? 'Matches the supplied rows' : check.status === 'different' ? 'A total needs your attention' : 'A total could not be checked'}</strong><p>{check.source} · {check.kind}</p><p>Counted rows: {money(check.actual, report.currency)}{check.expected !== null && <> · File total: {money(check.expected, report.currency)}</>}. {check.status === 'unreadable' ? 'Header total not compared.' : 'Compared at two decimal places.'}</p>{check.status === 'different' && <p><strong>{invoiceCheckGap(check, report.currency)}</strong> Check for filters, another invoice, or a credit/debit memo. Google’s invoice header and Cost table can legitimately differ. Resolve the gap before treating these rows as the full bill.</p>}{check.status === 'unreadable' && <p>The header total is not a supported plain decimal. Compare it with your source document.</p>}</article>) : <p className="billing-check-note">No provider control total was supplied. Compare {money(period.net, report.currency)} with your original bill and check that every export part is included.</p>}</div>)}</section>;
 }
 
 export function BillingComparison({ report, onReplace }) {
