@@ -30,7 +30,7 @@ export function answerBillingQuestion(report, question) {
   if (/anomal|spike|unusual|watchdog/.test(q)) {
     const diagnostic = report.pipeline.watchdog;
     const findings = report.findings.filter(finding => finding.producer === 'finops-watchdog');
-    return `${findings.map(finding => finding.text).join('\n\n')}${findings.length ? '\n\n' : ''}Watchdog evaluated ${diagnostic.series_evaluated} eligible daily series and produced ${diagnostic.anomalies_detected} anomaly findings. ${diagnostic.insufficient_history_series.length} series need more history; ${diagnostic.excluded_daily_series.length} lack suitable daily evidence. Missing days and monthly charges are not filled in. No finding is not proof that all costs are normal. This is not a savings or root-cause conclusion.`;
+    return `${findings.map(finding => finding.text).join('\n\n')}${findings.length ? '\n\n' : ''}Watchdog evaluated ${diagnostic.series_evaluated} eligible daily series and produced ${diagnostic.anomalies_detected} anomaly findings. ${diagnostic.insufficient_history_series.length} ${diagnostic.insufficient_history_series.length === 1 ? 'series needs' : 'series need'} more history; ${diagnostic.excluded_daily_series.length} ${diagnostic.excluded_daily_series.length === 1 ? 'series lacks' : 'series lack'} suitable daily evidence. Missing days and monthly charges are not filled in. No finding is not proof that all costs are normal. This is not a savings or root-cause conclusion.`;
   }
   const months = 'january february march april may june july august september october november december'.split(' ');
   const requestedMonth = months.findIndex(name => new RegExp(`\\b${name}\\b`).test(q.replace(/\bmay\s+(?:i|we|you)\b/g, '')));

@@ -273,7 +273,7 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByRole('button', { name: 'Upload another bill', exact: true }).click();
     await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`${one()}\n2026-10-02,Only my service,7.25,USD`));
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('need your review');
+    await expect(page.getByRole('alert')).toContainText(/needs? your review/);
     await page.getByText('Period dates & identical rows', { exact: true }).click();
     await page.getByLabel('Identical rows without a RecordId').selectOption('drop');
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
