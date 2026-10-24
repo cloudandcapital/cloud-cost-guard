@@ -145,7 +145,7 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('billing-credits')).toHaveText('-$52.25');
     await expect(page.getByTestId('billing-comparison')).toContainText('Add an earlier bill');
     await expect(page.getByTestId('approved-dashboard')).toHaveAttribute('data-source', 'uploaded');
-    await expect(page.getByRole('heading', { name: 'Cloud+ Cost Guard', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cloud Cost Guard', exact: true })).toBeVisible();
     await checkNoSample(page);
     // Collect every affected view when disclosure copy changes. Soft image
     // assertions still fail the test while preserving the remaining evidence.
