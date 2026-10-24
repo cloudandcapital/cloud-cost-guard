@@ -35,9 +35,20 @@ Required headers: `ChargePeriodStart`, `ChargePeriodEnd`, `ServiceName`, `Billed
 
 UTC timestamps (for example `2026-09-01T13:00:00Z`) and ISO dates are accepted. UTC `+00:00` is accepted; other offsets are rejected. Timezone-less timestamps stop preflight until the visitor explicitly confirms that this export uses UTC. This choice is passed to the producer, recorded in report warnings and source mapping notes, and does not rewrite the source text. Dates must be real calendar dates between 1900 and 2199. ChargePeriodEnd is exclusive. FOCUS rows with no service name retain their amounts under a flagged service-not-supplied label, based on their supplied ChargeCategory. No service is inferred. Explicit BigQuery timestamps ending in UTC and up to six fractional-second digits are supported without dropping microseconds.
 
+Valid minute-precision UTC boundaries such as `2024-06-12T00:00Z` are accepted,
+including Microsoft's published EA example. Timezone-less values still require
+explicit UTC confirmation. Amounts and original source text stay unchanged.
+
 Download [the invented FOCUS example](../frontend/public/billing/focus-example.csv).
 
 ### Google Cloud Cost table CSV
+
+Recognized invoice/statement key-value header lines can stay before the cost
+table. Up to 32 document rows are read separately; unknown preceding records stop
+the file. An explicit document currency must match your confirmation. Invoice
+dates and header totals do not override the selected month or become charges.
+The original full-file hash includes these headers, and mapping notes disclose
+the separate document rows.
 
 The English Cost table export is a separate invoice-month format. Include
 `Service description`, `Cost type` and `Unrounded cost` (recommended) or `Cost`.

@@ -80,7 +80,7 @@ test('large amounts preserve all eighteen places through browser Python validati
 });
 
 test('Google invoice month and exact signed rows match native canonical artifacts', () => {
-  const text = fs.readFileSync(path.join(root, 'tests/fixtures/provider-inputs/google-cost-table.csv'), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'tests/fixtures/provider-inputs/google-cost-table-document.csv'), 'utf8');
   const payload = {...identity, current:[{name:'google.csv',text}], options:{current:{googleCostTable:{month:'2026-09',currency:'USD',confirmed:true}}}};
   const browser = run(payload);
   const native = JSON.parse(execFileSync('python', [path.join(root,'scripts/run_billing_pipeline.py')], {input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
@@ -89,4 +89,17 @@ test('Google invoice month and exact signed rows match native canonical artifact
   assert.equal(browser.presentation.current.rows.length, 6);
   assert.equal(browser.presentation.current.sourceRowCount, 7);
   assert.equal(browser.presentation.pipeline.watchdog.series_evaluated, 0);
+  assert.ok(JSON.parse(browser.files['finops-lite.json']).inputs[0].mapping_notes.some(note => note.includes('4 invoice/statement header rows')));
+});
+
+test('published Microsoft minute-precision export matches exact native artifacts', () => {
+  const text = gunzipSync(fs.readFileSync(path.join(root, 'tests/fixtures/provider-inputs/microsoft-ea-focus-1000.csv.gz'))).toString('utf8');
+  const payload = {...identity, current:[{name:'azure.csv.gz',text}]};
+  const browser = run(payload);
+  const native = JSON.parse(execFileSync('python', [path.join(root,'scripts/run_billing_pipeline.py')], {input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser, native);
+  assert.equal(browser.presentation.current.net, '83.346183636400141');
+  assert.equal(browser.presentation.current.rows.length, 1000);
+  assert.equal(browser.presentation.current.identicalRows, 0);
+  assert.equal(JSON.parse(browser.files['finops-lite.json']).inputs[0].content_sha256, '5766878f44ac4a143a6c45c401ab2bd736876ca2ff70a290a82d25dd2344d6ed');
 });

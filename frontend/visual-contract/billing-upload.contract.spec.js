@@ -66,8 +66,8 @@ test.describe('browser-local billing upload experience', () => {
   });
 
   test('Google Cost table confirms invoice context and preserves exact evidence without a daily chart', async ({ page }, testInfo) => {
-    const sourcePath = path.resolve(__dirname, '../../tests/fixtures/provider-inputs/google-cost-table.csv');
-    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(sourcePath);
+    const sourcePath = path.resolve(__dirname, '../../tests/fixtures/provider-inputs/google-cost-table-document.csv');
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles({name:'Invented billing account_Cost table, 2026-09-01 — 2026-09-30.csv',mimeType:'text/csv',buffer:fs.readFileSync(sourcePath)});
     await expect(page.getByRole('heading', { name: 'A quick check for your Google bill', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
     await page.getByLabel('Invoice month', { exact: true }).fill('2026-09');
@@ -96,6 +96,31 @@ test.describe('browser-local billing upload experience', () => {
     const source = JSON.parse(evidence.pipeline.artifacts['finops-lite.json']);
     expect(source.inputs[0].content_sha256).toBe(require('node:crypto').createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex'));
     expect(source.inputs[0].mapping_notes.join(' ')).toContain('confirmed invoice month 2026-09 and billing currency USD');
+    expect(source.inputs[0].mapping_notes.join(' ')).toContain('4 invoice/statement header rows');
+    await page.getByRole('button', { name: 'Clear my data', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+  });
+
+  test('provider-published Microsoft file opens with minute-precision UTC and exact credits', async ({ page }, testInfo) => {
+    const sourcePath = path.resolve(__dirname, '../../tests/fixtures/provider-inputs/microsoft-ea-focus-1000.csv.gz');
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(sourcePath);
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-report')).toBeVisible();
+    await expect(page.getByText('Exact: USD 83.346183636400141', { exact: true })).toBeVisible();
+    await expectExactPageOverflow(page);
+    await page.screenshot({path:testInfo.outputPath('azure-published-report.png'),fullPage:true});
+    await checkNoSample(page);
+    await page.getByRole('button', { name: 'Export uploaded report', exact: true }).click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('canonical-export-json').click()]);
+    const stream = await download.createReadStream();
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const evidence = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    expect(evidence.current.rows).toHaveLength(1000);
+    expect(evidence.current.net).toBe('83.346183636400141');
+    const source = JSON.parse(evidence.pipeline.artifacts['finops-lite.json']);
+    expect(source.inputs[0].content_sha256).toBe('5766878f44ac4a143a6c45c401ab2bd736876ca2ff70a290a82d25dd2344d6ed');
     await page.getByRole('button', { name: 'Clear my data', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
   });
