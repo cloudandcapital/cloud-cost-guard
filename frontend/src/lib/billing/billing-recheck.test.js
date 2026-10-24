@@ -79,3 +79,14 @@ test('month lookup reads naturally and does not relabel a partial month as a ful
   expect(periodInWords({start:'2026-09-02', end:'2026-09-03', days:1})).toBe('Sep 2, 2026');
   expect(periodInWords({start:'2026-09-02', end:'2026-09-11', days:9})).toBe('Sep 2, 2026 to Sep 10, 2026');
 });
+
+test('the local anomaly answer keeps the producer-owned new-spending title', () => {
+  const header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,ProviderName,BillingPeriodStart,BillingPeriodEnd\n';
+  const rows=Array.from({length:30},(_,i)=>`${new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10)},${new Date(Date.UTC(2026,8,i+2)).toISOString().slice(0,10)},S3,${i===20?50:0},USD,AWS,2026-09-01,2026-10-01`).join('\n');
+  const report=nativeBillingReport([normalizeCsv(header+rows)]);
+  const answer=answerBillingQuestion(report,'Did Watchdog find a spike?');
+  expect(answer).toContain('New S3 spending on Sep 21, 2026');
+  expect(answer).toContain('cost $50.00');
+  expect(answer).toContain('median was $0.00');
+  expect(answer).not.toContain('spending drop');
+});
