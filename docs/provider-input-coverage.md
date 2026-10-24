@@ -20,8 +20,9 @@ unassigned label. The category is source-supplied, not a guessed service. UTC
 BigQuery serialization and up to six fractional seconds preserve original time
 precision. Google Cost table uses its signed amount rows directly; credits are
 not added again, and a Total control is reconciled and excluded from charges.
-Month/currency context and source bytes remain in canonical evidence. No daily
-observations are invented from an invoice-month summary.
+Month/currency context and the hash of the unchanged source remain in canonical
+evidence; downloads contain normalized records, not every original CSV column.
+No daily observations are invented from an invoice-month summary.
 
 FinOps Lite PR21 merged as `9a3faacdfe6040c6e569e875f7a3da581819db81`.
 Producer checks passed on Python 3.10, 3.11 and 3.12, including required quality,

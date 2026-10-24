@@ -56,8 +56,9 @@ used with a warning; missing values are never replaced with zero.
 The confirmed month supplies the reporting window. Usage dates can fall outside
 that invoice month; the records cannot establish daily spending. Clouds shows
 an invoice-month view, and Watchdog gets no invented daily observations.
-Original CSV text, selected month/currency and any rounded fallback remain in
-source evidence. Review this layout separately from another representation of
+The original CSV stays unchanged. Downloads record its hash, normalized charges,
+selected month/currency and any rounded fallback, rather than embedding every
+original column. Review this layout separately from another representation of
 that bill. Filters and incomplete account coverage remain the visitor's check.
 
 ## Export instructions
