@@ -65,6 +65,37 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByText('Oracle', { exact: true }).first()).toBeVisible();
   });
 
+  test('Google Cost table confirms invoice context and preserves exact evidence without a daily chart', async ({ page }) => {
+    const sourcePath = path.resolve(__dirname, '../../tests/fixtures/provider-inputs/google-cost-table.csv');
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(sourcePath);
+    await expect(page.getByRole('heading', { name: 'A quick check for your Google bill', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+    await page.getByLabel('Invoice month', { exact: true }).fill('2026-09');
+    await page.getByLabel('Billing currency', { exact: true }).fill('USD');
+    await page.getByRole('button', { name: 'Use these bill details', exact: true }).click();
+    await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
+    await expect(page.getByTestId('billing-report')).toBeVisible();
+    await expect(page.getByText('Exact: USD 108.830007', { exact: true })).toBeVisible();
+    await checkNoSample(page);
+    await openSection(page, 'clouds', 'Clouds');
+    await expect(page.getByTestId('billing-invoice-month-view')).toBeVisible();
+    await expect(page.getByTestId('billing-date-chart')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Export uploaded report', exact: true }).click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('canonical-export-json').click()]);
+    const stream = await download.createReadStream();
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const evidence = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    expect(evidence.current.rows).toHaveLength(6);
+    expect(evidence.current.sourceRowCount).toBe(7);
+    expect(evidence.current.net).toBe('108.830007');
+    const source = JSON.parse(evidence.pipeline.artifacts['finops-lite.json']);
+    expect(source.inputs[0].content_sha256).toBe(require('node:crypto').createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex'));
+    expect(source.inputs[0].mapping_notes.join(' ')).toContain('confirmed invoice month 2026-09 and billing currency USD');
+    await page.getByRole('button', { name: 'Clear my data', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+  });
+
   test('starts with upload instructions, working templates and an optional example', async ({ page }, testInfo) => {
     await expect(page.getByTestId('billing-upload')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();

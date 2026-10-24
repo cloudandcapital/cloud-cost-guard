@@ -21,3 +21,12 @@ explicit test interpretation, not an assertion that any timezone-less file is
 UTC. The default import must stop and ask. Exact independent totals over the
 supplied rows: AWS 18.00663861840, Microsoft 1.97651418586, Oracle 0.53707392473,
 combined USD 20.52022672899. There are no identical full-dimension rows.
+# Google Cost table contract fixture
+
+`google-cost-table.csv` contains invented records in the English columns described
+by [Google's Cost table documentation](https://docs.cloud.google.com/billing/docs/how-to/cost-table).
+It is not a captured customer download. Usage, a separate negative credit, tax,
+an adjustment, a rounding line and a rounded Total control reconcile to exact
+USD 108.830007 before the invoice-precision total of USD 108.83. The invoice month
+and USD currency must be confirmed explicitly. Usage dates deliberately cross
+the selected invoice month, so this fixture cannot become daily observations.

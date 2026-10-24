@@ -48,6 +48,34 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => { root.unmount(); }); host.remove(); sampleSpy.mockRestore(); });
 
+test('Google bill details are required, source totals are not doubled, and replacement clears approval', async () => {
+  const csv = fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/google-cost-table.csv'), 'utf8');
+  await choose(csv, 'current', 'Test_Cost table, 2026-09-01 — 2026-09-30.csv');
+  expect(text()).toContain('A quick check for your Google bill');
+  expect(document.querySelector('#google-invoice-month').value).toBe('2026-09');
+  expect(button('Review my bill').disabled).toBe(true);
+  expect(button('Use these bill details').disabled).toBe(true);
+  const currency = document.querySelector('#google-billing-currency');
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(currency, 'USD');
+    currency.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click(button('Use these bill details'));
+  expect(text()).toContain('Confirmed invoice month: 2026-09 · USD');
+  await click(button('Review my bill'));
+  expect(text()).toContain('Exact: USD 108.830007');
+  expect(text()).toContain('6');
+  expect(sampleSpy).not.toHaveBeenCalled();
+  expect(global.fetch).not.toHaveBeenCalled();
+  await click(button('Upload another bill'));
+  await choose(csv);
+  expect(text()).toContain('A quick check for your Google bill');
+  expect(document.querySelector('#google-billing-currency').value).toBe('');
+  expect(button('Review my bill').disabled).toBe(true);
+  await click(button('Cancel this selection'));
+  expect(text()).not.toContain('Confirmed invoice month');
+});
+
 test('timezone confirmation is explicit for the selection and resets when files are replaced', async () => {
   const csv = 'ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency\n2024-09-01 00:00:00,2024-09-02 00:00:00,Compute,0.00012345678,USD';
   await choose(csv);

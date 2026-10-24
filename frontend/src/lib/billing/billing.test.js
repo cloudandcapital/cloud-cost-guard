@@ -16,6 +16,39 @@ const current = () => [fixture('current')];
 const previous = () => [fixture('previous')];
 
 describe('browser billing CSV ingestion', () => {
+  test('Google Cost table requires explicit context and keeps credits, tax and the source total separate', () => {
+    const raw = fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/google-cost-table.csv'), 'utf8');
+    expect(() => normalizeCsv(raw)).toThrow(/Confirm its invoice month/);
+    const details = { month: '2026-09', currency: 'USD', confirmed: true };
+    const file = normalizeCsv(raw, 'google.csv', { googleCostTable: details });
+    expect(file.rows).toHaveLength(6);
+    expect(file.inputRowCount).toBe(7);
+    expect(file.text).toBe(raw);
+    expect(() => buildBillingReport([file])).toThrow(/Confirm the Google/);
+    const report = buildBillingReport([file], [], { current: { googleCostTable: details } });
+    expect(report.current.net).toBe('108.830007');
+    expect(report.current.start).toBe('2026-09-01');
+    expect(report.current.end).toBe('2026-10-01');
+    expect(report.current.dateBasis).toMatch(/Invoice month/);
+    expect(report.current.warnings.join(' ')).toContain('not counted as a charge');
+    expect(report.pipeline.watchdog.series_evaluated).toBe(0);
+    const source = JSON.parse(report.pipeline.artifacts['finops-lite.json']).inputs[0];
+    expect(source.content_sha256).toBe(createHash('sha256').update(raw).digest('hex'));
+    expect(source.mapping_notes.join(' ')).toMatch(/confirmed invoice month 2026-09 and billing currency USD/);
+    const bad = normalizeCsv(raw.replace(',108.83\n', ',999.00\n'), 'google.csv', { googleCostTable: details });
+    expect(() => buildBillingReport([bad], [], { current: { googleCostTable: details } })).toThrow(/Total row does not match/);
+  });
+  test('FOCUS keeps unassigned tax and explicit BigQuery UTC microseconds without rounding time', () => {
+    const raw = 'ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,ProviderName,ChargeCategory\n2026-09-01 00:00:00.000001 UTC,2026-09-01 00:00:00.000002 UTC,,0.000007,USD,Google Cloud,Tax';
+    const file = normalizeCsv(raw);
+    expect(file.rows[0].start).toBe('2026-09-01T00:00:00.000001Z');
+    expect(file.rows[0].end).toBe('2026-09-01T00:00:00.000002Z');
+    const report = buildBillingReport([file]);
+    expect(report.current.net).toBe('0.000007');
+    expect(report.current.warnings.join(' ')).toContain('no ServiceName');
+    expect(report.current.rows[0].service).toBe('Tax · service not supplied');
+    expect(() => normalizeCsv(raw.replace('.000002 UTC', '.000001 UTC'))).toThrow(/end must be after/);
+  });
   test('exact decimals include credits and eighteen-place precision without floating point drift', () => {
     expect(decimalString(decimalUnits('0.1') + decimalUnits('0.2') - decimalUnits('0.3'))).toBe('0');
     expect(decimalString(decimalUnits('-0.00000001') + decimalUnits('1.00000001'))).toBe('1');

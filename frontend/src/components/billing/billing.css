@@ -57,6 +57,13 @@
 .billing-timezone-check{margin:12px 0;padding:12px;border:1px solid #d9aa96;border-radius:8px;background:#fffaf7}
 .billing-timezone-check .billing-link-button{white-space:normal;text-align:left;min-height:44px}
 .billing-timezone-note{font-size:13px;color:#526b59;line-height:1.5}
+.billing-source-check{margin-top:24px;padding:24px;border:1px solid #bac8b9;border-radius:14px;background:#f3f5ef;color:#384b3c;overflow-wrap:anywhere}
+.billing-source-check h3{margin:0 0 10px;font-family:Georgia,serif;font-size:25px;font-weight:400;line-height:1.25}
+.billing-source-check p{max-width:64ch;line-height:1.6}
+.billing-source-check .billing-date-fields{max-width:620px;gap:18px;margin:18px 0 8px}
+.billing-source-check .billing-primary{white-space:normal;min-height:44px}
+.billing-chart-card .billing-monthly-net{font-family:Georgia,serif;font-size:36px;line-height:1.2;color:#4d6a56;margin:28px 0 20px}
+@media(max-width:480px){.billing-source-check{padding:18px}.billing-source-check .billing-date-fields{grid-template-columns:1fr;gap:14px}}
 .billing-instructions{border:1px solid #ddd7cc;border-radius:12px;background:#faf7f1;margin-top:24px;overflow:hidden}
 .billing-instructions>summary{padding:18px 22px;cursor:pointer;color:#565f52;font-size:13px;line-height:1.6;font-weight:600}
 .billing-instruction-body{padding:6px 24px 26px;color:#69665b;font-size:13px}

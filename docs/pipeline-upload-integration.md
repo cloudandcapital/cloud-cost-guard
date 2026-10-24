@@ -37,7 +37,7 @@ policy still requires all five producers.
 
 FinOps Lite preserves signed credits, 18-place money precision, date coverage,
 currency separation and deliberate duplicate handling. An earlier non-overlapping
-upload supplies period comparisons. Monthly amounts are charted on their charge
+upload supplies period comparisons. Multi-day FOCUS/simple amounts are charted on their charge
 start date, never spread into synthetic daily spend. Watchdog receives only
 consecutive observed full UTC days with nonnegative daily totals. Short history,
 missing days, monthly intervals and negative daily adjustments remain explicit
@@ -80,3 +80,5 @@ Provider precision and explicit UTC confirmation are extended in FinOps Lite #20
 
 The public billing upload uses the revisions in the current source lock. Review their source hashes
 and the production upload flow again whenever the vendor snapshots change.
+
+Google Cost table ingestion is owned by FinOps Lite in the same pipeline. The browser collects explicit month/currency context and performs preflight only; the producer checks/excludes Total controls and owns aggregation. Original text and choices stay in evidence. This monthly input produces no daily anomaly series, and the UI uses an invoice-month view instead of a daily chart.
