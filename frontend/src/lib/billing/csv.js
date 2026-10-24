@@ -75,25 +75,99 @@ const nextDay = (value) => new Date(Date.parse(`${value}T00:00:00Z`) + DAY).toIS
 
 function boundary(value, label, timestampBasis) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${day(value, label)}T00:00:00.000Z`;
-  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?$/.test(value)) {
+  if (value.endsWith(' UTC')) value = `${value.slice(0, -4)}Z`;
+  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$/.test(value)) {
     if (timestampBasis !== 'UTC') fail(`${label} has no timezone. Confirm UTC below only if your export uses UTC, or export timestamps with an explicit timezone.`, 'TIMEZONE_REQUIRED');
     value += 'Z';
   }
-  if (!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|\+00:00)$/.test(value)) {
+  if (!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)$/.test(value)) {
     fail(`${label} needs YYYY-MM-DD or a UTC timestamp such as 2026-09-01T00:00:00Z. Local times and timezone offsets are not supported.`);
   }
   day(value.slice(0, 10), label);
   const normalized = value.replace(' ', 'T').replace('+00:00', 'Z');
-  const parsed = new Date(normalized);
+  const fraction = normalized.match(/\.(\d+)Z$/)?.[1] || '';
+  const millisecondText = normalized.replace(/\.(\d+)Z$/, (_, digits) => `.${digits.padEnd(3, '0').slice(0, 3)}Z`);
+  const parsed = new Date(millisecondText);
   if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value.slice(0, 10)) fail(`${label} contains an invalid time.`);
-  return parsed.toISOString();
+  return fraction.length > 3 && /[1-9]/.test(fraction.slice(3))
+    ? `${parsed.toISOString().slice(0, -5)}.${fraction.padEnd(6, '0')}Z`
+    : parsed.toISOString();
+}
+
+function timestampMicros(value) {
+  const fraction = value.match(/\.(\d+)Z$/)?.[1] || '';
+  const milliseconds = value.replace(/\.(\d+)Z$/, (_, digits) => `.${digits.padEnd(3, '0').slice(0, 3)}Z`);
+  return BigInt(Date.parse(milliseconds)) * 1000n + BigInt(fraction.padEnd(6, '0').slice(3));
 }
 
 const knownCurrencies = typeof Intl.supportedValuesOf === 'function'
   ? new Set(Intl.supportedValuesOf('currency'))
   : new Set('USD EUR GBP CAD AUD NZD JPY CHF PLN SEK NOK DKK INR SGD HKD BRL MXN ZAR AED SAR KRW CNY'.split(' '));
 
-export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis } = {}) {
+export const validBillingCurrency = value => knownCurrencies.has(value);
+
+export function googleCostColumn(headers) {
+  const found = {};
+  for (const base of ['unrounded cost', 'cost']) {
+    const matches = headers.filter(key => new RegExp(`^${base}(?:\\s*\\([^()]+\\))?$`).test(key));
+    if (matches.length > 1) fail('Choose a Google Cost table export with one cost column per precision, in one currency.');
+    if (matches.length) found[base] = matches[0];
+  }
+  if (!found['unrounded cost'] && !found.cost) fail('Include Unrounded cost (recommended) or Cost in the Google Cost table CSV.');
+  return { cost: found['unrounded cost'] || found.cost, rounded: found.cost };
+}
+
+function googleInvoiceWindow(details, filename, columns) {
+  if (!details || details.confirmed !== true) {
+    const error = new Error('This looks like a Google Cloud Cost table. Confirm its invoice month and billing currency below; you do not need to edit the CSV.');
+    error.code = 'GOOGLE_COST_TABLE_REQUIRED';
+    const dates = filename.match(/_Cost table,\s*(\d{4}-\d{2})-\d{2}\s*[—–-]\s*(\d{4}-\d{2})-\d{2}/i);
+    const currency = columns.cost.match(/\(([a-z]{3})\)$/i)?.[1]?.toUpperCase() || '';
+    error.details = { month: dates && dates[1] === dates[2] ? dates[1] : '', currency, costColumn: columns.cost };
+    throw error;
+  }
+  if (!/^\d{4}-\d{2}$/.test(details.month || '')) fail('Choose the Google Cost table invoice month as YYYY-MM.');
+  const start = day(`${details.month}-01`, 'Invoice month');
+  const next = new Date(`${start}T00:00:00Z`);
+  next.setUTCMonth(next.getUTCMonth() + 1);
+  const end = day(next.toISOString().slice(0, 10), 'Invoice month end');
+  if (!knownCurrencies.has(details.currency)) fail('Confirm the Google bill’s three-letter billing currency; currency symbols are ambiguous.');
+  for (const key of [columns.cost, columns.rounded].filter(Boolean)) {
+    const unit = key.match(/\(([a-z]{3})\)$/i)?.[1]?.toUpperCase();
+    if (unit && unit !== details.currency) fail('The confirmed currency does not match the Google cost column.');
+  }
+  return { start: `${start}T00:00:00.000Z`, end: `${end}T00:00:00.000Z`, currency: details.currency };
+}
+
+function normalizeGoogleCostTable(text, filename, parsed, headers, details) {
+  const columns = googleCostColumn(headers);
+  const period = googleInvoiceWindow(details, filename, columns);
+  const rows = [];
+  let totals = 0;
+  for (const { cells, line } of parsed.slice(1)) {
+    try {
+      if (cells.length !== headers.length) fail(`Expected ${headers.length} columns but found ${cells.length}. Check commas and quotes.`);
+      const get = key => (cells[headers.indexOf(key)] || '').trim();
+      const kind = get('cost type').toLowerCase();
+      if (!['usage', 'adjustment', 'rounding error', 'tax', 'total'].includes(kind)) fail('Use the English Google Cost table CSV with Cost type included and Group by set to No grouping.');
+      const rowCurrency = get('currency') || get('currency code');
+      if (rowCurrency && rowCurrency.toUpperCase() !== period.currency) fail('Google records contain a different currency; review one billing currency at a time.');
+      const cost = decimalString(decimalUnits(get(columns.cost) || (columns.rounded ? get(columns.rounded) : '')));
+      if (kind === 'total') { totals += 1; continue; }
+      const service = get('service description') || `${get('cost type')} · service not supplied`;
+      const accountId = get('billing account id');
+      if (service.length > 200 || accountId.length > 300) fail('Keep service names to 200 characters and billing account IDs to 300.');
+      rows.push({ ...period, service, provider: 'Google Cloud', cost, accountId, recordId: '', file: filename, line });
+    } catch (error) { fail(`${filename}, line ${line}: ${error.message}`, error.code); }
+  }
+  if (!rows.length) fail('The Google CSV has no charge records; a Total row alone cannot supply a service review.');
+  if (totals > 1) fail('This Google CSV has multiple Total rows. Download one flat, ungrouped Cost table, in one currency.');
+  // Preflight only. The original CSV and confirmed context go to FinOps Lite,
+  // which owns Total-row reconciliation, duplicate identity and aggregation.
+  return { name: filename, text, format: 'Google Cloud Cost table CSV', rows, inputRowCount: parsed.length - 1 };
+}
+
+export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, googleCostTable } = {}) {
   if (!/\.csv(?:\.gz)?$/i.test(filename)) fail(`${filename}: choose a .csv or .csv.gz file. Excel, ZIP, and Parquet need conversion first.`);
   if (timestampBasis !== undefined && timestampBasis !== 'UTC') fail('The only supported timestamp confirmation is UTC.');
   let parsed;
@@ -101,6 +175,7 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis } 
   catch (error) { fail(`${filename}: ${error.message}`); }
   const headers = parsed[0].cells.map((value) => value.trim().toLowerCase());
   if (new Set(headers).size !== headers.length || headers.some((header) => !header)) fail(`${filename}: every column needs a unique header.`);
+  if (headers.includes('service description') && headers.includes('cost type')) return normalizeGoogleCostTable(text, filename, parsed, headers, googleCostTable);
   const focus = headers.some((header) => ['billedcost', 'chargeperiodstart', 'servicename'].includes(header));
   const fields = focus
     ? { date: 'chargeperiodstart', end: 'chargeperiodend', service: 'servicename', cost: 'billedcost', currency: 'billingcurrency', provider: 'providername' }
@@ -115,7 +190,7 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis } 
     try {
       if (cells.length !== headers.length) fail(`Expected ${headers.length} columns but found ${cells.length}. Check commas and quotes.`);
       const get = (key) => (cells[headers.indexOf(key)] || '').trim();
-      const service = get(fields.service);
+      const service = get(fields.service) || (focus ? `${get('chargecategory') || 'Charge'} · service not supplied` : '');
       if (!service) fail('Service is empty. Give each record a service name, including tax or account-level adjustments.');
       if (service.length > 200) fail('Service names must be 200 characters or fewer.');
       const provider = get(fields.provider) || 'Not specified';
@@ -129,7 +204,7 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis } 
       const end = get(fields.end)
         ? (focus ? boundary(get(fields.end), 'ChargePeriodEnd', timestampBasis) : `${day(get(fields.end), 'EndDate')}T00:00:00.000Z`)
         : `${nextDay(start.slice(0, 10))}T00:00:00.000Z`;
-      if (end <= start) fail('The charge end must be after its start. End dates are exclusive.');
+      if (timestampMicros(end) <= timestampMicros(start)) fail('The charge end must be after its start. End dates are exclusive.');
       const recordId = get('recordid'), accountId = get('billingaccountid');
       if (recordId.length > 300 || accountId.length > 300) fail('Record and account IDs must be 300 characters or fewer.');
       // UI preflight only. The original text goes to FinOps Lite, which owns
@@ -201,6 +276,7 @@ export async function readBillingFiles(fileList, options = {}) {
     catch { fail(`${file.name}: save this file as UTF-8 CSV and try again.`); }
     data.push(normalizeCsv(text, file.name, options));
   }
-  if (data.reduce((sum, file) => sum + file.rows.length, 0) > LIMITS.rows) fail('This period has more than 50,000 records across its files. Export a smaller period.');
+  if (data.reduce((sum, file) => sum + (file.inputRowCount ?? file.rows.length), 0) > LIMITS.rows) fail('This period has more than 50,000 records across its files. Export a smaller period.');
+  if (data.some(file => file.format === 'Google Cloud Cost table CSV') && data.some(file => file.format !== 'Google Cloud Cost table CSV')) fail('Review Google Cost table files separately from FOCUS or simple CSVs; do not combine different export representations of the same bill.');
   return data;
 }

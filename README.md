@@ -16,11 +16,11 @@ Uploads run the FinOps Lite → Watchdog → CCAC validation → Command Center 
 
 **Review your own billing CSV without cloud credentials.** Files and uploaded-report Lumen questions stay in browser memory. [Supported formats, export instructions, accounting rules, and privacy →](docs/billing-upload.md)
 
-The main flow supports FOCUS BilledCost CSVs and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Sections that need other evidence explain what is missing instead of displaying example metrics. “Try an example” opens the preserved deterministic CCAC report in the same dashboard. Its Refresh button only reloads that example; it does not synchronize a cloud account. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
+The main flow supports FOCUS BilledCost CSVs, English Google Cloud Cost table CSVs with confirmed invoice month/currency, and a simple Date/Service/Cost/Currency template. Uploads power the existing dashboard's summary, Findings, Services, Clouds, Overview, exports, and local Lumen guide. Sections that need other evidence explain what is missing instead of displaying example metrics. “Try an example” opens the preserved deterministic CCAC report in the same dashboard. Its Refresh button only reloads that example; it does not synchronize a cloud account. The GitHub pipeline tests and builds the application; visitors' files are processed in the browser without a workflow run or manual handoff.
 
 **CSV review:**
 - Exact decimal totals, signed credits, service breakdowns, charge-date charts, and period comparisons
-- Downloadable template and invented fixtures, with AWS/Azure FOCUS export instructions
+- Downloadable template and invented fixtures, with AWS/Azure FOCUS and Google Cost table export instructions
 - Deliberate currency, interval, coverage, duplicate, invalid-row, and replacement handling
 - Local HTML/JSON/CSV downloads and a deterministic local Lumen guide; no file upload or AI transfer
 
@@ -41,7 +41,7 @@ The main flow supports FOCUS BilledCost CSVs and a simple Date/Service/Cost/Curr
 | Tool | Role |
 |------|------|
 | **Cloud Cost Guard** | Read-only presentation, canonical exports, and Lumen explanations |
-| [FinOps Lite](https://github.com/cloudandcapital/finops-lite) | Cost pull — AWS/Azure/GCP with FOCUS 2026 export |
+| [FinOps Lite](https://github.com/cloudandcapital/finops-lite) | Reviewed billing CSVs and AWS cost collection → canonical CCAC analysis |
 | [FinOps Watchdog](https://github.com/cloudandcapital/finops-watchdog) | Anomaly detection — baseline-aware spend spikes |
 | [Recovery Economics](https://github.com/cloudandcapital/recovery-economics) | Resilience modeling — backup and restore costs |
 | [AI Cost Lens](https://github.com/cloudandcapital/ai-cost-lens) | AI spend observability — model-level LLM costs |

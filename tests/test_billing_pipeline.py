@@ -26,6 +26,21 @@ def supplied(body, header='Date,Service,Cost,Currency,Provider,RecordId'):
     return [{'name':'invented.csv','text':header+'\n'+body}]
 
 class BillingPipelineTests(unittest.TestCase):
+    def test_google_invoice_rows_keep_exact_money_context_and_validated_source_chain(self):
+        raw=(ROOT/'tests/fixtures/provider-inputs/google-cost-table.csv').read_text()
+        payload=dict(**IDENTITY,current=[{'name':'google.csv','text':raw}],options={'current':{'googleCostTable':{'month':'2026-09','currency':'USD','confirmed':True}}})
+        result=run_billing_pipeline(payload)
+        view=result['presentation']['current']
+        self.assertEqual(view['net'],'108.830007')
+        self.assertEqual(view['sourceRowCount'],7)
+        self.assertEqual(len(view['rows']),6)
+        self.assertEqual(result['presentation']['pipeline']['watchdog']['series_evaluated'],0)
+        source=loads_exact(result['files']['finops-lite.json'])
+        self.assertEqual(source['inputs'][0]['content_sha256'],hashlib.sha256(raw.encode()).hexdigest())
+        self.assertEqual(source['inputs'][0]['source_version'],'google_cost_table/1.0')
+        self.assertTrue(any('confirmed invoice month' in note for note in source['inputs'][0]['mapping_notes']))
+        for name,text in result['files'].items(): self.assertEqual(validate_document(loads_exact(text)),[],name)
+
     def test_public_focus_rows_keep_exact_provider_totals_and_expanded_source_hash(self):
         original=gzip.decompress((ROOT/'tests/fixtures/provider-inputs/focus-sample-1000.csv.gz').read_bytes())
         current=[{'name':'focus-sample-1000.csv.gz','text':original.decode('utf-8')}]

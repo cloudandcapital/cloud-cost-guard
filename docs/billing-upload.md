@@ -33,15 +33,40 @@ Download [the template](../frontend/public/billing/template.csv), [an invented c
 
 Required headers: `ChargePeriodStart`, `ChargePeriodEnd`, `ServiceName`, `BilledCost`, `BillingCurrency`. Optional `ProviderName`, `RecordId`, `BillingAccountId`, and `ChargeCategory` are read. The reader supports these stable columns from FOCUS exports; it does **not** assert full FOCUS conformance. `EffectiveCost` and `ListCost` never substitute for `BilledCost`.
 
-UTC timestamps (for example `2026-09-01T13:00:00Z`) and ISO dates are accepted. UTC `+00:00` is accepted; other offsets are rejected. Timezone-less timestamps stop preflight until the visitor explicitly confirms that this export uses UTC. This choice is passed to the producer, recorded in report warnings and source mapping notes, and does not rewrite the source text. Dates must be real calendar dates between 1900 and 2199. ChargePeriodEnd is exclusive. A non-empty service label is required even for account-level tax or credit lines; label those records before uploading if the source leaves them empty.
+UTC timestamps (for example `2026-09-01T13:00:00Z`) and ISO dates are accepted. UTC `+00:00` is accepted; other offsets are rejected. Timezone-less timestamps stop preflight until the visitor explicitly confirms that this export uses UTC. This choice is passed to the producer, recorded in report warnings and source mapping notes, and does not rewrite the source text. Dates must be real calendar dates between 1900 and 2199. ChargePeriodEnd is exclusive. FOCUS rows with no service name retain their amounts under a flagged service-not-supplied label, based on their supplied ChargeCategory. No service is inferred. Explicit BigQuery timestamps ending in UTC and up to six fractional-second digits are supported without dropping microseconds.
 
 Download [the invented FOCUS example](../frontend/public/billing/focus-example.csv).
 
+### Google Cloud Cost table CSV
+
+The English Cost table export is a separate invoice-month format. Include
+`Service description`, `Cost type` and `Unrounded cost` (recommended) or `Cost`.
+Money column labels such as `Unrounded Cost ($)` are recognized. List cost is
+not substituted. Choose the file, then confirm the invoice month and the
+three-letter billing currency from the invoice or statement. A dollar symbol
+alone does not establish USD. Replacing files clears those choices.
+
+Credits are already separate signed rows. Taxes, adjustments and rounding rows
+remain in the review. A single `Cost type=Total` row is a reconciliation control,
+not another charge: FinOps Lite checks it at two-decimal invoice precision and
+excludes it from financial totals. A mismatch or multiple Total rows stops the
+review. If Unrounded cost is missing for a row, its supplied Cost value can be
+used with a warning; missing values are never replaced with zero.
+
+The confirmed month supplies the reporting window. Usage dates can fall outside
+that invoice month; the records cannot establish daily spending. Clouds shows
+an invoice-month view, and Watchdog gets no invented daily observations.
+The original CSV stays unchanged. Downloads record its hash, normalized charges,
+selected month/currency and any rounded fallback, rather than embedding every
+original column. Review this layout separately from another representation of
+that bill. Filters and incomplete account coverage remain the visitor's check.
+
 ## Export instructions
 
-- **AWS:** Billing and Cost Management → Data Exports → FOCUS export → CSV delivery to S3. Download and select all `.csv.gz` parts belonging to one run; Guard expands them locally. Follow the [AWS Data Exports instructions](https://docs.aws.amazon.com/cur/latest/userguide/dataexports-create.html). FOCUS schema details are in [AWS's table dictionary](https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-focus-1-0-aws-columns.html).
+- **AWS:** Billing and Cost Management → Data Exports → FOCUS export → CSV delivery to S3. Download and select all `.csv.gz` parts belonging to one run; Guard expands them locally. Follow the [AWS Data Exports instructions](https://docs.aws.amazon.com/cur/latest/userguide/dataexports-create.html). FOCUS schema details are in [AWS's table dictionary](https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-focus-1-2-aws.html).
 - **Azure:** Cost Management → Exports → Cost and usage details (FOCUS) → CSV. Download the export from Azure storage. Follow the [Azure export instructions](https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-improved-exports) and [FOCUS column reference](https://learn.microsoft.com/en-us/azure/cost-management-billing/dataset-schema/cost-usage-details-focus).
-- **Other providers:** map billed-cost rows to the simple template. Preserve signed credits, taxes, currency, and coverage. Native AWS CUR, Cost Explorer pivots, generic Azure/GCP exports, Excel, invoice PDFs, ZIP, and Parquet are not automatically ingested.
+- **Google Cloud:** Billing → Cost table → choose the invoice month → reset filters → Group by: No grouping. Include Service description, Cost type and Unrounded cost, then download CSV. Confirm month/currency in Guard. Follow the [Google Cost table instructions](https://docs.cloud.google.com/billing/docs/how-to/cost-table).
+- **Other exports:** map billed-cost rows to the simple template. Preserve signed credits, taxes, currency, and coverage. Native AWS CUR, Cost Explorer pivots, generic Azure usage exports, non-FOCUS BigQuery exports, Excel, invoice PDFs, ZIP, and Parquet are not automatically ingested.
 
 ## Accounting rules
 
@@ -87,3 +112,5 @@ The main invented fixtures have exact current charges `1362.375`, adjustments `-
 The attributed public FOCUS fixture under `tests/fixtures/provider-inputs` contains 1,000 unchanged historical AWS/Microsoft/Oracle rows, with 11-place amounts and timezone-less timestamps. Without a UTC choice it must stop. With an explicit UTC test interpretation, exact net is USD `20.52022672899`; each provider subtotal reconciles. It is not a current native export or a Google Cloud test. The separate 10,000-row public extract reconciles to USD `151.43009124197`.
 
 Run `node --test scripts/billing-inputs.test.mjs` for bounded plain/Gzip transport tests, `python -m unittest tests.test_billing_pipeline -v` for canonical evidence checks, and `node --test scripts/billing-runtime.test.mjs` for native/WebAssembly parity.
+
+The documented-layout Google contract fixture reconciles six counted records and one excluded Total control to exact USD `108.830007`; the rounded invoice control is USD `108.83`. It is invented, not a captured customer export. Current provider/download coverage and remaining checks are tracked in [the coverage matrix](provider-input-coverage.md).

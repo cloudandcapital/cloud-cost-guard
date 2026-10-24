@@ -78,3 +78,15 @@ test('large amounts preserve all eighteen places through browser Python validati
   const result = run({...identity, current:[{name:'precise.csv',text}]});
   assert.equal(result.presentation.current.net, '999999999999.123456789012345679');
 });
+
+test('Google invoice month and exact signed rows match native canonical artifacts', () => {
+  const text = fs.readFileSync(path.join(root, 'tests/fixtures/provider-inputs/google-cost-table.csv'), 'utf8');
+  const payload = {...identity, current:[{name:'google.csv',text}], options:{current:{googleCostTable:{month:'2026-09',currency:'USD',confirmed:true}}}};
+  const browser = run(payload);
+  const native = JSON.parse(execFileSync('python', [path.join(root,'scripts/run_billing_pipeline.py')], {input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser, native);
+  assert.equal(browser.presentation.current.net, '108.830007');
+  assert.equal(browser.presentation.current.rows.length, 6);
+  assert.equal(browser.presentation.current.sourceRowCount, 7);
+  assert.equal(browser.presentation.pipeline.watchdog.series_evaluated, 0);
+});
