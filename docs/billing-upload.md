@@ -167,3 +167,22 @@ Google Invoice month headers accept YYYY-MM and English Month YYYY. An unknown h
 Late rows wholly outside their supplied billing window stay in bill totals and downloads. They are kept out of the current window's daily observations and noted separately. Missing in-window dates, partial days and negative daily totals still cannot become spike evidence. The displayed checked-series count excludes histories too short to run the detector.
 
 Lumen answers supplied-month, tax-amount and invoice-gap questions from this report, while future-cost and correctness limits stay explicit. Header mismatches show their source-owned difference and are also marked next to the headline. The printable HTML places the headline and bill checks together and has compact A4/Letter print styling. The mobile Lumen action sits in the header instead of covering report text.
+
+### Summary rows and dated findings
+
+Clear template summaries such as Service total, Monthly total, Total USD and
+Total incl. tax stop before analysis. Vendor-prefixed credit-card fees remain
+charges; a separately named refund or credit still needs its signed amount.
+
+For flat same-window simple CSVs with at least three rows, an unfamiliar row
+matching the combined other counted rows is marked as a possible summary beside
+the headline and in bill checks, local Lumen and the printable report. Every row
+stays included. Real charges can also match; inspect the original bill and remove
+a row only when confirmed as a summary, then upload the corrected file.
+
+Daily spike findings name the observed day and the service, compare its supplied
+cost with the trailing median, and suggest checking that day with the owner.
+The date and amounts come from Watchdog's existing observed metrics. Forecast
+requests phrased as going to, next quarter/year or an estimate keep the same
+no-forecast boundary. Supplied full months are named naturally without labelling
+partial-month records as complete invoices.

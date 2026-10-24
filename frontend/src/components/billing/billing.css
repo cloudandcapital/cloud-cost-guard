@@ -219,3 +219,5 @@
 
 .billing-total-attention{border-left:3px solid #ad746d;padding:8px 12px;margin:12px 0;background:#f2e2db;color:#653d37;font-size:12px;line-height:1.7}
 @media(max-width:639px){.billing-dashboard .header-actions>.ask-claude-btn{position:static;align-self:flex-end;flex-shrink:0;min-height:44px;margin:4px 0 0;box-shadow:none;transform:none}}
+
+.billing-invoice-suspected { border:2px solid #aa8d5e; border-left-width:5px; background:#f2ebdf; }
