@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowDownToLine, CheckCircle, FileText, Info, PieChart as PieIcon } from 'lucide-react';
+import { ArrowDownToLine, FileText, Info, PieChart as PieIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -39,11 +39,12 @@ export function BillingSummary({ report }) {
   return <section className={`executive-summary billing-dashboard-summary${large ? ' billing-dashboard-large-values' : ''}`} data-testid="executive-summary">
     <Card className="hero-card"><CardContent className="hero-content">
       <div className="hero-copy">
-        <div className="eyebrow">Net cloud cost · your uploaded bill</div>
+        <div className="eyebrow">Net cloud cost · {report.example ? 'invented sample bill' : 'your uploaded bill'}</div>
         <div className="hero-total" data-testid="billing-net-total">{cost(current.net)}</div>
         <div className="exact-value">Exact: {currency} {current.net}</div>
         <p className="text-sm text-brand-muted mt-2">{periodLabel(current)}</p>
-        <div className="reconcile-line"><CheckCircle className="h-5 w-5" aria-hidden="true"/><div><strong>Service totals add up</strong><span>Calculated from your records. Check coverage against your provider bill.</span></div></div>
+        <div className="billing-calculation-note"><Info size={18} aria-hidden="true"/><div><strong>Calculated from the supplied rows</strong><span>This is a file review. Check the bill totals and coverage below.</span></div></div>
+        <p className="billing-daily-average"><strong>{cost(current.dailyAverage)} per reporting day</strong><span>Net total ÷ {current.days} days. A period average, not daily usage or a forecast.</span></p>
         <div className="scope-stack" data-testid="scope-cards">
           <BillingMetric title="Positive charges" value={cost(current.charges)} exact={`${currency} ${current.charges}`} testId="billing-charges"/>
           <BillingMetric title="Credits & adjustments" value={cost(current.credits)} exact={`${currency} ${current.credits}`} testId="billing-credits" credit/>
@@ -62,12 +63,17 @@ export function BillingSummary({ report }) {
   </section>;
 }
 
+export function BillingBillChecks({ report }) {
+  const periods = [['Current upload', report.current], ...(report.previous ? [['Earlier upload', report.previous]] : [])];
+  return <section className="billing-bill-checks" aria-labelledby="bill-match-title" data-testid="billing-bill-checks"><p className="billing-eyebrow">Before you use this total</p><h2 id="bill-match-title">Does this match your bill?</h2><p>The rows were added exactly. These separate checks compare totals actually supplied in a Google file. They do not prove every account, invoice or export part is included.</p>{periods.map(([label, period]) => <div key={label}><h3>{label}</h3>{[...new Set(period.warnings)].filter(warning => warning.includes('thousands separators')).map(warning => <p className="billing-check-note" key={warning}>{warning}</p>)}{period.invoiceChecks?.length ? period.invoiceChecks.map((check, index) => <article key={`${check.source}-${index}`} className={`billing-invoice-check billing-invoice-${check.status}`}><strong>{check.status === 'matched' ? 'Matches the supplied rows' : check.status === 'different' ? 'A total needs your attention' : 'A total could not be checked'}</strong><p>{check.source} · {check.kind}</p><p>Counted rows: {money(check.actual, report.currency)}{check.expected !== null && <> · File total: {money(check.expected, report.currency)}</>}. {check.status === 'unreadable' ? 'Header total not compared.' : 'Compared at two decimal places.'}</p>{check.status === 'different' && <p>Check for filters, another invoice, or a credit/debit memo. Google’s invoice header and Cost table can legitimately differ. Resolve the gap before treating these rows as the full bill.</p>}{check.status === 'unreadable' && <p>The header total is not a supported plain decimal. Compare it with your source document.</p>}</article>) : <p className="billing-check-note">No provider control total was supplied. Compare {money(period.net, report.currency)} with your original bill and check that every export part is included.</p>}</div>)}</section>;
+}
+
 export function BillingComparison({ report, onReplace }) {
   const { comparison, previous, currency } = report;
   const cost = (value) => money(value, currency);
   return <section className="billing-comparison-card" data-testid="billing-comparison">
     <div><p className="billing-eyebrow">What changed?</p><h3>{comparison ? `${cost(comparison.delta)} total change` : 'Add an earlier bill to compare'}</h3><p>{comparison ? `${comparison.percent === null ? 'Percentage unavailable: previous net cost is zero or negative.' : `${comparison.percent}% compared with the earlier upload.`} This compares the records supplied, not a verified account-wide trend.` : 'With one upload, we can show spending and the biggest services. We need a separate, earlier period to measure a change.'}</p></div>
-    {previous ? <div className="billing-previous-total"><span>Previous net cost</span><strong>{cost(previous.net)}</strong><span>{periodLabel(previous)}</span></div> : <button className="billing-secondary" onClick={onReplace}>Add comparison CSV</button>}
+    {previous ? <div className="billing-previous-total"><span>Previous net cost</span><strong>{cost(previous.net)}</strong><span>{cost(previous.dailyAverage)} per reporting day</span><span>{periodLabel(previous)}</span></div> : <button className="billing-secondary" onClick={onReplace}>Add comparison CSV</button>}
     {comparison?.warnings.map((warning) => <p className="billing-comparison-warning" key={warning}>{warning}</p>)}
   </section>;
 }
@@ -78,6 +84,7 @@ export function BillingFindings({ report }) {
       <div className="finding-severity"><span className="billing-finding-number">{String(index + 1).padStart(2, '0')}</span><span>{finding.producer === 'finops-watchdog' ? 'Watchdog · ' + finding.severity : finding.title === 'Before you act' ? 'Coverage & context' : 'Billing review'}</span></div>
       <div className="finding-summary"><h3>{finding.title}</h3><p>{finding.text}</p></div>
     </article>)}</div>
+    <p className="billing-check-note">Daily spike check: {report.pipeline.watchdog.series_evaluated} eligible service series reviewed. Hourly rows, monthly totals, gaps and negative daily totals do not qualify. See Overview for what could be checked; no finding does not mean every cost is normal.</p>
     {report.comparison && <BillingChanges report={report}/>}
   </>;
 }
@@ -124,10 +131,20 @@ export function BillingClouds({ report }) {
   const topServices = period.services.slice(0, 8).map((service) => ({ ...service, label: compact(service.service), cost: Number(service.net) }));
   const daily = useMemo(() => {
     const byDate = new Map(period.daily.map((row) => [row.date, row.cost]));
-    return Array.from({ length: period.days }, (_, index) => {
+    const dates = new Set(period.daily.map(row => row.date));
+    for (const row of period.daily) {
+      for (const offset of [-1, 1]) dates.add(new Date(Date.parse(`${row.date}T00:00:00Z`) + offset * 86400000).toISOString().slice(0, 10));
+    }
+    Array.from({ length: period.days }, (_, index) => {
       const date = new Date(Date.parse(`${period.start}T00:00:00Z`) + index * 86400000).toISOString().slice(0, 10);
-      return { date, exact: byDate.get(date), cost: byDate.has(date) ? Number(byDate.get(date)) : null };
+      dates.add(date);
+      return date;
     });
+    const sourceDates = period.daily.map(row => row.date);
+    const start = [period.start, ...sourceDates].sort()[0];
+    const last = new Date(Date.parse(`${period.end}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
+    const end = [last, ...sourceDates].sort().slice(-1)[0];
+    return [...dates].filter(date => date >= start && date <= end).sort().map(date => ({ date, exact: byDate.get(date), cost: byDate.has(date) ? Number(byDate.get(date)) : null }));
   }, [period]);
   return <section aria-labelledby="billing-clouds-title">
     <div className="section-heading"><div><div className="eyebrow">Your cloud charges</div><h2 id="billing-clouds-title">Cloud spending</h2><p>Filter the charts by providers present in this bill. The dashboard headline, downloads and Lumen cover the full upload.</p></div></div>
@@ -145,14 +162,19 @@ export function BillingUnavailable({ section, onServices }) {
   return <Card className="unavailable-card billing-missing-section" data-testid={`billing-unavailable-${section}`}><CardContent className="unavailable-content"><Info className="h-5 w-5" aria-hidden="true"/><div><p className="eyebrow">Additional data needed</p><h2>{missing.title}</h2><p>{missing.text}</p><p>Only your supplied cloud costs are included in the dashboard total.</p><Button variant="outline" className="btn-brand-outline" onClick={onServices}>Review uploaded services</Button></div></CardContent></Card>;
 }
 
+export function BillingMissingEvidence() {
+  return <Card className="kpi-card"><CardContent className="billing-overview-copy"><h3>Not in this file</h3><p>A cloud bill can include provider-billed AI, but it does not establish direct AI vendor invoices, model/token usage, SaaS seats or Kubernetes utilization. Those need separate records.</p><p>If you want help bringing those pieces together, <a href="https://cloudandcapital.com/services">explore Technology Cost Review</a>.</p></CardContent></Card>;
+}
+
 export function BillingOverview({ report }) {
   return <section className="billing-overview"><div className="section-heading"><div><div className="eyebrow">Coverage & cost basis</div><h2>What this dashboard includes</h2><p>Calculated from your uploaded records, with its limits kept visible.</p></div></div>
-    <Card className="kpi-card"><CardContent className="billing-overview-copy"><h3>One bill, one consistent report</h3><p>{report.costBasis}</p><p>Service totals add up to the net cost. This checks the calculation; it does not reconcile your upload against a provider invoice or prove every account is covered.</p><p>{report.previous ? 'The earlier upload supplies the comparison baseline. Differences locate cost changes; usage and pricing evidence are needed to explain their cause.' : 'No earlier bill was supplied for a period comparison. Watchdog separately checks eligible daily records when enough history is present.'}</p><p>Forecasts, potential savings, resilience tests, Kubernetes utilization, direct AI invoices and SaaS seats are not inferred from cloud billing amounts.</p><p>{report.privacy}</p><p data-testid="billing-pipeline-status">FinOps Lite → Watchdog → Command Center · CCAC validated · Cloud-only partial report.</p><p>Watchdog reviewed {report.pipeline.watchdog.series_evaluated} eligible daily series and reported {report.pipeline.watchdog.anomalies_detected} unusual movements. {report.pipeline.watchdog.insufficient_history_series.length} series need more history; {report.pipeline.watchdog.excluded_daily_series.length} lack suitable daily records. Missing days and monthly amounts are not filled in.</p></CardContent></Card>
+    <Card className="kpi-card"><CardContent className="billing-overview-copy"><h3>One bill, one consistent report</h3><p>{report.costBasis}</p><p>Service totals add up to the net cost. This checks the calculation; supplied Google control totals are compared separately. It does not prove complete invoice or account coverage.</p><p>{report.previous ? 'The earlier upload supplies the comparison baseline. Differences locate cost changes; usage and pricing evidence are needed to explain their cause.' : 'No earlier bill was supplied for a period comparison. Watchdog separately checks eligible daily records when enough history is present.'}</p><p>Forecasts, potential savings, resilience tests, Kubernetes utilization, direct AI invoices and SaaS seats are not inferred from cloud billing amounts.</p><p>{report.privacy}</p><p data-testid="billing-pipeline-status">FinOps Lite → Watchdog → Command Center · CCAC validated · Cloud-only partial report.</p><p>Watchdog reviewed {report.pipeline.watchdog.series_evaluated} eligible daily series and reported {report.pipeline.watchdog.anomalies_detected} unusual movements. {report.pipeline.watchdog.insufficient_history_series.length} series need more history; {report.pipeline.watchdog.excluded_daily_series.length} lack suitable daily records. Missing days, hourly rows and monthly amounts are not filled in.</p></CardContent></Card>
+    <BillingMissingEvidence/>
   </section>;
 }
 
 function DataChecks({ period, label }) {
-  return <div className="billing-check-period"><h3>{label}</h3><p><strong>{period.rows.length.toLocaleString()} counted records</strong> from {period.sourceRowCount.toLocaleString()} input rows · {period.currency}</p><p>{periodLabel(period)}</p><p>{period.dateBasis}.</p><ul>{period.sources.map((source, index) => <li key={`${source.name}-${index}`}>{source.name} · {source.format} · {source.rows.toLocaleString()} rows</li>)}</ul>{period.warnings.map((warning) => <p className="billing-check-note" key={warning}>{warning}</p>)}</div>;
+  return <div className="billing-check-period"><h3>{label}</h3><p><strong>{period.rows.length.toLocaleString()} counted records</strong> from {period.sourceRowCount.toLocaleString()} input rows · {period.currency}</p><p>{periodLabel(period)}</p><p>{period.dateBasis}.</p><ul>{period.sources.map((source, index) => <li key={`${source.name}-${index}`}>{source.name} · {source.format} · {source.rows.toLocaleString()} rows</li>)}</ul>{[...new Set(period.warnings)].map((warning) => <p className="billing-check-note" key={warning}>{warning}</p>)}</div>;
 }
 
 export function BillingDataChecks({ report }) {

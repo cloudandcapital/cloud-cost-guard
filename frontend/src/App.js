@@ -3,7 +3,7 @@ import "./App.css";
 import logo from "./assets/cloud-and-capital-icon.png";
 import AskClaude from "./components/AskClaude";
 import BillingApp from "./components/billing/BillingApp";
-import { BillingSummary, BillingComparison, BillingFindings, BillingServices, BillingClouds, BillingUnavailable, BillingOverview, BillingDataChecks, BillingDownloads } from "./components/billing/BillingDashboard";
+import { BillingSummary, BillingBillChecks, BillingComparison, BillingFindings, BillingServices, BillingClouds, BillingOverview, BillingDataChecks, BillingDownloads } from "./components/billing/BillingDashboard";
 import { buildBillingExports } from "./lib/billing/export";
 import { getCcac11PresentationModel } from "./lib/ccac11PresentationModel";
 import { buildCanonicalExportFiles, downloadCanonicalExport } from "./lib/canonicalExport";
@@ -160,7 +160,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
   })) || [];
   const topAnomaly = model?.anomalies[0];
   const unsupported = (key) => model?.unsupported[key]?.explanation || unavailable;
-  const sections = [["findings", "Findings"], ["products", report ? "Services" : "Products"], ["clouds", "Clouds"], ["kubernetes", "Kubernetes"], ["overview", "Overview"], ["ai-spend", "AI Spend"], ["saas", "SaaS"]];
+  const sections = report ? [["findings", "Findings"], ["products", "Services"], ["clouds", "Clouds"], ["overview", "Overview"]] : [["findings", "Findings"], ["products", report ? "Services" : "Products"], ["clouds", "Clouds"], ["kubernetes", "Kubernetes"], ["overview", "Overview"], ["ai-spend", "AI Spend"], ["saas", "SaaS"]];
   const handleExport = (kind) => {
     setExportError("");
     try {
@@ -177,7 +177,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <img src={logo} alt="Cloud & Capital" className="brand-logo" />
-            <div className="leading-tight"><h1 className="brand-title">Cloud+ Cost Guard</h1><p className="brand-deck">{report ? <>Your cloud billing dashboard <span>· Uploaded data</span></> : <>Canonical technology spend decision support <span>· Illustrative</span></>}</p></div>
+            <div className="leading-tight"><h1 className="brand-title">{report ? "Cloud Cost Guard" : "Cloud+ Cost Guard"}</h1><p className="brand-deck">{report ? <>Your cloud billing dashboard <span>· {report.example ? "Invented example" : "Uploaded data"}</span></> : <>Canonical technology spend decision support <span>· Illustrative</span></>}</p></div>
           </div>
           <div className="header-actions">
             <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
@@ -199,7 +199,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6" data-testid={report ? "billing-report" : undefined}>
         <div className="trust-strip" data-testid="capability-disclosure">
-          {report ? <><span className="font-medium">Your uploaded bill powers this dashboard. No cloud account credentials needed.</span><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>Clear my data</button><button onClick={onExample}>Try an example</button></div></> : <>
+          {report ? <><span className="font-medium">{report.example ? "Invented bills, reviewed through the same steps as your own files." : "Your uploaded bill powers this dashboard. No cloud account credentials needed."}</span><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>Clear my data</button><button onClick={onExample}>Try an example</button></div></> : <>
           <span className="font-medium">Validated CCAC 1.1 illustrative report. No customer accounts, credentials, or production resources are connected.</span>
           <span>Refresh reloads the tracked canonical view; it does not sync cloud accounts.</span>
           <span>Report generated: {model.identity.generated_at}</span>
@@ -207,7 +207,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
           </>}
         </div>
 
-        {report ? <><BillingSummary report={report}/><BillingComparison report={report} onReplace={onReplace}/></> : <>
+        {report ? <><BillingSummary report={report}/><BillingBillChecks report={report}/><BillingComparison report={report} onReplace={onReplace}/></> : <>
         <section className="executive-summary" data-testid="executive-summary">
           <Card className="hero-card"><CardContent className="hero-content">
             <div className="hero-copy"><div className="eyebrow">Published Technology Spend</div><div className="hero-total" data-canonical-id={model.total.id}>{money(model.total.displayValue)}</div><div className="exact-value">Exact canonical value: USD {model.total.value}</div><div className="text-sm text-brand-muted mt-2">{periodLabel(model.identity.report_period)}</div>
@@ -238,10 +238,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
             <TabsContent value="findings" className="space-y-5"><BillingFindings report={report}/></TabsContent>
             <TabsContent value="products" className="space-y-5"><BillingServices report={report}/></TabsContent>
             <TabsContent value="clouds" className="space-y-6"><BillingClouds report={report}/></TabsContent>
-            <TabsContent value="kubernetes"><BillingUnavailable section="kubernetes" onServices={() => setActiveTab("products")}/></TabsContent>
             <TabsContent value="overview" className="space-y-6"><BillingOverview report={report}/></TabsContent>
-            <TabsContent value="ai-spend"><BillingUnavailable section="ai-spend" onServices={() => setActiveTab("products")}/></TabsContent>
-            <TabsContent value="saas"><BillingUnavailable section="saas" onServices={() => setActiveTab("products")}/></TabsContent>
           </> : <>
           <TabsContent value="findings" className="space-y-5"><div className="section-heading"><div><div className="eyebrow">Decision queue</div><h2>Canonical Findings</h2><p>Prioritized review with provenance and methodology kept close at hand.</p></div><Badge className="badge-brand">{model.findings.length} findings</Badge></div><div className="finding-list">{model.findings.map((item) => <FindingCard key={item.id} finding={item} onDetails={setFinding} />)}</div></TabsContent>
 

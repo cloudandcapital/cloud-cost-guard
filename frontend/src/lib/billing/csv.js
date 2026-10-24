@@ -8,10 +8,12 @@ const DAY = 86400000;
 const MAX_GOOGLE_DOCUMENT_ROWS = 32;
 const GOOGLE_DOCUMENT_FIELDS = new Set('invoice number|invoice date|invoice total|invoice total amount|total amount due|due date|payment due date|payment terms|statement number|statement date|statement total|total new activity|statement total new activity|billing account id|billing account name|currency|currency code|invoice currency|statement currency|exchange rate|currency exchange rate|publisher type|invoice month|billing period'.split('|'));
 const GOOGLE_CURRENCY_FIELDS = new Set(['currency', 'currency code', 'invoice currency', 'statement currency']);
+const SYMBOL_CURRENCIES = { '€': ['EUR'], '£': ['GBP'], '$': 'USD CAD AUD NZD SGD HKD TWD BBD BMD BSD BZD FJD GYD JMD KYD LRD NAD SBD SRD TTD XCD ZWL MXN ARS CLP COP UYU DOP CUP CUC PHP BND'.split(' ') };
 const fail = (message, code) => { const error = new Error(message); if (code) error.code = code; throw error; };
 
 export function decimalUnits(value) {
   const text = String(value).trim();
+  if (text.includes(',') && !text.includes('.')) fail('Cost is ambiguous: a comma alone could mean a decimal or thousands separator. Use 1500 for one thousand five hundred, or 1.50 for one and a half.');
   if (!/^[+-]?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,18})?$/.test(text)) {
     fail('Cost must be a signed number with up to 18 decimal places, such as 12.50 or -2.50. Leave out currency symbols and scientific notation.');
   }
@@ -125,21 +127,30 @@ function billingHeader(parsed) {
   const isGoogle = headers => headers.includes('service description') && headers.includes('cost type');
   const first = normalized(parsed[0]);
   const isExisting = ['date', 'service', 'cost', 'currency'].every(key => first.includes(key)) || ['chargeperiodstart', 'chargeperiodend', 'servicename', 'billedcost', 'billingcurrency'].every(key => first.includes(key));
-  if (isGoogle(first) || isExisting || !GOOGLE_DOCUMENT_FIELDS.has(first[0])) return { parsed, documentCurrency: null };
+  if (isGoogle(first) || isExisting) return { parsed, documentCurrency: null, documentMonth: null };
+  if (!GOOGLE_DOCUMENT_FIELDS.has(first[0])) {
+    if (parsed.slice(1, 40).some(row => isGoogle(normalized(row)))) fail(`Unrecognized Google document header: ${parsed[0].cells[0].slice(0, 100)}. No billing rows were skipped. Download the English ungrouped Cost table or use the simple template.`);
+    return { parsed, documentCurrency: null, documentMonth: null };
+  }
   const currencies = new Set();
+  const months = new Set();
   let index = 0;
   for (; index < parsed.length && !isGoogle(normalized(parsed[index])); index += 1) {
     const { cells } = parsed[index], label = normalized(parsed[index])[0];
     if (index >= MAX_GOOGLE_DOCUMENT_ROWS || !GOOGLE_DOCUMENT_FIELDS.has(label) || cells.slice(2).some(value => value.trim())) fail('Unrecognized information before the Google Cost table. Use its English CSV with Service description, Cost type and Unrounded cost. No billing rows were skipped.');
     const currency = (cells[1] || '').trim().toUpperCase();
     if (GOOGLE_CURRENCY_FIELDS.has(label) && knownCurrencies.has(currency)) currencies.add(currency);
+    if (label === 'invoice month') months.add((cells[1] || '').trim());
   }
   if (index === parsed.length) fail('Invoice information alone is not a Cost table. Include Service description, Cost type and Unrounded cost in the Google CSV.');
   if (currencies.size > 1) fail('Google document headers contain conflicting currencies.');
-  return { parsed: parsed.slice(index), documentCurrency: [...currencies][0] || null };
+  if (months.size > 1) fail('Google document headers contain conflicting invoice months.');
+  const month = [...months][0] || null;
+  if (month && !/^\d{4}-\d{2}$/.test(month)) fail('The Google Invoice month header needs YYYY-MM. Check it against the invoice.');
+  return { parsed: parsed.slice(index), documentCurrency: [...currencies][0] || null, documentMonth: month };
 }
 
-function googleInvoiceWindow(details, filename, columns, documentCurrency) {
+function googleInvoiceWindow(details, filename, columns, documentCurrency, documentMonth) {
   const columnCurrency = columns.cost.match(/\(([a-z]{3})\)$/i)?.[1]?.toUpperCase();
   if (documentCurrency && columnCurrency && documentCurrency !== columnCurrency) fail('The Google cost column and document header contain different currencies.');
   if (!details || details.confirmed !== true) {
@@ -147,7 +158,7 @@ function googleInvoiceWindow(details, filename, columns, documentCurrency) {
     error.code = 'GOOGLE_COST_TABLE_REQUIRED';
     const dates = filename.match(/_Cost table,\s*(\d{4}-\d{2})-\d{2}\s*[—–-]\s*(\d{4}-\d{2})-\d{2}/i);
     const currency = documentCurrency || columnCurrency || '';
-    error.details = { month: dates && dates[1] === dates[2] ? dates[1] : '', currency, costColumn: columns.cost };
+    error.details = { month: documentMonth || (dates && dates[1] === dates[2] ? dates[1] : ''), currency, costColumn: columns.cost };
     throw error;
   }
   if (!/^\d{4}-\d{2}$/.test(details.month || '')) fail('Choose the Google Cost table invoice month as YYYY-MM.');
@@ -157,16 +168,17 @@ function googleInvoiceWindow(details, filename, columns, documentCurrency) {
   const end = day(next.toISOString().slice(0, 10), 'Invoice month end');
   if (!knownCurrencies.has(details.currency)) fail('Confirm the Google bill’s three-letter billing currency; currency symbols are ambiguous.');
   if (documentCurrency && documentCurrency !== details.currency) fail('The confirmed currency does not match the Google document header.');
+  if (documentMonth && documentMonth !== details.month) fail(`The confirmed invoice month does not match the Google Invoice month header (${documentMonth}). Choose the month on the file.`);
   for (const key of [columns.cost, columns.rounded].filter(Boolean)) {
-    const unit = key.match(/\(([a-z]{3})\)$/i)?.[1]?.toUpperCase();
-    if (unit && unit !== details.currency) fail('The confirmed currency does not match the Google cost column.');
+    const unit = key.match(/\(([^()]+)\)$/)?.[1]?.trim();
+    if ((unit && /^[a-z]{3}$/i.test(unit) && unit.toUpperCase() !== details.currency) || (SYMBOL_CURRENCIES[unit] && !SYMBOL_CURRENCIES[unit].includes(details.currency))) fail('The confirmed currency does not match the Google cost column.');
   }
   return { start: `${start}T00:00:00.000Z`, end: `${end}T00:00:00.000Z`, currency: details.currency };
 }
 
-function normalizeGoogleCostTable(text, filename, parsed, headers, details, documentCurrency) {
+function normalizeGoogleCostTable(text, filename, parsed, headers, details, documentCurrency, documentMonth) {
   const columns = googleCostColumn(headers);
-  const period = googleInvoiceWindow(details, filename, columns, documentCurrency);
+  const period = googleInvoiceWindow(details, filename, columns, documentCurrency, documentMonth);
   const rows = [];
   let totals = 0;
   for (const { cells, line } of parsed.slice(1)) {
@@ -192,7 +204,7 @@ function normalizeGoogleCostTable(text, filename, parsed, headers, details, docu
   return { name: filename, text, format: 'Google Cloud Cost table CSV', rows, inputRowCount: parsed.length - 1 };
 }
 
-export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, googleCostTable } = {}) {
+export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, googleCostTable, simpleDateBasis } = {}) {
   if (!/\.csv(?:\.gz)?$/i.test(filename)) fail(`${filename}: choose a .csv or .csv.gz file. Excel, ZIP, and Parquet need conversion first.`);
   if (timestampBasis !== undefined && timestampBasis !== 'UTC') fail('The only supported timestamp confirmation is UTC.');
   let parsed;
@@ -203,7 +215,7 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, g
   if (parsed.length - 1 > LIMITS.rows) fail('This period has more than 50,000 rows. Export a smaller period.');
   const headers = parsed[0].cells.map((value) => value.trim().toLowerCase());
   if (new Set(headers).size !== headers.length || headers.some((header) => !header)) fail(`${filename}: every column needs a unique header.`);
-  if (headers.includes('service description') && headers.includes('cost type')) return normalizeGoogleCostTable(text, filename, parsed, headers, googleCostTable, table.documentCurrency);
+  if (headers.includes('service description') && headers.includes('cost type')) return normalizeGoogleCostTable(text, filename, parsed, headers, googleCostTable, table.documentCurrency, table.documentMonth);
   const focus = headers.some((header) => ['billedcost', 'chargeperiodstart', 'servicename'].includes(header));
   const fields = focus
     ? { date: 'chargeperiodstart', end: 'chargeperiodend', service: 'servicename', cost: 'billedcost', currency: 'billingcurrency', provider: 'providername' }
@@ -221,26 +233,41 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, g
       const service = get(fields.service) || (focus ? `${get('chargecategory') || 'Charge'} · service not supplied` : '');
       if (!service) fail('Service is empty. Give each record a service name, including tax or account-level adjustments.');
       if (service.length > 200) fail('Service names must be 200 characters or fewer.');
+      if (!focus && /^(?:(?:grand\s+|sub\s*|net\s+)?total(?:\s+costs?)?|amount\s+due|balance\s+due):?$/i.test(service)) fail(`${service} looks like a total line. Remove it so it is not counted twice; keep the individual charges, taxes and negative credits.`);
       const provider = get(fields.provider) || 'Not specified';
       if (provider.length > 200) fail('Provider names must be 200 characters or fewer.');
       const currency = get(fields.currency).toUpperCase();
       if (!knownCurrencies.has(currency)) fail('Currency needs a supported three-letter code such as USD, EUR, or GBP. Currency symbols are ambiguous.');
       const cost = decimalString(decimalUnits(get(fields.cost)));
+      if (!focus && decimalUnits(cost) > 0n && /\b(?:credits?|refunds?|discounts?)\b/i.test(service)) fail(`${service} has a positive cost. Check the bill and enter credits, refunds or discounts as negative amounts; their sign is never guessed.`);
       if (get('chargecategory').toLowerCase() === 'credit' && decimalUnits(cost) > 0n) fail('This credit has a positive cost. Enter credits as negative amounts; the tool will not guess their sign.');
       const start = focus ? boundary(get(fields.date), 'ChargePeriodStart', timestampBasis) : `${day(get(fields.date), 'Date')}T00:00:00.000Z`;
       if (focus && !get(fields.end)) fail('ChargePeriodEnd is empty. Supply the exclusive end date; the tool will not assume the charge lasted one day.');
-      const end = get(fields.end)
+      let end = get(fields.end)
         ? (focus ? boundary(get(fields.end), 'ChargePeriodEnd', timestampBasis) : `${day(get(fields.end), 'EndDate')}T00:00:00.000Z`)
         : `${nextDay(start.slice(0, 10))}T00:00:00.000Z`;
+      if (!focus && !get(fields.end) && simpleDateBasis === 'monthly') {
+        if (start.slice(8, 10) !== '01') fail('Confirmed monthly totals need Date on the first of the month, or an explicit EndDate.');
+        const next = new Date(start); next.setUTCMonth(next.getUTCMonth() + 1);
+        end = `${day(next.toISOString().slice(0, 10), 'Monthly EndDate')}T00:00:00.000Z`;
+      }
       if (timestampMicros(end) <= timestampMicros(start)) fail('The charge end must be after its start. End dates are exclusive.');
+      let billingPeriod = {};
+      if (focus && (get('billingperiodstart') || get('billingperiodend'))) {
+        if (!get('billingperiodstart') || !get('billingperiodend')) fail('Supply both BillingPeriodStart and BillingPeriodEnd, or neither.');
+        const billStart = boundary(get('billingperiodstart'), 'BillingPeriodStart', timestampBasis);
+        const billEnd = boundary(get('billingperiodend'), 'BillingPeriodEnd', timestampBasis);
+        if (!billStart.endsWith('T00:00:00.000Z') || !billEnd.endsWith('T00:00:00.000Z') || timestampMicros(billEnd) <= timestampMicros(billStart)) fail('Billing period boundaries must be UTC midnights, with the exclusive end after the start.');
+        billingPeriod = { billingStart: billStart.slice(0, 10), billingEnd: billEnd.slice(0, 10) };
+      }
       const recordId = get('recordid'), accountId = get('billingaccountid');
       if (recordId.length > 300 || accountId.length > 300) fail('Record and account IDs must be 300 characters or fewer.');
       // UI preflight only. The original text goes to FinOps Lite, which owns
       // normalization, full-dimension duplicate identity and period handling.
-      return { start, end, service, provider, currency, cost, recordId, accountId, file: filename, line };
+      return { start, end, service, provider, currency, cost, recordId, accountId, ...billingPeriod, file: filename, line };
     } catch (error) { return fail(`${filename}, line ${line}: ${error.message}`, error.code); }
   });
-  return { name: filename, text, format: focus ? 'FOCUS BilledCost' : 'Simple billing CSV', rows };
+  return { name: filename, text, format: focus ? 'FOCUS BilledCost' : 'Simple billing CSV', rows, needsDateCheck: !focus && !simpleDateBasis && rows.every(row => row.start.slice(8, 10) === '01' && row.end === `${nextDay(row.start.slice(0, 10))}T00:00:00.000Z` && parsed.slice(1).every(row => !(row.cells[headers.indexOf(fields.end)] || '').trim())) };
 }
 
 async function expandedBytes(file, remaining) {

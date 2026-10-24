@@ -69,7 +69,7 @@ test("optimized production bundle routes uploaded bills into the existing dashbo
   assert.equal(await page.getByTestId('approved-dashboard').getAttribute('data-source'), 'uploaded');
   assert.equal(await page.getByTestId('billing-net-total').innerText(), '$1,310.13');
   assert.match(await page.getByTestId('billing-comparison').innerText(), /\$313\.53/);
-  for (const label of ['Services', 'Clouds', 'Kubernetes', 'Overview', 'AI Spend', 'SaaS', 'Findings']) {
+  for (const label of ['Services', 'Clouds', 'Overview', 'Findings']) {
     await page.getByRole('tab', { name: label, exact: true }).click();
     assert.equal(await page.getByTestId('billing-net-total').innerText(), '$1,310.13');
     assert.doesNotMatch(await page.locator('body').innerText(), /2939\.0525|2,939\.05|736\.77|Top canonical anomaly/);
@@ -94,6 +94,13 @@ test("optimized production bundle routes uploaded bills into the existing dashbo
   await page.getByRole('button', { name: 'Clear my data', exact: true }).click();
   await page.getByTestId('billing-upload').waitFor({ state: 'visible' });
   await page.getByRole('button', { name: 'Try an example', exact: true }).click();
+  await page.getByTestId('billing-report').waitFor({ state: 'visible', timeout: 120000 });
+  assert.equal(await page.getByTestId('billing-net-total').innerText(), '$1,310.13');
+  assert.match(await page.getByRole('region', { name: 'Example data', exact: true }).innerText(), /Invented bills/);
+  assert.equal(await page.getByRole('tab', {name:'Kubernetes',exact:true}).count(),0);
+  await page.getByRole('button', { name: 'Review my own cloud bill →', exact: true }).click();
+  await page.getByText('What can I upload? Export instructions & CSV format', {exact:true}).click();
+  await page.getByRole('button', { name: 'See the full technology spend demo', exact: true }).click();
   await page.getByTestId("approved-dashboard").waitFor({ state: "visible" });
   assert.notEqual(await page.locator("#root").innerHTML(), "");
   assert.equal(await page.getByText("Published Technology Spend", { exact: true }).count(), 1);

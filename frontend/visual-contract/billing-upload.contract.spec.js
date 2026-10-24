@@ -5,7 +5,7 @@ const { expectExactPageOverflow, expectNoBrokenDisplayValues } = require('./help
 
 const csv = (name) => path.resolve(__dirname, `../public/billing/${name}-example.csv`);
 const payload = (text, name = 'billing.csv') => ({ name, mimeType: 'text/csv', buffer: Buffer.from(text) });
-const one = (amount = '7.25', currency = 'USD', service = 'Only my service') => `Date,Service,Cost,Currency\n2026-10-01,${service},${amount},${currency}`;
+const one = (amount = '7.25', currency = 'USD', service = 'Only my service') => `Date,Service,Cost,Currency\n2026-10-02,${service},${amount},${currency}`;
 async function analyze(page, comparison = false) {
   await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(csv('current'));
   if (comparison) await page.getByLabel('Previous billing CSV files', { exact: true }).setInputFiles(csv('previous'));
@@ -145,7 +145,7 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByTestId('billing-credits')).toHaveText('-$52.25');
     await expect(page.getByTestId('billing-comparison')).toContainText('Add an earlier bill');
     await expect(page.getByTestId('approved-dashboard')).toHaveAttribute('data-source', 'uploaded');
-    await expect(page.getByRole('heading', { name: 'Cloud+ Cost Guard', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cloud Cost Guard', exact: true })).toBeVisible();
     await checkNoSample(page);
     // Collect every affected view when disclosure copy changes. Soft image
     // assertions still fail the test while preserving the remaining evidence.
@@ -242,6 +242,7 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
     await expect(page.locator('body')).not.toContainText('Only my service');
     await analyze(page);
+    page.once('dialog', dialog => dialog.accept());
     await page.reload();
     await expect(page.getByTestId('billing-upload')).toBeVisible();
     await expect(page.locator('body')).not.toContainText('API compute');
@@ -251,8 +252,9 @@ test.describe('browser-local billing upload experience', () => {
     await analyze(page);
     await page.getByRole('button', { name: 'Try an example', exact: true }).click();
     await expect(page.getByTestId('approved-dashboard')).toBeVisible();
-    await expect(page.locator('body')).toContainText('Exact canonical value: USD 2939.0525');
-    await expect(page.locator('body')).not.toContainText('API compute');
+    await expect(page.locator('body')).toContainText('Invented bills, reviewed exactly like your own files.');
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+    await expect(page.locator('body')).not.toContainText('2939.0525');
     await page.getByRole('button', { name: 'Review my own cloud bill', exact: false }).click();
     await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(one('25', 'EUR')));
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
@@ -269,7 +271,7 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByRole('button', { name: 'Back to report', exact: true }).click();
     await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
     await page.getByRole('button', { name: 'Upload another bill', exact: true }).click();
-    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`${one()}\n2026-10-01,Only my service,7.25,USD`));
+    await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`${one()}\n2026-10-02,Only my service,7.25,USD`));
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('need your review');
     await page.getByText('Period dates & identical rows', { exact: true }).click();
@@ -302,7 +304,7 @@ test.describe('browser-local billing upload experience', () => {
   });
 
   test('many service groups paginate while totals and downloads still cover every record', async ({ page }) => {
-    const rows = Array.from({ length: 32 }, (_, index) => `2026-10-01,Service ${index.toString().padStart(2, '0')},1,USD`).join('\n');
+    const rows = Array.from({ length: 32 }, (_, index) => `2026-10-02,Service ${index.toString().padStart(2, '0')},1,USD`).join('\n');
     await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(payload(`Date,Service,Cost,Currency\n${rows}`));
     await page.getByRole('button', { name: 'Review my bill', exact: true }).click();
     await expect(page.getByTestId('billing-net-total')).toHaveText('$32.00');
@@ -315,14 +317,10 @@ test.describe('browser-local billing upload experience', () => {
 
   test('all original dashboard sections use the upload, with honest boundaries for missing evidence', async ({ page }) => {
     await analyze(page, true);
-    for (const [value, label] of [['products', 'Services'], ['clouds', 'Clouds'], ['kubernetes', 'Kubernetes'], ['overview', 'Overview'], ['ai-spend', 'AI Spend'], ['saas', 'SaaS'], ['findings', 'Findings']]) {
+    for (const [value, label] of [['products', 'Services'], ['clouds', 'Clouds'], ['overview', 'Overview'], ['findings', 'Findings']]) {
       await openSection(page, value, label);
       await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
-      if (['kubernetes', 'ai-spend', 'saas'].includes(value)) {
-        await expect(page.getByTestId(`billing-unavailable-${value}`)).toContainText('Additional data needed');
-        await expect(page.getByTestId(`billing-unavailable-${value}`)).toContainText('Only your supplied cloud costs');
-      }
-      if (value === 'overview') await expect(page.getByRole('tabpanel')).toContainText('does not reconcile your upload against a provider invoice');
+      if (value === 'overview') await expect(page.getByRole('tabpanel')).toContainText('Not in this file');
       await checkNoSample(page);
       await expectNoBrokenDisplayValues(page);
       await expectExactPageOverflow(page);
@@ -384,7 +382,8 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByLabel('Current billing CSV files', {exact:true}).setInputFiles(csv('current'));
     await page.getByRole('button', {name:'Review my bill',exact:true}).click();
     await expect.poll(() => page.workers().length).toBe(1);
-    await page.getByRole('button', {name:'Try an example',exact:true}).click();
+    await page.getByText('What can I upload? Export instructions & CSV format', {exact:true}).click();
+    await page.getByRole('button', {name:'See the full technology spend demo',exact:true}).click();
     await expect.poll(() => page.workers().length).toBe(0);
     await page.getByRole('button', {name:'Review my own cloud bill →',exact:true}).click();
     await expect(page.getByRole('button', {name:'Review my bill',exact:true})).toBeDisabled();

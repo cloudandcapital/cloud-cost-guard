@@ -23,11 +23,12 @@ const fixture = (name) => fs.readFileSync(path.join(__dirname, `../../../public/
 const button = (label) => [...document.querySelectorAll('button')].find((element) => element.textContent.trim() === label);
 let root, host, sampleSpy;
 async function click(element) { expect(element).toBeTruthy(); await act(async () => { element.click(); }); }
-async function choose(text, kind = 'current', name = 'bill.csv') {
+async function choose(text, kind = 'current', name = 'bill.csv', confirmDaily = true) {
   const bytes = new TextEncoder().encode(text);
   const input = document.querySelector(`#${kind}-files`);
   Object.defineProperty(input, 'files', { configurable: true, value: [{ name, size: bytes.length, arrayBuffer: async () => bytes.buffer }] });
   await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+  if (confirmDaily && button('They are one-day records')) await click(button('They are one-day records'));
 }
 const text = () => document.body.textContent;
 async function tab(label) {
@@ -138,8 +139,10 @@ test('a new current bill drops its old comparison and clear returns to an empty 
 test('switching to the example drops the uploaded selection', async () => {
   await choose(fixture('current')); await click(button('Review my bill'));
   await click(button('Try an example'));
-  expect(text()).toContain('Exact canonical value: USD 2939.0525');
-  expect(text()).not.toContain('API compute');
+  expect(text()).toContain('Invented bills, reviewed exactly like your own files.');
+  expect(text()).toContain('Exact: USD 1310.125');
+  expect(text()).not.toContain('2939.0525');
+  expect(sampleSpy).not.toHaveBeenCalled();
   await click(button('Review my own cloud bill →'));
   expect(button('Review my bill').disabled).toBe(true);
   expect(text()).not.toContain('2939.0525');
@@ -160,11 +163,11 @@ test('an invalid comparison cannot silently turn into a current-only report', as
 test('the real dashboard tabs use uploads and explain missing evidence without loading the example', async () => {
   await choose(fixture('current')); await choose(fixture('previous'), 'previous'); await click(button('Review my bill'));
   const headline = document.querySelector('[data-testid="billing-net-total"]');
-  for (const label of ['Services', 'Clouds', 'Kubernetes', 'Overview', 'AI Spend', 'SaaS', 'Findings']) {
+  for (const label of ['Services', 'Clouds', 'Overview', 'Findings']) {
     await tab(label);
     expect(headline.textContent).toBe('$1,310.13');
     expect(text()).not.toMatch(/2939\.0525|2,939\.05|736\.77|8\.2825|Top canonical anomaly|Modeled resilience/);
-    if (['Kubernetes', 'AI Spend', 'SaaS'].includes(label)) expect(text()).toContain('Additional data needed');
+    if (label === 'Overview') expect(text()).toContain('Not in this file');
     if (label === 'Services') expect(document.querySelector('[aria-label="Uploaded service costs"]').textContent).toContain('API compute');
     if (label === 'Findings') expect(document.querySelector('[aria-label="Uploaded service comparisons"]').textContent).toContain('$240.03');
   }
@@ -197,4 +200,22 @@ test('a replacement resets the original dashboard tab, provider selection and Lu
   await tab('Clouds');
   expect(document.querySelector('[data-testid="billing-provider-total"]').textContent).toContain('All providers: €25.00');
   expect(text()).not.toContain('AWS');
+});
+
+
+test('monthly template confirmation prevents a month from appearing as one day', async () => {
+  await choose('Date,Service,Cost,Currency\n2026-09-01,Compute,300,USD', 'current', 'monthly.csv', false);
+  expect(text()).toContain('Are these monthly totals?');
+  expect(button('Review my bill').disabled).toBe(true);
+  await click(button('They cover the whole month'));
+  await click(button('Review my bill'));
+  expect(text()).toContain('2026-09-01 to 2026-09-30 · 30 days');
+  expect(text()).toContain('$10.00 per reporting day');
+  const event = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
+  await click(button('Clear my data'));
+  const cleared = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(cleared);
+  expect(cleared.defaultPrevented).toBe(false);
 });

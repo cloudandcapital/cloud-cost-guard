@@ -74,6 +74,28 @@ class BillingPipelineTests(unittest.TestCase):
         value=next(item['value'] for item in report['metric_catalog'] if item['id']=='metric.tech-spend.scope.cloud')
         self.assertEqual(value,Decimal('999999999999.123456789012345679'))
 
+    def test_post_duplicate_google_control_stops_and_invoice_header_difference_survives_projection(self):
+        text='Invoice total,5000\nService description,Cost type,Unrounded cost,Cost\nCompute,Usage,50.004,50\nCompute,Usage,50.004,50\n,Tax,9,9\n,Total,,109.01'
+        current=[{'name':'audit.csv','text':text}]
+        context={'googleCostTable':{'month':'2026-09','currency':'USD','confirmed':True},'duplicatePolicy':'drop'}
+        with self.assertRaisesRegex(CCACBuildError,"Count once.*Google's Total"):
+            run_billing_pipeline(dict(**IDENTITY,current=current,options={'current':context}))
+        result=run_billing_pipeline(dict(**IDENTITY,current=current,options={'current':{**context,'duplicatePolicy':'keep'}}))
+        view=result['presentation']['current']
+        self.assertEqual(view['net'],'109.008')
+        self.assertEqual(view['dailyAverage'],'3.6336')
+        self.assertEqual([check['status'] for check in view['invoiceChecks']],['matched','different'])
+
+    def test_prior_usage_corrections_compare_on_billing_dates_and_retain_invoice_identity(self):
+        header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,BillingPeriodStart,BillingPeriodEnd,ChargeClass,InvoiceId\n'
+        current=[{'name':'sep.csv','text':header+'2026-09-01,2026-10-01,Compute,100,USD,2026-09-01,2026-10-01,,SEP\n2026-08-20,2026-08-21,Compute,-10,USD,2026-09-01,2026-10-01,Correction,SEP'}]
+        previous=[{'name':'aug.csv','text':header+'2026-08-01,2026-09-01,Compute,80,USD,2026-08-01,2026-09-01,,AUG'}]
+        view=run_billing_pipeline(dict(**IDENTITY,current=current,previous=previous))['presentation']
+        self.assertEqual((view['current']['start'],view['current']['end'],view['current']['days']),('2026-09-01','2026-10-01',30))
+        self.assertEqual(view['comparison']['delta'],'10')
+        self.assertEqual(view['current']['rows'][1]['invoiceId'],'SEP')
+        self.assertEqual(view['current']['dailyAverage'],'3')
+
     @classmethod
     def setUpClass(cls):
         cls.bundle=run_billing_pipeline(dict(**IDENTITY,current=[fixture('current')],previous=[fixture('previous')]))

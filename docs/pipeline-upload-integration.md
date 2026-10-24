@@ -82,3 +82,9 @@ The public billing upload uses the revisions in the current source lock. Review 
 and the production upload flow again whenever the vendor snapshots change.
 
 Google Cost table ingestion is owned by FinOps Lite in the same pipeline. The browser collects explicit month/currency context and performs preflight only; the producer checks/excludes Total controls and owns aggregation. Original text and choices stay in evidence. This monthly input produces no daily anomaly series, and the UI uses an invoice-month view instead of a daily chart.
+
+The quick example now uses the same producer pipeline on the bundled public
+current/previous bills, with `mode=illustrative`. The complete five-producer
+CCAC demo remains a separate action under upload instructions; its validation
+and original source pins are unchanged. Bill controls and daily averages come
+from reviewed FinOps Lite source, never new browser financial aggregation.
