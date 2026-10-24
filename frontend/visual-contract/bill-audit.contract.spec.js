@@ -13,6 +13,22 @@ async function google(page, text) {
 test.beforeEach(async ({ page }) => { await page.goto('/'); });
 test.afterEach(async ({ page }) => { await expectExactPageOverflow(page); });
 
+test('earlier corrections stay in bill totals without hiding an in-period spike', async ({ page }, info) => {
+  const header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,BillingPeriodStart,BillingPeriodEnd,ChargeClass\n';
+  const rows=Array.from({length:30},(_,i)=>{
+    const start=new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10);
+    const end=new Date(Date.UTC(2026,8,i+2)).toISOString().slice(0,10);
+    return `${start},${end},EC2,${i===24?250:100},USD,2026-09-01,2026-10-01,Usage`;
+  });
+  rows.push('2026-08-20,2026-08-21,EC2,-10,USD,2026-09-01,2026-10-01,Correction');
+  await page.getByLabel('Current billing CSV files',{exact:true}).setInputFiles(file(header+rows.join('\n')));
+  await review(page);
+  await expect(page.getByTestId('billing-net-total')).toHaveText('$3,140.00');
+  await expect(page.locator('.billing-upload-findings')).toContainText('Observed 250.0 USD');
+  await expect(page.getByText(/Daily spike check:/)).toContainText('1 service series checked');
+  await page.screenshot({path:info.outputPath('audit-correction-spike.png'),fullPage:true});
+});
+
 test('quick example is the actual local bill review, including daily average and downloads', async ({ page }, info) => {
   const outbound = [];
   page.on('request', request => { if (request.method() !== 'GET') outbound.push(request.url()); });
@@ -31,9 +47,16 @@ test('quick example is the actual local bill review, including daily average and
   const evidence = JSON.parse(fs.readFileSync(path, 'utf8'));
   expect(evidence.example).toBe(true);
   expect(evidence.current.dailyAverage).toBe('43.670833333333333333');
+  expect(evidence.pipeline.watchdog.series_evaluated).toBe(0);
+  expect(evidence.pipeline.watchdog.series_with_observations).toBe(1);
   for (const artifact of Object.values(evidence.pipeline.artifacts)) expect(JSON.parse(artifact).mode).toBe('illustrative');
+  if (info.project.name === 'mobile-390x844') {
+    expect(await page.getByTestId('lumen-trigger').evaluate(button => getComputedStyle(button).position)).toBe('static');
+  }
   await page.getByTestId('lumen-trigger').click();
   const input = page.getByLabel('Ask Lumen about your uploaded report');
+  await input.fill('How much did September cost?'); await input.press('Enter');
+  await expect(page.getByTestId('lumen-panel')).toContainText('$1,310.13');
   await input.fill('What is my run rate and what will October cost?'); await input.press('Enter');
   await expect(page.getByTestId('lumen-panel')).toContainText('cannot tell what a future month will cost');
   await input.fill('Is my tax amount correct?'); await input.press('Enter');
@@ -55,6 +78,8 @@ test('Google Count once cannot break its control and header difference stays vis
   await expect(checks).toContainText('Matches the supplied rows');
   await expect(checks).toContainText('A total needs your attention');
   await expect(checks).toContainText('$5,000.00');
+  await expect(checks).toContainText('$4,890.99');
+  await expect(page.locator('.billing-total-attention')).toContainText('1 total needs your attention');
   await page.screenshot({ path: info.outputPath('audit-google-controls.png'), fullPage: true });
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Printable report', exact: true }).click()]);
   const path = info.outputPath(download.suggestedFilename()); await download.saveAs(path);
@@ -70,6 +95,11 @@ test('Google Count once cannot break its control and header difference stays vis
     await expect(printPage.locator('body')).toContainText('A total needs your attention');
     const pdf = await printPage.pdf({ path: info.outputPath('audit-printed-google-review.pdf'), format: 'A4', printBackground: true, margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' } });
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    const letter = await printPage.pdf({ path: info.outputPath('audit-printed-google-letter.pdf'), format: 'Letter', printBackground: true, margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' } });
+    for (const output of [pdf,letter]) {
+      const count=(output.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
+      expect(count).toBeGreaterThan(0);expect(count).toBeLessThanOrEqual(2);
+    }
     await printPage.close();
   }
 });
@@ -78,6 +108,11 @@ test('template total lines stop while monthly totals need an explicit date choic
   await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(file('Date,Service,Cost,Currency\n2026-09-01,EC2,100,USD\n2026-09-01,S3,20,USD\n2026-09-01,Tax,9.60,USD\n2026-09-01,Total,129.60,USD'));
   await expect(page.getByRole('alert')).toContainText('looks like a total line');
   await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
+  for (const label of ['Invoice total','Total charges','Totals','Total (USD)']) {
+    await page.getByLabel('Current billing CSV files',{exact:true}).setInputFiles(file(`Date,Service,Cost,Currency\n2026-09-02,EC2,100,USD\n2026-09-02,${label},100,USD`));
+    await expect(page.getByRole('alert')).toContainText('looks like a total line');
+    await expect(page.getByRole('button',{name:'Review my bill',exact:true})).toBeDisabled();
+  }
   await page.getByLabel('Current billing CSV files', { exact: true }).setInputFiles(file('Date,Service,Cost,Currency,EndDate\n2026-09-01,Compute,300,USD,'));
   await expect(page.getByRole('heading', { name: 'Are these monthly totals?', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'They cover the whole month', exact: true }).click();

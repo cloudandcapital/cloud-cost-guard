@@ -192,14 +192,14 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
               </DropdownMenu>
               {report ? <Button onClick={onReplace} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs">Upload another bill</Button> : <Button onClick={() => setRevision((value) => value + 1)} className="btn-brand-primary rounded-2xl px-2 sm:px-4 text-xs"><Activity className="h-4 w-4 mr-2" />Refresh</Button>}
             </div>
-            {exportError && <p className="export-error" role="alert" data-testid="canonical-export-error">{exportError}</p>}
+            {exportError && <p className="export-error" role="alert" data-testid="canonical-export-error">{exportError}</p>}{report && !finding && <AskClaude billingReport={report}/>}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6" data-testid={report ? "billing-report" : undefined}>
         <div className="trust-strip" data-testid="capability-disclosure">
-          {report ? <><span className="font-medium">{report.example ? "Invented bills, reviewed through the same steps as your own files." : "Your uploaded bill powers this dashboard. No cloud account credentials needed."}</span><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>Clear my data</button><button onClick={onExample}>Try an example</button></div></> : <>
+          {report ? <><span className="font-medium">{report.example ? "Invented bills, reviewed through the same steps as your own files." : "Your uploaded bill powers this dashboard. No cloud account credentials needed."}</span><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>{report.example ? "Reset example" : "Clear my data"}</button><button onClick={onExample}>Try an example</button></div></> : <>
           <span className="font-medium">Validated CCAC 1.1 illustrative report. No customer accounts, credentials, or production resources are connected.</span>
           <span>Refresh reloads the tracked canonical view; it does not sync cloud accounts.</span>
           <span>Report generated: {model.identity.generated_at}</span>
@@ -258,7 +258,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
         {report && <><BillingDownloads report={report} onDownload={handleExport}/><BillingDataChecks report={report}/><p className="billing-dashboard-help">Want help interpreting your bill? <a href="https://cloudandcapital.com/services">Get a second pair of eyes from Cloud &amp; Capital.</a></p></>}
       </main>
       <FindingModal finding={finding} onClose={() => setFinding(null)} />
-      {!finding && <AskClaude billingReport={report}/>}
+      {!report && !finding && <AskClaude/>}
     </div>
   );
 }

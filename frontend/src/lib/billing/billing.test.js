@@ -187,7 +187,7 @@ describe('browser billing CSV ingestion', () => {
   });
   test('does not silently drop ambiguous identical charges, or distinct dimensions and IDs', () => {
     const one = simple([record('2026-09-01', 'Compute', '10'), record('2026-09-01', 'Compute', '10')].join('\n'));
-    expect(() => buildBillingReport([one])).toThrow(/need your review/);
+    expect(() => buildBillingReport([one])).toThrow(/needs? your review/);
     expect(buildBillingReport([one], [], { current: { duplicatePolicy: 'keep' } }).current.net).toBe('20');
     expect(buildBillingReport([one], [], { current: { duplicatePolicy: 'drop' } }).current.net).toBe('10');
     const distinct = normalizeCsv('Date,Service,Cost,Currency,ResourceId\n2026-09-01,Compute,10,USD,a\n2026-09-01,Compute,10,USD,b');
@@ -310,6 +310,51 @@ describe('report, exports and Lumen share uploaded evidence', () => {
 
 
 describe('independent bill audit regressions', () => {
+  test('summary aliases stop while real services and card fees retain their amounts', () => {
+    for (const label of ['Invoice total', 'Invoice total amount', 'Total charges', 'Totals', 'Total due', 'Total (USD)', 'TOTAL (USD):']) {
+      const raw = `Date,Service,Cost,Currency\n2026-09-02,Compute,100,USD\n2026-09-02,${label},100,USD`;
+      expect(() => normalizeCsv(raw)).toThrow(/total line/);
+      expect(() => buildBillingReport([{name:'totals.csv',text:raw}])).toThrow(/total line/);
+    }
+    for (const label of ['Credit card processing fee', 'Credit-card transaction fee', 'Total Defense', 'Totaljobs']) {
+      const file = normalizeCsv(`Date,Service,Cost,Currency\n2026-09-02,${label},25,USD`);
+      expect(buildBillingReport([file]).current.net).toBe('25');
+    }
+    expect(decimalString(decimalUnits('1,500,000'))).toBe('1500000');
+  });
+  test('Google human month, tax and invoice differences answer plain questions', () => {
+    const options = {googleCostTable:{month:'2026-09',currency:'USD',confirmed:true},duplicatePolicy:'keep'};
+    const raw = 'Invoice month,September 2026\nInvoice total,5000\nService description,Cost type,Unrounded cost,Cost\nCompute,Usage,50.004,50\nCompute,Usage,50.004,50\n,Tax,9,9\n,Total,,109.01';
+    let confirmation;try {normalizeCsv(raw);} catch(error) {confirmation=error;}
+    expect(confirmation.details.month).toBe('2026-09');
+    const file=normalizeCsv(raw,'google.csv',options);
+    const report=buildBillingReport([file],[],{current:options});
+    expect(report.current.tax).toBe('9');
+    expect(answerBillingQuestion(report,'How much was tax?')).toContain('$9.00');
+    expect(answerBillingQuestion(report,'What was the September tax cost?')).toContain('$9.00');
+    expect(answerBillingQuestion(report,'Why did Compute costs increase in September?')).toContain('No earlier period');
+    expect(answerBillingQuestion(report,'How much did Compute cost in September?')).toContain('$100.01');
+    expect(answerBillingQuestion(report,'How much did September cost?')).toContain('$109.01');
+    for (const q of ['Why is the invoice total different?', 'Does this match my invoice?']) {
+      const answer=answerBillingQuestion(report,q);
+      expect(answer).toContain('$4,890.99');expect(answer).toContain('matches the counted rows');expect(answer).not.toContain('Add an earlier');
+    }
+    expect(buildBillingExports(report).html.content).toContain('$4,890.99');
+    const unknown=normalizeCsv(raw.replace('September 2026','Septembre 2026'),'unknown.csv',options);
+    expect(buildBillingReport([unknown],[],{current:options}).current.warnings.join(' ')).toContain('header format could not be compared');
+    expect(() => normalizeCsv(raw.replace('September 2026','August 2026'),'wrong.csv',options)).toThrow(/month does not match/);
+  });
+  test('month lookups use the matching upload and keep forecast boundaries', () => {
+    const report=buildBillingReport(current(),previous());
+    expect(answerBillingQuestion(report,'How much did September cost?')).toContain('$1,310.13');
+    expect(answerBillingQuestion(report,'What did August cost?')).toContain('$996.60');
+    expect(answerBillingQuestion(report,'What did September 2025 cost?')).toContain('do not provide a separate total');
+    expect(answerBillingQuestion(report,'What did October cost?')).toContain('do not provide a separate total');
+    expect(answerBillingQuestion(report,'What will October cost?')).toContain('cannot tell what a future month will cost');
+    expect(answerBillingQuestion(report,'May I see the total cost?')).toContain('$1,310.13');
+    expect(report.pipeline.watchdog.series_evaluated).toBe(0);
+    expect(report.pipeline.watchdog.series_with_observations).toBe(1);
+  });
   test('the quick sample uses the two actual downloadable bills', () => {
     const { SAMPLE_BILLS } = require('./examples');
     expect(SAMPLE_BILLS.map(file => file.text)).toEqual(['current', 'previous'].map(name => fixture(name).text));
