@@ -13,6 +13,22 @@ async function google(page, text) {
 test.beforeEach(async ({ page }) => { await page.goto('/'); });
 test.afterEach(async ({ page }) => { await expectExactPageOverflow(page); });
 
+test('earlier corrections stay in bill totals without hiding an in-period spike', async ({ page }, info) => {
+  const header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,BillingPeriodStart,BillingPeriodEnd,ChargeClass\n';
+  const rows=Array.from({length:30},(_,i)=>{
+    const start=new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10);
+    const end=new Date(Date.UTC(2026,8,i+2)).toISOString().slice(0,10);
+    return `${start},${end},EC2,${i===24?250:100},USD,2026-09-01,2026-10-01,Usage`;
+  });
+  rows.push('2026-08-20,2026-08-21,EC2,-10,USD,2026-09-01,2026-10-01,Correction');
+  await page.getByLabel('Current billing CSV files',{exact:true}).setInputFiles(file(header+rows.join('\n')));
+  await review(page);
+  await expect(page.getByTestId('billing-net-total')).toHaveText('$3,140.00');
+  await expect(page.locator('.billing-upload-findings')).toContainText('Observed 250.0 USD');
+  await expect(page.getByText(/Daily spike check:/)).toContainText('1 service series checked');
+  await page.screenshot({path:info.outputPath('audit-correction-spike.png'),fullPage:true});
+});
+
 test('quick example is the actual local bill review, including daily average and downloads', async ({ page }, info) => {
   const outbound = [];
   page.on('request', request => { if (request.method() !== 'GET') outbound.push(request.url()); });

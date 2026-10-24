@@ -187,7 +187,7 @@ describe('browser billing CSV ingestion', () => {
   });
   test('does not silently drop ambiguous identical charges, or distinct dimensions and IDs', () => {
     const one = simple([record('2026-09-01', 'Compute', '10'), record('2026-09-01', 'Compute', '10')].join('\n'));
-    expect(() => buildBillingReport([one])).toThrow(/need your review/);
+    expect(() => buildBillingReport([one])).toThrow(/needs? your review/);
     expect(buildBillingReport([one], [], { current: { duplicatePolicy: 'keep' } }).current.net).toBe('20');
     expect(buildBillingReport([one], [], { current: { duplicatePolicy: 'drop' } }).current.net).toBe('10');
     const distinct = normalizeCsv('Date,Service,Cost,Currency,ResourceId\n2026-09-01,Compute,10,USD,a\n2026-09-01,Compute,10,USD,b');
@@ -331,6 +331,9 @@ describe('independent bill audit regressions', () => {
     const report=buildBillingReport([file],[],{current:options});
     expect(report.current.tax).toBe('9');
     expect(answerBillingQuestion(report,'How much was tax?')).toContain('$9.00');
+    expect(answerBillingQuestion(report,'What was the September tax cost?')).toContain('$9.00');
+    expect(answerBillingQuestion(report,'Why did Compute costs increase in September?')).toContain('No earlier period');
+    expect(answerBillingQuestion(report,'How much did Compute cost in September?')).toContain('$100.01');
     expect(answerBillingQuestion(report,'How much did September cost?')).toContain('$109.01');
     for (const q of ['Why is the invoice total different?', 'Does this match my invoice?']) {
       const answer=answerBillingQuestion(report,q);

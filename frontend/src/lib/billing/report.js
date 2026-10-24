@@ -34,10 +34,19 @@ export function answerBillingQuestion(report, question) {
   }
   const months = 'january february march april may june july august september october november december'.split(' ');
   const requestedMonth = months.findIndex(name => new RegExp(`\\b${name}\\b`).test(q.replace(/\bmay\s+(?:i|we|you)\b/g, '')));
-  if (requestedMonth >= 0 && /cost|spend|spent|paid|bill|total/.test(q)) {
+  if (requestedMonth >= 0 && /cost|spend|spent|paid|bill|total|tax/.test(q) && !/why|chang|increase|decrease|compar|movement/.test(q)) {
     const year = q.match(/\b(?:19|20|21)\d{2}\b/)?.[0];
     const selected = [report.current, report.previous].filter(Boolean).find(period => Number(period.start.slice(5, 7)) === requestedMonth + 1 && period.start.slice(0, 7) === endInclusive(period).slice(0, 7) && (!year || period.start.startsWith(year)));
-    return selected ? `The supplied records for ${periodLabel(selected)} total ${cost(selected.net)} net. This is the uploaded coverage, not proof of every charge for that month.` : `These uploads do not provide a separate total for that month. Current records cover ${periodLabel(report.current)}.${report.previous ? ` Earlier records cover ${periodLabel(report.previous)}.` : ''} I cannot split a multi-month total or fill in an unprovided month.`;
+    if (selected) {
+      if (/\btax(?:es)?\b/.test(q) && selected.tax !== undefined) return `The supplied tax rows for ${periodLabel(selected)} total ${cost(selected.tax)} net. This is a lookup of the file’s Tax category, not verification of tax correctness.`;
+      const matches = selected.services.filter(row => row.service.length > 2 && q.includes(row.service.toLowerCase()));
+      const service = matches.find(row => q.includes(row.provider.toLowerCase())) || (matches.length === 1 ? matches[0] : null);
+      if (service) return `${service.service} (${service.provider}) has ${cost(service.net)} net cost in the supplied records for ${periodLabel(selected)}. This is the uploaded coverage, not proof of every charge for that month.`;
+      if (matches.length > 1) return `That service appears in multiple provider groups. Include the provider or review the separate service rows for ${periodLabel(selected)}.`;
+      if (/\btax(?:es)?\b/.test(q)) return 'These records do not supply a separately identified Tax total for that month. Check the source bill; no tax amount is inferred.';
+      return `The supplied records for ${periodLabel(selected)} total ${cost(selected.net)} net. This is the uploaded coverage, not proof of every charge for that month.`;
+    }
+    return `These uploads do not provide a separate total for that month. Current records cover ${periodLabel(report.current)}.${report.previous ? ` Earlier records cover ${periodLabel(report.previous)}.` : ''} I cannot split a multi-month total or fill in an unprovided month.`;
   }
   if (/\btax(?:es)?\b/.test(q) && report.current.tax !== undefined) return `The supplied tax rows total ${cost(report.current.tax)} net. This uses the file’s explicit Tax category, including signed adjustments. It does not verify the tax rate, liability or correctness.`;
   const matches = report.current.services.filter((row) => row.service.length > 2 && q.includes(row.service.toLowerCase()));
