@@ -157,3 +157,13 @@ printable report, while records/evidence retain exact amounts and exclusive
 timestamps. An open personal bill adds the browser's standard leave/reload
 warning; clearing data removes it. Physical print/Safari/real-device checks and
 current customer provider exports remain separate unverified acceptance work.
+
+## Independent recheck follow-up (October 24)
+
+The simple template rejects explicit summary labels including Invoice total, Total charges, Totals, Total due and Total (USD). They must not become a second charge. A Credit card processing fee is still a real positive charge. Single-comma amounts such as 1,500 remain ambiguous; a valid multi-group amount such as 1,500,000 is unambiguous.
+
+Google Invoice month headers accept YYYY-MM and English Month YYYY. An unknown header format leaves the decision with the visitor's explicit month confirmation and produces a warning. A recognized conflicting month still stops. Explicit Google/FOCUS Tax categories retain their exact signed tax metric. It is an amount lookup, not tax validation.
+
+Late rows wholly outside their supplied billing window stay in bill totals and downloads. They are kept out of the current window's daily observations and noted separately. Missing in-window dates, partial days and negative daily totals still cannot become spike evidence. The displayed checked-series count excludes histories too short to run the detector.
+
+Lumen answers supplied-month, tax-amount and invoice-gap questions from this report, while future-cost and correctness limits stay explicit. Header mismatches show their source-owned difference and are also marked next to the headline. The printable HTML places the headline and bill checks together and has compact A4/Letter print styling. The mobile Lumen action sits in the header instead of covering report text.
