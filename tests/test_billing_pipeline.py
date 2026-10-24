@@ -26,8 +26,18 @@ def supplied(body, header='Date,Service,Cost,Currency,Provider,RecordId'):
     return [{'name':'invented.csv','text':header+'\n'+body}]
 
 class BillingPipelineTests(unittest.TestCase):
+    def test_provider_published_azure_prefix_reconciles_exactly_and_keeps_source(self):
+        raw=gzip.decompress((ROOT/'tests/fixtures/provider-inputs/microsoft-ea-focus-1000.csv.gz').read_bytes())
+        result=run_billing_pipeline(dict(**IDENTITY,current=[{'name':'azure.csv.gz','text':raw.decode()}]))
+        view=result['presentation']['current']
+        self.assertEqual((view['net'],view['charges'],view['credits']),('83.346183636400141','111.458936152662569','-28.112752516262428'))
+        self.assertEqual(len(view['rows']),1000)
+        self.assertEqual(view['rows'][0]['start'],'2024-06-12T00:00:00.000Z')
+        source=loads_exact(result['files']['finops-lite.json'])
+        self.assertEqual(source['inputs'][0]['content_sha256'],'5766878f44ac4a143a6c45c401ab2bd736876ca2ff70a290a82d25dd2344d6ed')
+
     def test_google_invoice_rows_keep_exact_money_context_and_validated_source_chain(self):
-        raw=(ROOT/'tests/fixtures/provider-inputs/google-cost-table.csv').read_text()
+        raw=(ROOT/'tests/fixtures/provider-inputs/google-cost-table-document.csv').read_bytes().decode()
         payload=dict(**IDENTITY,current=[{'name':'google.csv','text':raw}],options={'current':{'googleCostTable':{'month':'2026-09','currency':'USD','confirmed':True}}})
         result=run_billing_pipeline(payload)
         view=result['presentation']['current']

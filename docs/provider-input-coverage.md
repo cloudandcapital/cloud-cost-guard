@@ -8,8 +8,8 @@ remain in place. No private bill was used in these checks.
 | Provider / layout | Input path | Evidence and limit |
 | --- | --- | --- |
 | AWS FOCUS CSV / Gzip CSV | Selected stable FOCUS columns; all parts of one export run | Historical public mixed-provider FOCUS input and exact pipeline/browser tests pass. Current native AWS downloads and complete 1.2 conformance are not certified. Native CUR and Cost Explorer pivots remain separate formats. |
-| Azure FOCUS CSV / Gzip CSV | Selected stable FOCUS columns | Historical Microsoft Toolkit sample rows and exact pipeline/browser tests pass. Current native customer downloads and arbitrary Azure usage schemas still need their own checks. |
-| Google Cloud Cost table, English, flat/no grouping | Recognized CSV columns plus explicit invoice month and currency | Invented documented-layout fixture exercises usage, separate credits, tax, adjustment, rounding and a Total control. Exact net USD 108.830007, six counted rows from seven input rows. This is contract evidence, not a captured customer export. |
+| Azure FOCUS CSV / Gzip CSV | Selected stable FOCUS columns | The unchanged first 1,000 records of Microsoft's published EA FOCUS 1.0 demo file retain all 96 columns and exact net USD 83.346183636400141. Valid minute-precision UTC boundaries are supported. This 2024 demo prefix is format evidence, not a current customer download or FOCUS 1.2 certification. |
+| Google Cloud Cost table, English, flat/no grouping | Recognized CSV columns and optional document headers, plus explicit invoice month and currency | Invented documented-layout fixtures exercise usage, separate credits, tax, adjustment, rounding, a Total control and invoice/statement metadata before the charge table. Exact net USD 108.830007, six counted charge rows from seven table rows. These are contract checks, not a captured customer export. |
 | Google Cloud FOCUS scalar CSV | Same supported FOCUS columns | Explicit UTC suffix and microsecond boundaries are tested, including an unassigned tax row. Arbitrary nested BigQuery exports are not automatically converted. |
 | Simple billing CSV | Date, Service, Cost, Currency | Existing exact signed costs, comparisons, source evidence and downloads remain tested. A template pass does not certify a provider-native layout. |
 
@@ -24,11 +24,20 @@ Month/currency context and the hash of the unchanged source remain in canonical
 evidence; downloads contain normalized records, not every original CSV column.
 No daily observations are invented from an invoice-month summary.
 
-FinOps Lite PR21 merged as `9a3faacdfe6040c6e569e875f7a3da581819db81`.
+The current provider-documentation pass found and repaired two additional
+boundaries: Microsoft's published CSV uses explicit UTC timestamps without
+seconds; Google's Cost table download can include invoice/statement header lines
+before its columns. Up to 32 recognized key-value metadata rows are read
+separately, with original line numbers and full CSV hashes preserved. Unknown
+preceding rows stop the file. Clear document currencies must match confirmation;
+invoice dates and header totals never replace charge rows or the selected month.
+
+FinOps Lite PR23 merged as `4a4764694aa48f4871973c698a239a36a5497190`.
 Producer checks passed on Python 3.10, 3.11 and 3.12, including required quality,
-dependency audit and package smoke checks. Local source tests: 118 passed, one
-existing release skip. Guard interface/reader tests: 183 passed; pipeline
-integration: 14 passed; native/WebAssembly parity includes the new Google path.
+dependency audit and package smoke checks. Local source tests: 130 passed, one
+existing release skip. Guard interface/reader tests: 187 passed; pipeline
+integration: 15 passed; native/WebAssembly parity: seven passed, including the
+provider-published Microsoft prefix and Google document-header fixture.
 Final browser/release evidence is recorded with the app pull request.
 
 ## Provider documentation

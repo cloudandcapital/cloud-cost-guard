@@ -3,7 +3,7 @@
   "sources": [
     {
       "repository": "https://github.com/cloudandcapital/finops-lite",
-      "revision": "9a3faacdfe6040c6e569e875f7a3da581819db81",
+      "revision": "4a4764694aa48f4871973c698a239a36a5497190",
       "uncommitted": false,
       "files": {
         "finops_lite/__init__.py": {
@@ -20,7 +20,7 @@
         },
         "finops_lite/billing.py": {
           "path": "finops_lite/billing.py",
-          "sha256": "511f42cee3fa847f6366eb9597e768a7952c55872a89e6c6b452788247672005"
+          "sha256": "a2746b0165ca293002ee742b430ff9976196489f39271ff5c5e15ace17ce4fe4"
         },
         "finops_lite/billing_currencies.json": {
           "path": "finops_lite/billing_currencies.json",

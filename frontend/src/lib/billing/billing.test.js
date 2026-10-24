@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
+import { gunzipSync } from 'zlib';
 import { TextEncoder, TextDecoder } from 'util';
 import { decimalUnits, decimalString, normalizeCsv, parseCsv, readBillingFiles } from './csv';
 import { answerBillingQuestion, money, periodLabel } from './report';
@@ -16,6 +17,56 @@ const current = () => [fixture('current')];
 const previous = () => [fixture('previous')];
 
 describe('browser billing CSV ingestion', () => {
+  test('published Microsoft EA records retain exact costs and explicit minute-precision UTC', () => {
+    const raw = gunzipSync(fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/microsoft-ea-focus-1000.csv.gz')));
+    expect(createHash('sha256').update(raw).digest('hex')).toBe('5766878f44ac4a143a6c45c401ab2bd736876ca2ff70a290a82d25dd2344d6ed');
+    const file = normalizeCsv(raw.toString('utf8'), 'azure.csv.gz');
+    expect(file.rows).toHaveLength(1000);
+    expect(new Set(file.rows.map(row => row.start))).toEqual(new Set(['2024-06-12T00:00:00.000Z']));
+    expect(decimalString(file.rows.reduce((sum, row) => sum + decimalUnits(row.cost), 0n))).toBe('83.346183636400141');
+    expect(file.text).toBe(raw.toString('utf8'));
+  });
+  test('Google document metadata stays separate and the original CSV hash covers it', () => {
+    const raw = fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/google-cost-table-document.csv'), 'utf8');
+    let confirmation;
+    try { normalizeCsv(raw); } catch (error) { confirmation = error; }
+    expect(confirmation.code).toBe('GOOGLE_COST_TABLE_REQUIRED');
+    expect(confirmation.details.currency).toBe('USD');
+    expect(confirmation.details.month).toBe('');
+    const details = { month: '2026-09', currency: 'USD', confirmed: true };
+    const file = normalizeCsv(raw, 'google.csv', { googleCostTable: details });
+    expect(file.rows).toHaveLength(6);
+    expect(file.inputRowCount).toBe(7);
+    expect(file.rows[0].line).toBe(7);
+    const report = buildBillingReport([file], [], { current: { googleCostTable: details } });
+    expect(report.current.net).toBe('108.830007');
+    expect(report.current.start).toBe('2026-09-01');
+    const source = JSON.parse(report.pipeline.artifacts['finops-lite.json']).inputs[0];
+    expect(source.content_sha256).toBe(createHash('sha256').update(raw).digest('hex'));
+    expect(source.mapping_notes.join(' ')).toContain('4 invoice/statement header rows');
+    expect(() => normalizeCsv(raw, 'google.csv', { googleCostTable: { ...details, currency: 'EUR' } })).toThrow(/document header/);
+  });
+  test('Google header scanning cannot skip unknown charge rows or conflicting currency metadata', () => {
+    const raw = fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/google-cost-table.csv'), 'utf8');
+    const details = { month: '2026-09', currency: 'USD', confirmed: true };
+    for (const prefix of ['Invoice number,INVENTED\nUnknown charge,123\n', 'Invoice number,INVENTED\n2026-09-01,Compute,123,USD\n', 'Invoice number,INVENTED\n'.repeat(33), 'Currency,USD\nCurrency,EUR\n']) {
+      expect(() => normalizeCsv(prefix + raw, 'google.csv', { googleCostTable: details })).toThrow(/Unrecognized|conflicting/);
+    }
+    expect(() => normalizeCsv('Invoice number,INVENTED\nInvoice date,2026-10-02')).toThrow(/Invoice information alone/);
+  });
+  test('minute-precision UTC stays explicit and timezone-less minutes still require confirmation', () => {
+    const header = 'ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency\n';
+    for (const suffix of ['Z', '+00:00', ' UTC']) {
+      const file = normalizeCsv(header + `2026-09-01T13:02${suffix},2026-09-01T13:03${suffix},Compute,1,USD`);
+      expect(file.rows[0].start).toBe('2026-09-01T13:02:00.000Z');
+    }
+    const bare = header + '2026-09-01T13:02,2026-09-01T13:03,Compute,1,USD';
+    expect(() => normalizeCsv(bare)).toThrow(/no timezone/);
+    expect(normalizeCsv(bare, 'focus.csv', { timestampBasis: 'UTC' }).rows[0].start).toBe('2026-09-01T13:02:00.000Z');
+    for (const start of ['2026-09-01T13:02-07:00', '2026-09-01T13:99Z', '2026-09-01T24:00Z']) {
+      expect(() => normalizeCsv(header + `${start},2026-09-02T00:00Z,Compute,1,USD`)).toThrow(/UTC timestamp|invalid time/);
+    }
+  });
   test('Google Cost table requires explicit context and keeps credits, tax and the source total separate', () => {
     const raw = fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/google-cost-table.csv'), 'utf8');
     expect(() => normalizeCsv(raw)).toThrow(/Confirm its invoice month/);
