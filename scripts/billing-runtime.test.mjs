@@ -25,6 +25,21 @@ function run(payload) {
 const fixture = name => ({ name: name+'.csv', text: fs.readFileSync(path.join(root,'frontend/public/billing',name+'-example.csv'),'utf8') });
 const identity = {run_id:'7e5f2340-60aa-46e6-a7dd-66ed33854d03',generated_at:'2026-10-20T00:00:00Z'};
 
+test('earlier corrections retain exact totals without suppressing in-window spike evidence', () => {
+  const header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,BillingPeriodStart,BillingPeriodEnd,ChargeClass\n';
+  const rows=Array.from({length:30},(_,i)=>{const start=new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10);const end=new Date(Date.UTC(2026,8,i+2)).toISOString().slice(0,10);return `${start},${end},EC2,${i===24?250:100},USD,2026-09-01,2026-10-01,Usage`;});
+  rows.push('2026-08-20,2026-08-21,EC2,-10,USD,2026-09-01,2026-10-01,Correction');
+  const payload={...identity,current:[{name:'correction.csv',text:header+rows.join('\n')}]};
+  const browser=run(payload);
+  const native=JSON.parse(execFileSync('python',[path.join(root,'scripts/run_billing_pipeline.py')],{input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser,native);
+  assert.equal(browser.presentation.current.net,'3140');
+  assert.equal(browser.presentation.current.rows.length,31);
+  assert.equal(browser.presentation.pipeline.watchdog.series_evaluated,1);
+  assert.equal(browser.presentation.pipeline.watchdog.anomalies_detected,1);
+  assert.ok(browser.presentation.current.warnings.some(note=>note.includes('1 record is wholly outside')));
+});
+
 test('browser Python runs the actual pipeline and exactly matches native artifacts', () => {
   const payload = {...identity, current:[fixture('current')], previous:[fixture('previous')]};
   const browser = run(payload);

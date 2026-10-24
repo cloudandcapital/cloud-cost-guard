@@ -3,6 +3,13 @@
 export const money = (value, currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 export const endInclusive = (period) => new Date(Date.parse(`${period.end}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
 export const periodLabel = (period) => `${period.start} to ${endInclusive(period)} · ${period.days} ${period.days === 1 ? 'day' : 'days'} · UTC`;
+export const invoiceCheckGap = (check, currency) => check.difference == null ? '' : `Rows are ${money(check.difference.replace(/^-/, ''), currency)} ${check.difference.startsWith('-') ? 'below' : 'above'} this supplied total.`;
+function invoiceCheckAnswer(report) {
+  return [['Current upload', report.current], ...(report.previous ? [['Earlier upload', report.previous]] : [])].map(([label, period]) => {
+    if (!period.invoiceChecks?.length) return `${label}: no provider control total was supplied. Compare ${money(period.net, report.currency)} with the original bill and include every export part.`;
+    return `${label}: ` + period.invoiceChecks.map(check => `${check.source}, ${check.kind}: ${check.status === 'matched' ? `matches the counted rows at ${money(check.actual, report.currency)} (two-decimal comparison)` : check.status === 'different' ? `counted rows ${money(check.actual, report.currency)}, supplied total ${money(check.expected, report.currency)}. ${invoiceCheckGap(check, report.currency)} Check filters, other invoices and credit/debit memos; the file does not establish the cause` : 'the supplied total could not be read, so compare it with the original bill'}.`).join(' ');
+  }).join('\n\n') + '\n\nThese checks do not verify complete account coverage, tax correctness or contract rates.';
+}
 // The dashboard's unavailable sections and local Lumen share these boundaries.
 export const BILLING_EVIDENCE_LIMITS = {
   kubernetes: { title: 'Kubernetes cost and utilization', text: 'Your cloud bill can include compute charges, but it does not allocate them to clusters, namespaces or workloads, or show utilization. Workload allocation and usage data are needed for this section.' },
@@ -14,7 +21,8 @@ export function answerBillingQuestion(report, question) {
   const q = question.trim().toLowerCase();
   const cost = (value) => money(value, report.currency);
   const dailyAverage = () => `The supplied net cost averages ${cost(report.current.dailyAverage)} per reporting day over ${report.current.days} days.${report.previous ? ` The earlier upload averages ${cost(report.previous.dailyAverage)} over ${report.previous.days} days.` : ''} This is period total divided by reporting days, not measured daily usage. Check coverage before using it.`;
-  if (/forecast|predict|next month|annualiz|saving|waste|utilization|roi|profit|run.?rate|will\b.*\bcost|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\b.*\b(?:cost|spend)\b/.test(q)) return `This upload does not establish forecasts, savings, waste, utilization, or business value. ${dailyAverage()} I cannot tell what a future month will cost.`;
+  if (/forecast|predict|next month|future|annualiz|saving|waste|utilization|roi|profit|run.?rate|will\b.*\b(?:cost|spend)|\bexpect\b.*\b(?:cost|spend)/.test(q)) return `This upload does not establish forecasts, savings, waste, utilization, or business value. ${dailyAverage()} I cannot tell what a future month will cost.`;
+  if (/\b(?:invoice|statement|bill|control)\b/.test(q) && /\btotal|match|reconcil|differ|gap|check/.test(q)) return invoiceCheckAnswer(report);
   if (/\b(?:correct|right|accurate|accuracy|verify|verified|valid|reconcil|match)\b/.test(q)) return `I can check the supplied arithmetic and the provider control totals listed in “Does this match your bill?” I cannot verify tax correctness, contract rates, credit eligibility or complete invoice coverage from these rows. Check those against your original bill and agreement.`;
   if (/daily average|per day|per reporting day|daily (?:cost|rate|spend)/.test(q)) return dailyAverage();
   if (/delete|cancel|resize|terminate|shut down/.test(q)) return 'I can help you review these billing records. I cannot access or change your cloud account.';
@@ -24,6 +32,14 @@ export function answerBillingQuestion(report, question) {
     const findings = report.findings.filter(finding => finding.producer === 'finops-watchdog');
     return `${findings.map(finding => finding.text).join('\n\n')}${findings.length ? '\n\n' : ''}Watchdog evaluated ${diagnostic.series_evaluated} eligible daily series and produced ${diagnostic.anomalies_detected} anomaly findings. ${diagnostic.insufficient_history_series.length} series need more history; ${diagnostic.excluded_daily_series.length} lack suitable daily evidence. Missing days and monthly charges are not filled in. No finding is not proof that all costs are normal. This is not a savings or root-cause conclusion.`;
   }
+  const months = 'january february march april may june july august september october november december'.split(' ');
+  const requestedMonth = months.findIndex(name => new RegExp(`\\b${name}\\b`).test(q.replace(/\bmay\s+(?:i|we|you)\b/g, '')));
+  if (requestedMonth >= 0 && /cost|spend|spent|paid|bill|total/.test(q)) {
+    const year = q.match(/\b(?:19|20|21)\d{2}\b/)?.[0];
+    const selected = [report.current, report.previous].filter(Boolean).find(period => Number(period.start.slice(5, 7)) === requestedMonth + 1 && period.start.slice(0, 7) === endInclusive(period).slice(0, 7) && (!year || period.start.startsWith(year)));
+    return selected ? `The supplied records for ${periodLabel(selected)} total ${cost(selected.net)} net. This is the uploaded coverage, not proof of every charge for that month.` : `These uploads do not provide a separate total for that month. Current records cover ${periodLabel(report.current)}.${report.previous ? ` Earlier records cover ${periodLabel(report.previous)}.` : ''} I cannot split a multi-month total or fill in an unprovided month.`;
+  }
+  if (/\btax(?:es)?\b/.test(q) && report.current.tax !== undefined) return `The supplied tax rows total ${cost(report.current.tax)} net. This uses the file’s explicit Tax category, including signed adjustments. It does not verify the tax rate, liability or correctness.`;
   const matches = report.current.services.filter((row) => row.service.length > 2 && q.includes(row.service.toLowerCase()));
   const service = matches.find(row => q.includes(row.provider.toLowerCase())) || (matches.length === 1 ? matches[0] : null);
   if (matches.length > 1 && !service) return `That service appears in more than one provider group: ${matches.map(row => `${row.service} (${row.provider})`).join(', ')}. Include the provider in your question, or review the separate rows in Services.`;

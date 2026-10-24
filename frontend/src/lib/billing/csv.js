@@ -8,12 +8,12 @@ const DAY = 86400000;
 const MAX_GOOGLE_DOCUMENT_ROWS = 32;
 const GOOGLE_DOCUMENT_FIELDS = new Set('invoice number|invoice date|invoice total|invoice total amount|total amount due|due date|payment due date|payment terms|statement number|statement date|statement total|total new activity|statement total new activity|billing account id|billing account name|currency|currency code|invoice currency|statement currency|exchange rate|currency exchange rate|publisher type|invoice month|billing period'.split('|'));
 const GOOGLE_CURRENCY_FIELDS = new Set(['currency', 'currency code', 'invoice currency', 'statement currency']);
-const SYMBOL_CURRENCIES = { '€': ['EUR'], '£': ['GBP'], '$': 'USD CAD AUD NZD SGD HKD TWD BBD BMD BSD BZD FJD GYD JMD KYD LRD NAD SBD SRD TTD XCD ZWL MXN ARS CLP COP UYU DOP CUP CUC PHP BND'.split(' ') };
+const SYMBOL_CURRENCIES = { '€': ['EUR'], '£': ['GBP'], '¥': ['JPY', 'CNY'], '￥': ['JPY', 'CNY'], '₹': ['INR'], '₩': ['KRW'], '$': 'USD CAD AUD NZD SGD HKD TWD BBD BMD BSD BZD FJD GYD JMD KYD LRD NAD SBD SRD TTD XCD ZWL MXN ARS CLP COP UYU DOP CUP CUC PHP BND'.split(' ') };
 const fail = (message, code) => { const error = new Error(message); if (code) error.code = code; throw error; };
 
 export function decimalUnits(value) {
   const text = String(value).trim();
-  if (text.includes(',') && !text.includes('.')) fail('Cost is ambiguous: a comma alone could mean a decimal or thousands separator. Use 1500 for one thousand five hundred, or 1.50 for one and a half.');
+  if (text.includes(',') && !text.includes('.') && !/^[+-]?\d{1,3}(?:,\d{3}){2,}$/.test(text)) fail('Cost is ambiguous: a comma alone could mean a decimal or thousands separator. Use 1500 for one thousand five hundred, or 1.50 for one and a half.');
   if (!/^[+-]?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,18})?$/.test(text)) {
     fail('Cost must be a signed number with up to 18 decimal places, such as 12.50 or -2.50. Leave out currency symbols and scientific notation.');
   }
@@ -122,6 +122,15 @@ export function googleCostColumn(headers) {
   return { cost: found['unrounded cost'] || found.cost, rounded: found.cost };
 }
 
+function invoiceMonthValue(value) {
+  const text = value.trim();
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(text)) return text;
+  const names = 'january february march april may june july august september october november december'.split(' ');
+  const match = text.match(/^([a-z]+)\s+(\d{4})$/i);
+  const index = match ? names.indexOf(match[1].toLowerCase()) : -1;
+  return index < 0 ? null : `${match[2]}-${String(index + 1).padStart(2, '0')}`;
+}
+
 function billingHeader(parsed) {
   const normalized = row => row.cells.map(value => value.trim().toLowerCase());
   const isGoogle = headers => headers.includes('service description') && headers.includes('cost type');
@@ -140,13 +149,12 @@ function billingHeader(parsed) {
     if (index >= MAX_GOOGLE_DOCUMENT_ROWS || !GOOGLE_DOCUMENT_FIELDS.has(label) || cells.slice(2).some(value => value.trim())) fail('Unrecognized information before the Google Cost table. Use its English CSV with Service description, Cost type and Unrounded cost. No billing rows were skipped.');
     const currency = (cells[1] || '').trim().toUpperCase();
     if (GOOGLE_CURRENCY_FIELDS.has(label) && knownCurrencies.has(currency)) currencies.add(currency);
-    if (label === 'invoice month') months.add((cells[1] || '').trim());
+    if (label === 'invoice month') { const value = invoiceMonthValue(cells[1] || ''); if (value) months.add(value); }
   }
   if (index === parsed.length) fail('Invoice information alone is not a Cost table. Include Service description, Cost type and Unrounded cost in the Google CSV.');
   if (currencies.size > 1) fail('Google document headers contain conflicting currencies.');
   if (months.size > 1) fail('Google document headers contain conflicting invoice months.');
   const month = [...months][0] || null;
-  if (month && !/^\d{4}-\d{2}$/.test(month)) fail('The Google Invoice month header needs YYYY-MM. Check it against the invoice.');
   return { parsed: parsed.slice(index), documentCurrency: [...currencies][0] || null, documentMonth: month };
 }
 
@@ -233,13 +241,13 @@ export function normalizeCsv(text, filename = 'billing.csv', { timestampBasis, g
       const service = get(fields.service) || (focus ? `${get('chargecategory') || 'Charge'} · service not supplied` : '');
       if (!service) fail('Service is empty. Give each record a service name, including tax or account-level adjustments.');
       if (service.length > 200) fail('Service names must be 200 characters or fewer.');
-      if (!focus && /^(?:(?:grand\s+|sub\s*|net\s+)?total(?:\s+costs?)?|amount\s+due|balance\s+due):?$/i.test(service)) fail(`${service} looks like a total line. Remove it so it is not counted twice; keep the individual charges, taxes and negative credits.`);
+      if (!focus && /^(?:(?:(?:grand|net|invoice|statement|final)\s+|sub\s*)?totals?(?:\s+(?:costs?|charges?|amount(?:\s+due)?|due|payable))?|(?:amount|balance)\s+due)$/i.test(service.trim().replace(/:\s*$/, '').replace(/\s*\((?:[a-z]{3}|[$€£¥￥₹₩])\)\s*$/i, '').trim().replace(/:$/, ''))) fail(`${service} looks like a total line. Remove it so it is not counted twice; keep the individual charges, taxes and negative credits.`);
       const provider = get(fields.provider) || 'Not specified';
       if (provider.length > 200) fail('Provider names must be 200 characters or fewer.');
       const currency = get(fields.currency).toUpperCase();
       if (!knownCurrencies.has(currency)) fail('Currency needs a supported three-letter code such as USD, EUR, or GBP. Currency symbols are ambiguous.');
       const cost = decimalString(decimalUnits(get(fields.cost)));
-      if (!focus && decimalUnits(cost) > 0n && /\b(?:credits?|refunds?|discounts?)\b/i.test(service)) fail(`${service} has a positive cost. Check the bill and enter credits, refunds or discounts as negative amounts; their sign is never guessed.`);
+      if (!focus && decimalUnits(cost) > 0n && /\b(?:credits?|refunds?|discounts?)\b/i.test(service) && !/^credit[ -]card\s+(?:(?:processing|transaction|merchant)\s+)?fees?$/i.test(service)) fail(`${service} has a positive cost. Check the bill and enter credits, refunds or discounts as negative amounts; their sign is never guessed.`);
       if (get('chargecategory').toLowerCase() === 'credit' && decimalUnits(cost) > 0n) fail('This credit has a positive cost. Enter credits as negative amounts; the tool will not guess their sign.');
       const start = focus ? boundary(get(fields.date), 'ChargePeriodStart', timestampBasis) : `${day(get(fields.date), 'Date')}T00:00:00.000Z`;
       if (focus && !get(fields.end)) fail('ChargePeriodEnd is empty. Supply the exclusive end date; the tool will not assume the charge lasted one day.');
