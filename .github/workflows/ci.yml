@@ -99,6 +99,7 @@ jobs:
             frontend/test-results/**/google-*.png
             frontend/test-results/**/azure-*.png
             frontend/test-results/**/audit-*.png
+            frontend/test-results/**/audit-*.pdf
 
   backend:
     runs-on: ubuntu-latest

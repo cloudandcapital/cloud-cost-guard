@@ -61,6 +61,16 @@ test('Google Count once cannot break its control and header difference stays vis
   expect(html).toContain('A total needs your attention');
   expect(html).toContain('$5,000.00');
   expect(download.suggestedFilename()).toContain('2026-09-01-to-2026-09-30');
+  if (info.project.name === 'desktop-1440x1000') {
+    const printPage = await page.context().newPage();
+    await printPage.setContent(html);
+    await printPage.emulateMedia({ media: 'print' });
+    await expect(printPage.getByRole('heading', { name: 'Your cloud billing review', exact: true })).toBeVisible();
+    await expect(printPage.locator('body')).toContainText('A total needs your attention');
+    const pdf = await printPage.pdf({ path: info.outputPath('audit-printed-google-review.pdf'), format: 'A4', printBackground: true, margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' } });
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    await printPage.close();
+  }
 });
 
 test('template total lines stop while monthly totals need an explicit date choice', async ({ page }, info) => {
