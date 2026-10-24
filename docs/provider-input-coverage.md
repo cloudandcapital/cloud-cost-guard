@@ -32,10 +32,11 @@ separately, with original line numbers and full CSV hashes preserved. Unknown
 preceding rows stop the file. Clear document currencies must match confirmation;
 invoice dates and header totals never replace charge rows or the selected month.
 
-FinOps Lite PR23 merged as `4a4764694aa48f4871973c698a239a36a5497190`.
+FinOps Lite PR24 merged as `8be01c196701fce47f6d09dae18374ab07f6e4bd`,
+preserving existing simple/FOCUS column order after PR23's document-header fix.
 Producer checks passed on Python 3.10, 3.11 and 3.12, including required quality,
-dependency audit and package smoke checks. Local source tests: 130 passed, one
-existing release skip. Guard interface/reader tests: 187 passed; pipeline
+dependency audit and package smoke checks. Local source tests: 131 passed, one
+existing release skip. Guard interface/reader tests: 188 passed; pipeline
 integration: 15 passed; native/WebAssembly parity: seven passed, including the
 provider-published Microsoft prefix and Google document-header fixture.
 Final browser/release evidence is recorded with the app pull request.

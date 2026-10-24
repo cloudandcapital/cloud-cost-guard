@@ -17,6 +17,11 @@ const current = () => [fixture('current')];
 const previous = () => [fixture('previous')];
 
 describe('browser billing CSV ingestion', () => {
+  test('existing billing files retain arbitrary column order and invoice dimensions', () => {
+    for (const raw of ['Currency,Date,Service,Cost\nUSD,2026-09-01,Compute,12.50', 'Invoice number,Date,Service,Cost,Currency\nINVENTED,2026-09-01,Compute,12.50,USD', 'Currency,ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency\nUSD,2026-09-01T00:00Z,2026-09-02T00:00Z,Compute,12.50,USD']) {
+      expect(normalizeCsv(raw).rows[0].cost).toBe('12.5');
+    }
+  });
   test('published Microsoft EA records retain exact costs and explicit minute-precision UTC', () => {
     const raw = gunzipSync(fs.readFileSync(path.join(__dirname, '../../../../tests/fixtures/provider-inputs/microsoft-ea-focus-1000.csv.gz')));
     expect(createHash('sha256').update(raw).digest('hex')).toBe('5766878f44ac4a143a6c45c401ab2bd736876ca2ff70a290a82d25dd2344d6ed');

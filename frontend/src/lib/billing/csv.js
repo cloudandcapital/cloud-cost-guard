@@ -123,7 +123,9 @@ export function googleCostColumn(headers) {
 function billingHeader(parsed) {
   const normalized = row => row.cells.map(value => value.trim().toLowerCase());
   const isGoogle = headers => headers.includes('service description') && headers.includes('cost type');
-  if (isGoogle(normalized(parsed[0])) || !GOOGLE_DOCUMENT_FIELDS.has(normalized(parsed[0])[0])) return { parsed, documentCurrency: null };
+  const first = normalized(parsed[0]);
+  const isExisting = ['date', 'service', 'cost', 'currency'].every(key => first.includes(key)) || ['chargeperiodstart', 'chargeperiodend', 'servicename', 'billedcost', 'billingcurrency'].every(key => first.includes(key));
+  if (isGoogle(first) || isExisting || !GOOGLE_DOCUMENT_FIELDS.has(first[0])) return { parsed, documentCurrency: null };
   const currencies = new Set();
   let index = 0;
   for (; index < parsed.length && !isGoogle(normalized(parsed[index])); index += 1) {
