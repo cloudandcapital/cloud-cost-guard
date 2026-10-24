@@ -174,11 +174,16 @@ Clear template summaries such as Service total, Monthly total, Total USD and
 Total incl. tax stop before analysis. Vendor-prefixed credit-card fees remain
 charges; a separately named refund or credit still needs its signed amount.
 
-For flat same-window simple CSVs with at least three rows, an unfamiliar row
-matching the combined other counted rows is marked as a possible summary beside
-the headline and in bill checks, local Lumen and the printable report. Every row
-stays included. Real charges can also match; inspect the original bill and remove
-a row only when confirmed as a summary, then upload the corrected file.
+For simple CSVs with at least three counted rows, an unfamiliar summary can be
+flagged even when dates differ. The producer checks the whole file, starting
+calendar-month groups, and an amount before or after a block of at least two
+other rows. It does not solve arbitrary subsets or infer invoice boundaries.
+Matches stay visible beside the headline and in bill checks, local Lumen and
+the printable report. Every row stays included. Real charges can also match;
+inspect the original bill and remove a row only when confirmed as a summary,
+then upload the corrected file. Total tax and Total VAT remain valid tax-charge
+labels; qualified bill totals such as Total incl. tax and Total after credits
+still stop before analysis.
 
 Daily spike findings name the observed day and the service, compare its supplied
 cost with the trailing median, and suggest checking that day with the owner.
@@ -186,3 +191,15 @@ The date and amounts come from Watchdog's existing observed metrics. Forecast
 requests phrased as going to, next quarter/year or an estimate keep the same
 no-forecast boundary. Supplied full months are named naturally without labelling
 partial-month records as complete invoices.
+
+### Service-name and new-spending safety
+
+Valid service names, including Amazon EC2 and Lambda, must produce schema-valid
+finding IDs when a spike is detected. Truncated names trim a trailing separator
+before the existing hash. Zero-baseline findings read as new spending, never a
+drop. Displayed diagnostic amounts use money formatting; the detector, severity
+and existing diagnostic metric rounding are unchanged. Full input precision
+stays in the billing evidence. The native public-name matrix, WebAssembly parity
+and browser cases exercise these boundaries. A polite request such as Will you
+explain my bill uses the supplied report; explicit future estimates and budgets
+retain the no-forecast boundary.

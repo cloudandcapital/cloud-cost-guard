@@ -25,6 +25,39 @@ function run(payload) {
 const fixture = name => ({ name: name+'.csv', text: fs.readFileSync(path.join(root,'frontend/public/billing',name+'-example.csv'),'utf8') });
 const identity = {run_id:'7e5f2340-60aa-46e6-a7dd-66ed33854d03',generated_at:'2026-10-20T00:00:00Z'};
 
+function dailyFocus(service, baseline=100, observed=250) {
+  const header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,ProviderName,BillingPeriodStart,BillingPeriodEnd\n';
+  const rows=Array.from({length:30},(_,i)=>`${new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10)},${new Date(Date.UTC(2026,8,i+2)).toISOString().slice(0,10)},${service},${i===20?observed:baseline},USD,AWS,2026-09-01,2026-10-01`);
+  return {...identity,current:[{name:'daily.csv',text:header+rows.join('\n')}]};
+}
+function nativeAndBrowser(payload) {
+  const browser=run(payload);
+  const native=JSON.parse(execFileSync('python',[path.join(root,'scripts/run_billing_pipeline.py')],{input:JSON.stringify(payload),maxBuffer:32*1024*1024}));
+  assert.deepEqual(browser,native);
+  return browser;
+}
+for (const service of ['Amazon EC2','Amazon Route 53','Lambda']) test(`a spike on ${service} validates natively and in WebAssembly`, () => {
+  const result=nativeAndBrowser(dailyFocus(service));
+  assert.equal(result.presentation.current.net,'3150');
+  const finding=result.presentation.findings.find(item=>item.producer==='finops-watchdog');
+  assert.equal(finding.title,`${service} spending spike on Sep 21, 2026`);
+  assert.ok(finding.text.includes('cost $250.00'));
+});
+test('a zero baseline is new spending across native and WebAssembly outputs', () => {
+  const result=nativeAndBrowser(dailyFocus('S3',0,50));
+  assert.equal(result.presentation.current.net,'50');
+  const finding=result.presentation.findings.find(item=>item.producer==='finops-watchdog');
+  assert.equal(finding.title,'New S3 spending on Sep 21, 2026');
+  assert.ok(finding.text.includes('median was $0.00'));
+});
+test('mixed-date summary warnings retain every amount in native and WebAssembly evidence', () => {
+  const text='Date,EndDate,Service,Cost,Currency\n2026-09-01,2026-10-01,EC2,100,USD\n2026-09-01,2026-10-01,S3,20,USD\n2026-09-30,2026-10-01,Tax,9.60,USD\n2026-09-01,2026-10-01,Amazon Web Services,129.60,USD';
+  const result=nativeAndBrowser({...identity,current:[{name:'bill.csv',text}]});
+  assert.equal(result.presentation.current.net,'259.2');
+  assert.equal(result.presentation.current.rows.length,4);
+  assert.equal(result.presentation.current.potentialSummaryRowCount,1);
+});
+
 test('earlier corrections retain exact totals without suppressing in-window spike evidence', () => {
   const header='ChargePeriodStart,ChargePeriodEnd,ServiceName,BilledCost,BillingCurrency,BillingPeriodStart,BillingPeriodEnd,ChargeClass\n';
   const rows=Array.from({length:30},(_,i)=>{const start=new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10);const end=new Date(Date.UTC(2026,8,i+2)).toISOString().slice(0,10);return `${start},${end},EC2,${i===24?250:100},USD,2026-09-01,2026-10-01,Usage`;});
@@ -39,7 +72,7 @@ test('earlier corrections retain exact totals without suppressing in-window spik
   assert.equal(browser.presentation.pipeline.watchdog.anomalies_detected,1);
   const finding=browser.presentation.findings.find(item=>item.producer==='finops-watchdog');
   assert.equal(finding.title,'EC2 spending spike on Sep 25, 2026');
-  assert.ok(finding.text.includes('cost 250 USD on Sep 25, 2026'));
+  assert.ok(finding.text.includes('cost $250.00 on Sep 25, 2026'));
   assert.ok(browser.presentation.current.warnings.some(note=>note.includes('1 record is wholly outside')));
 });
 

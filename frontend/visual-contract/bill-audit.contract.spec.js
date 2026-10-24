@@ -43,7 +43,7 @@ test('earlier corrections stay in bill totals without hiding an in-period spike'
   await page.getByLabel('Current billing CSV files',{exact:true}).setInputFiles(file(header+rows.join('\n')));
   await review(page);
   await expect(page.getByTestId('billing-net-total')).toHaveText('$3,140.00');
-  await expect(page.locator('.billing-upload-findings')).toContainText('cost 250 USD on Sep 25, 2026');
+  await expect(page.locator('.billing-upload-findings')).toContainText('cost $250.00 on Sep 25, 2026');
   await expect(page.getByText(/Daily spike check:/)).toContainText('1 service series checked');
   await page.screenshot({path:info.outputPath('audit-correction-spike.png'),fullPage:true});
 });
