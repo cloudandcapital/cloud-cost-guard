@@ -11,13 +11,13 @@ global.TextDecoder = TextDecoder;
 const input = rows => 'Date,Service,Cost,Currency\n' + rows.map(([name, amount]) => `2026-09-02,${name},${amount},USD`).join('\n');
 const example = () => nativeBillingReport([normalizeCsv(fs.readFileSync(path.join(__dirname, '../../../public/billing/current-example.csv'), 'utf8'), 'current.csv')]);
 
-test.each(['Service total', 'Total USD', 'Monthly total', 'Total for this invoice', 'Total excluding tax', 'Total incl. tax', 'Monthly service total (EUR)', 'Total including VAT'])(
+test.each(['Service total', 'Total USD', 'Monthly total', 'Total for this invoice', 'Total excluding tax', 'Total incl. tax', 'Monthly service total (EUR)', 'Total including VAT', 'Total after credits'])(
   '%s cannot become a second charge', label => {
     expect(() => normalizeCsv(input([['EC2', '100'], ['S3', '20'], ['Tax', '9.60'], [label, '129.60']]))).toThrow(/looks like a total line/);
   }
 );
 
-test.each(['Stripe credit card fee', 'Credit card fee (Stripe)', 'Stripe credit-card transaction fees', 'Total Recall API', 'Total API'])(
+test.each(['Stripe credit card fee', 'Credit card fee (Stripe)', 'Stripe credit-card transaction fees', 'Total Recall API', 'Total API', 'Total tax', 'Total VAT', 'Total tax amount'])(
   'real charge %s keeps its positive amount', label => {
     const report = nativeBillingReport([normalizeCsv(input([[label, '3']]))]);
     expect(report.current.net).toBe('3');
@@ -46,12 +46,32 @@ test('a legitimate half-total charge is warned about without silently changing t
   expect(summaryRowWarning(report.current)).toContain('Real charges can also match');
 });
 
-test.each(["What's November going to cost?", 'Estimate next quarter’s bill', 'What should I budget for next year?', 'Can you estimate my future cloud spend?'])(
+test.each(["What's November going to cost?", 'Estimate next quarter’s bill', 'What should I budget for next year?', 'Can you estimate my future cloud spend?', 'What will my budget be?', 'What will my bill be?', 'Will you explain what November will cost?'])(
   'future question %s gets an explicit forecast limit', question => {
     expect(answerBillingQuestion(example(), question)).toContain('does not establish forecasts');
     expect(answerBillingQuestion(example(), question)).toContain('cannot tell what a future month will cost');
   }
 );
+
+test.each(['Will you explain my bill?', 'Will you explain my spending?', 'Could you please explain my bill?', 'Will you summarize my costs?'])(
+  'a polite request to explain supplied spending is not a forecast: %s', question => {
+    const answer = answerBillingQuestion(example(), question);
+    expect(answer).toContain('$1,310.13');
+    expect(answer).not.toContain('does not establish forecasts');
+  }
+);
+
+test('different dates keep the possible-total warning in the dashboard, local answers and print', () => {
+  const text = 'Date,EndDate,Service,Cost,Currency\n2026-09-01,2026-10-01,EC2,100,USD\n2026-09-01,2026-10-01,S3,20,USD\n2026-09-30,2026-10-01,Tax,9.60,USD\n2026-09-01,2026-10-01,Amazon Web Services,129.60,USD';
+  const report = nativeBillingReport([normalizeCsv(text, 'mixed-dates.csv')]);
+  expect(report.current.net).toBe('259.2');
+  expect(report.current.rows).toHaveLength(4);
+  expect(report.current.potentialSummaryRowCount).toBe(1);
+  expect(summaryRowWarning(report.current)).toContain('It matches');
+  expect(summaryRowWarning(report.current)).not.toContain('Each matches');
+  expect(answerBillingQuestion(report, 'Does this match my bill?')).toContain('Amazon Web Services');
+  expect(buildBillingExports(report).html.content).toContain('Amazon Web Services');
+});
 
 test('month lookup reads naturally and does not relabel a partial month as a full one', () => {
   const report = example();

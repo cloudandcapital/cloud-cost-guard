@@ -371,7 +371,7 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByTestId('lumen-trigger').click();
     const input = page.getByLabel('Ask Lumen about your uploaded report');
     await input.fill('Did Watchdog find a spike?'); await input.press('Enter');
-    await expect(page.getByTestId('lumen-panel')).toContainText('cost 250 USD on Sep 21, 2026');
+    await expect(page.getByTestId('lumen-panel')).toContainText('cost $250.00 on Sep 21, 2026');
     await expect(page.getByTestId('lumen-panel')).toContainText('not a savings estimate or a proven cause');
     expect(requests).toEqual([]);
     await input.press('Escape');

@@ -115,11 +115,13 @@ function summaryServiceLabel(value) {
   const tokens = value.replace(/[().:_-]/g, ' ').split(/\s+/).filter(Boolean);
   if (tokens.length && (knownCurrencies.has(tokens.at(-1).toUpperCase()) || Object.hasOwn(SYMBOL_CURRENCIES, tokens.at(-1)))) tokens.pop();
   const words = tokens.map(token => token.toLowerCase());
+  const taxWords = new Set('tax taxes vat amount charge charges'.split(' '));
+  if (words[0] === 'total' && words.slice(1).some(word => ['tax', 'taxes', 'vat'].includes(word)) && words.slice(1).every(word => taxWords.has(word))) return false;
   if (['amount due', 'balance due'].includes(words.join(' '))) return true;
   const totals = words.map((word, index) => ['total', 'totals', 'subtotal', 'subtotals'].includes(word) ? index : -1).filter(index => index >= 0);
   if (totals.length !== 1) return false;
   const prefix = new Set('grand net invoice statement final service monthly annual yearly daily period account billing bill sub'.split(' '));
-  const suffix = new Set('cost costs charge charges amount due payable for this the invoice statement bill month period service incl including excl excluding with without tax taxes vat'.split(' '));
+  const suffix = new Set('cost costs charge charges amount due payable for this the invoice statement bill month period service incl including excl excluding with without tax taxes vat after before credit credits adjustments discounts'.split(' '));
   return words.slice(0, totals[0]).every(word => prefix.has(word)) && words.slice(totals[0] + 1).every(word => suffix.has(word));
 }
 
