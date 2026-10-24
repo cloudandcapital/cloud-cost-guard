@@ -21,7 +21,8 @@ test('quick example is the actual local bill review, including daily average and
   await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
   await expect(page.getByRole('region', { name: 'Example data', exact: true })).toContainText('Invented bills');
   await expect(page.locator('.billing-daily-average')).toContainText('$43.67');
-  await expect(page.getByTestId('primary-tabs').getByRole('tab')).toHaveCount(4);
+  if (info.project.name === 'mobile-390x844') await expect(page.getByTestId('mobile-section-select').locator('option')).toHaveCount(4);
+  else await expect(page.getByTestId('primary-tabs').getByRole('tab')).toHaveCount(4);
   await expect(page.getByTestId('billing-bill-checks')).toContainText('No provider control total was supplied');
   await page.screenshot({ path: info.outputPath('audit-sample-bill.png'), fullPage: true });
   await page.getByTestId('executive-summary').screenshot({ path: info.outputPath('audit-bill-summary.png') });
