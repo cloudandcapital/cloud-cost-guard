@@ -65,7 +65,10 @@ describe("canonical CCAC 1.1 exports", () => {
     expect(html).toContain("Presentation unavailable");
     expect(html).not.toMatch(/<script\b/i);
     expect(html).not.toMatch(/<[^>]+\son[a-z]+\s*=/i);
-    expect(html).not.toMatch(/<(?:img|link|iframe|object|embed)\b/i);
+    const logos = html.match(/<img\b[^>]*>/gi) || [];
+    expect(logos).toHaveLength(1);
+    expect(logos[0]).toMatch(/^<img class="brand-wordmark" src="data:image\/png;base64,[A-Za-z0-9+/=]+" alt="Cloud &amp; Capital"/);
+    expect(html.replace(logos[0], "")).not.toMatch(/<(?:img|link|iframe|object|embed)\b/i);
     expect(html).not.toMatch(/(?:href|src)\s*=\s*["']https?:/i);
     expect(html).not.toContain("33479.45");
   });

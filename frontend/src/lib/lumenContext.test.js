@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
 import { buildCanonicalExportFiles } from "./canonicalExport";
+import { brandWordmarkHtml } from "./brandWordmark";
 import { getCcac11PresentationModel } from "./ccac11PresentationModel";
 import { buildCanonicalLumenContext, serializeCanonicalLumenContext } from "./lumenContext";
 
@@ -32,8 +33,12 @@ describe("unified canonical Lumen grounding", () => {
 
   test("HTML export remains approved and JSON authority projection is deterministic", () => {
     const files = buildCanonicalExportFiles();
-    expect(Buffer.byteLength(files.html.content, "utf8")).toBe(26623);
-    expect(sha256(files.html.content)).toBe("408b03ac3ce5a6a981575bf6e2a28a22033577183cafbcd3bdd90550922a428c");
+    // Only the requested brand treatment changes. The report body remains byte-identical.
+    const reportWithoutBrandChange = files.html.content.replace(brandWordmarkHtml, "")
+      .replace('<div class="brand">Cloud+ Cost Guard</div>', '<div class="brand">Cloud &amp; Capital · Cloud+ Cost Guard</div>');
+    expect(files.html.content).toContain(brandWordmarkHtml);
+    expect(Buffer.byteLength(reportWithoutBrandChange, "utf8")).toBe(26623);
+    expect(sha256(reportWithoutBrandChange)).toBe("408b03ac3ce5a6a981575bf6e2a28a22033577183cafbcd3bdd90550922a428c");
     expect(Buffer.byteLength(files.json.content, "utf8")).toBe(113184);
     expect(sha256(files.json.content)).toBe("de21282dec52da9c450b2da00c53ab2148f720cae136f31ccdc1fa57f8db24d0");
     expect(files.json.content).not.toContain("Lumen is not grounded in this report");

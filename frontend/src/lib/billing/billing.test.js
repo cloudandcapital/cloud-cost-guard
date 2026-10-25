@@ -6,6 +6,7 @@ import { TextEncoder, TextDecoder } from 'util';
 import { decimalUnits, decimalString, normalizeCsv, parseCsv, readBillingFiles } from './csv';
 import { answerBillingQuestion, money, periodLabel } from './report';
 import { buildBillingExports } from './export';
+import { brandWordmarkHtml } from '../brandWordmark';
 import { nativeBillingReport as buildBillingReport } from './nativePipelineTestHelper';
 
 global.TextEncoder = TextEncoder;
@@ -293,7 +294,8 @@ describe('report, exports and Lumen share uploaded evidence', () => {
     expect(buildBillingExports(report)).toEqual(files);
     expect(JSON.parse(files.json.content)).toEqual(report);
     expect(files.html.content).toContain('USD 1310.125');
-    expect(files.html.content).not.toMatch(/<script|<iframe|src=|2939|2194|736.77|canonical/i);
+    expect(files.html.content).toContain(brandWordmarkHtml);
+    expect(files.html.content.replace(brandWordmarkHtml, '')).not.toMatch(/<script|<iframe|src=|2939|2194|736.77|canonical/i);
     const roundTrip = buildBillingReport([normalizeCsv(files.current.content)]);
     expect(roundTrip.current.net).toBe(report.current.net);
     expect(roundTrip.current.rows).toHaveLength(7);
