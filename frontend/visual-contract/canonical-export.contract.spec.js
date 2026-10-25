@@ -43,7 +43,10 @@ test.describe("canonical CCAC 1.1 client-side downloads", () => {
     expect(htmlText).toContain("$8,640.00");
     expect(htmlText).toContain("$1,050.00");
     expect(htmlText).not.toMatch(/<script\b/i);
-    expect(htmlText).not.toMatch(/<(?:img|link|iframe|object|embed)\b/i);
+    const logos = htmlText.match(/<img\b[^>]*>/gi) || [];
+    expect(logos).toHaveLength(1);
+    expect(logos[0]).toMatch(/^<img class="brand-wordmark" src="data:image\/png;base64,[A-Za-z0-9+/=]+" alt="Cloud &amp; Capital"/);
+    expect(htmlText.replace(logos[0], "")).not.toMatch(/<(?:img|link|iframe|object|embed)\b/i);
     expect(htmlText).not.toMatch(/(?:href|src)\s*=\s*["']https?:/i);
 
     const evidence = JSON.parse(json.bytes.toString("utf8"));
