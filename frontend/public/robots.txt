@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://guard.cloudandcapital.com/sitemap.xml
