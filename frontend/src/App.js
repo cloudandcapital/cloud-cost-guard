@@ -1,3 +1,4 @@
+import ColorModeToggle from "./components/ColorModeToggle";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import logo from "./assets/cloud-and-capital-icon.png";
@@ -180,6 +181,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
             <div className="leading-tight"><h1 className="brand-title">{report ? "Cloud Cost Guard" : "Cloud+ Cost Guard"}</h1><p className="brand-deck">{report ? <>Your cloud billing dashboard <span>· {report.example ? "Invented example" : "Uploaded data"}</span></> : <>Canonical technology spend decision support <span>· Illustrative</span></>}</p></div>
           </div>
           <div className="header-actions">
+            <ColorModeToggle />
             <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
               <div className="btn-brand-outline rounded-2xl flex items-center justify-center px-2 sm:px-4 h-10 text-xs text-brand-muted"><Calendar className="h-4 w-4 mr-2" />{report ? `${report.current.days}-day bill` : "21-day report"}</div>
               <DropdownMenu>
