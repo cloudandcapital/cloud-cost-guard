@@ -213,7 +213,12 @@ describe('browser billing CSV ingestion', () => {
 describe('report, exports and Lumen share uploaded evidence', () => {
   test('billing pages contain no analytics capture script', () => {
     const html = fs.readFileSync(path.join(__dirname, '../../../public/index.html'), 'utf8');
-    expect(html).not.toMatch(/posthog|<script|analytics/i);
+    expect(html).not.toMatch(/posthog|analytics/i);
+    const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g)];
+    expect(scripts.map(match => match[1])).toEqual(['%PUBLIC_URL%/color-mode-head.js']);
+    expect((html.match(/<script\b/gi) || []).length).toBe(1);
+    const theme = fs.readFileSync(path.join(__dirname, '../../../public/color-mode-head.js'), 'utf8');
+    expect(theme).not.toMatch(/fetch\(|XMLHttpRequest|sendBeacon|posthog|analytics/i);
     expect(html).toContain('no-referrer');
   });
   test('invented current and previous bills reconcile to independently specified exact totals', () => {

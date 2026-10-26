@@ -125,6 +125,19 @@ test.describe('browser-local billing upload experience', () => {
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();
   });
 
+  test('color mode defaults to light and keeps a loaded bill unchanged', async ({ page }) => {
+    await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'light');
+    await page.getByRole('button', { name: 'Switch to dark mode', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'dark');
+    await analyze(page);
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+    await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'dark');
+    await page.getByRole('button', { name: 'Switch to light mode', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-color-mode', 'light');
+    await expect(page.getByTestId('billing-net-total')).toHaveText('$1,310.13');
+    await expect(page.getByTestId('approved-dashboard')).toHaveAttribute('data-source', 'uploaded');
+  });
+
   test('starts with upload instructions, working templates and an optional example', async ({ page }, testInfo) => {
     await expect(page.getByTestId('billing-upload')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Review my bill', exact: true })).toBeDisabled();

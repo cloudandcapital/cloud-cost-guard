@@ -1,0 +1,52 @@
+:root { color-scheme:light; }
+.cc-theme-toggle { flex:0 0 44px; display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; color:var(--brand-ink,#24211E); background:var(--soft-white,#FFFFFF); border:1px solid var(--border-strong,#8B8175); border-radius:50%; cursor:pointer; }
+.cc-theme-toggle svg { width:19px; height:19px; }
+.cc-theme-toggle:hover { background:var(--sage-surface,#DDE3D7); }
+.cc-theme-toggle:focus-visible { outline:3px solid var(--clay-ink,#785752); outline-offset:4px; }
+.cc-theme-toggle[hidden],.cc-theme-toggle [data-theme-sun] { display:none!important; }
+[data-color-mode="dark"] .cc-theme-toggle [data-theme-moon] { display:none!important; }
+[data-color-mode="dark"] .cc-theme-toggle [data-theme-sun] { display:block!important; }
+@media print { .cc-theme-toggle { display:none!important; } }
+@media screen {
+:root[data-color-mode="dark"] {
+color-scheme:dark;
+--theme-ink:#F5EEE9;
+--theme-muted:#C0B8AF;
+--theme-green:#B8CCBD;
+--theme-rose:#E0AFA8;
+--theme-sand:#CDBDA7;
+--theme-blue:#B2CCD8;
+--theme-bg:#211F1D;
+--theme-panel:#2D2A27;
+--theme-soft-panel:#302D29;
+--theme-sage-panel:#38443B;
+--theme-forest-panel:#283D34;
+--theme-rose-panel:#59413F;
+--theme-sand-panel:#3B352E;
+--theme-deep:#191816;
+--theme-line:#514B44;
+--theme-line-strong:#8B8175;
+--theme-rose-line:#A47A73;
+--theme-sage-line:#7E9584;
+--theme-nav-bg:rgba(33,31,29,.96);
+--theme-inverse-ink:#F5EEE9;
+--theme-green-surface:#38443B;
+--theme-rose-surface:#59413F;
+}
+}
+
+.billing-header-tools { display:flex; align-items:center; gap:20px; }
+.header-actions > .cc-theme-toggle { align-self:flex-end; }
+@media screen {
+:root[data-color-mode="dark"] { --brand-ink:#F5EEE9; --brand-muted:#C0B8AF; --brand-line:#514B44; --brand-card:#2D2A27; --brand-bg:#211F1D; --brand-light:#211F1D; --brand-accent:#B8CCBD; --brand-accent-2:#D4AAA5; --brand-accent-3:#CDBDA7; --brand-success:#B8CCBD; --brand-error:#E0AFA8; --soft-white:#2D2A27; --border-strong:#8B8175; --sage-surface:#38443B; --clay-ink:#E0AFA8;
+--background:30 6% 12%; --foreground:25 38% 94%; --card:30 7% 16%; --card-foreground:25 38% 94%; --popover:30 7% 16%; --popover-foreground:25 38% 94%; --primary:133 16% 76%; --primary-foreground:120 8% 13%; --secondary:130 10% 24%; --secondary-foreground:25 38% 94%; --muted:30 7% 19%; --muted-foreground:31 12% 72%; --accent:130 10% 24%; --accent-foreground:25 38% 94%; --border:32 9% 29%; --input:32 9% 42%; --ring:6 33% 75%; }
+:root[data-color-mode="dark"] :is(.billing-primary,.btn-brand-primary,.ask-claude-send,.ask-claude-btn) { background:#B8CCBD; color:#20251F; }
+:root[data-color-mode="dark"] :is(.billing-primary,.btn-brand-primary,.ask-claude-send,.ask-claude-btn):hover:not(:disabled) { background:#CCDCCE; }
+:root[data-color-mode="dark"] .ask-claude-bubble--user { background:#38443B; color:#F5EEE9; }
+:root[data-color-mode="dark"] :is(.recharts-default-tooltip,.recharts-tooltip-wrapper) { background:#2D2A27!important; color:#F5EEE9!important; border-color:#8B8175!important; }
+:root[data-color-mode="dark"] .recharts-cartesian-axis-tick text { fill:#C0B8AF; }
+:root[data-color-mode="dark"] .recharts-cartesian-grid line { stroke:#514B44; }
+:root[data-color-mode="dark"] :is(a,button,input,select,textarea,summary):focus-visible { outline-color:#D4AAA5; }
+:root[data-color-mode="dark"] :is(input,textarea)::placeholder { color:#ADA59A; opacity:1; }
+}
+@media(max-width:639px) { .billing-header-tools { gap:10px; } .billing-header-tools .billing-header-note { display:none; } }
