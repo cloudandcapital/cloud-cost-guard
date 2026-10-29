@@ -37,18 +37,18 @@ async function expectDashboardFonts(page) {
       .map((face) => face.family.replaceAll('"', ""));
     return {
       loadedFaces,
-      interAvailable: document.fonts.check("400 16px Inter"),
-      playfairAvailable: document.fonts.check('700 16px "Playfair Display"'),
+      jostAvailable: document.fonts.check("400 16px Jost"),
+      cormorantAvailable: document.fonts.check('400 16px "Cormorant Garamond"'),
       bodyFamily: getComputedStyle(document.body).fontFamily,
       brandFamily: getComputedStyle(document.querySelector(".brand-title")).fontFamily,
     };
   });
-  expect(fonts.loadedFaces).toContain("Inter");
-  expect(fonts.loadedFaces).toContain("Playfair Display");
-  expect(fonts.interAvailable).toBe(true);
-  expect(fonts.playfairAvailable).toBe(true);
-  expect(fonts.bodyFamily.split(",")[0].trim()).toBe("Inter");
-  expect(fonts.brandFamily.split(",")[0].trim().replaceAll('"', "")).toBe("Playfair Display");
+  expect(fonts.loadedFaces).toContain("Jost");
+  expect(fonts.loadedFaces).toContain("Cormorant Garamond");
+  expect(fonts.jostAvailable).toBe(true);
+  expect(fonts.cormorantAvailable).toBe(true);
+  expect(fonts.bodyFamily.split(",")[0].trim()).toBe("Jost");
+  expect(fonts.brandFamily.split(",")[0].trim().replaceAll('"', "")).toBe("Cormorant Garamond");
 }
 
 async function waitForChartsStable(page) {
@@ -71,7 +71,7 @@ async function waitForChartsStable(page) {
 
 async function openApprovedDashboard(page) {
   await page.goto("/");
-  await page.getByText("What can I upload? Export instructions & CSV format", {exact:true}).click();
+  await page.getByText("What can I upload?", {exact:true}).click();
   await page.getByRole("button", { name: "See the full technology spend demo", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Cloud+ Cost Guard" })).toBeVisible();
   await page.evaluate(async () => {

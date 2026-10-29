@@ -58,7 +58,7 @@ test("optimized production bundle routes uploaded bills into the existing dashbo
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(consoleErrors, []);
   await page.getByTestId("billing-upload").waitFor({ state: "visible" });
-  assert.equal(await page.getByRole('heading', { name: 'Review my cloud bill', exact: true }).count(), 1);
+  assert.equal(await page.getByRole('form', { name: 'Review my cloud bill', exact: true }).count(), 1);
   assert.equal(await page.getByText('Exact canonical value: USD 2939.0525', { exact: true }).count(), 0);
   const dataRequests = [];
   page.on('request', (request) => { if (request.method() !== 'GET' || /api\/ask-claude|anthropic|posthog/.test(request.url())) dataRequests.push(request.url()); });
@@ -99,7 +99,7 @@ test("optimized production bundle routes uploaded bills into the existing dashbo
   assert.match(await page.getByRole('region', { name: 'Example data', exact: true }).innerText(), /Invented bills/);
   assert.equal(await page.getByRole('tab', {name:'Kubernetes',exact:true}).count(),0);
   await page.getByRole('button', { name: 'Review my own cloud bill →', exact: true }).click();
-  await page.getByText('What can I upload? Export instructions & CSV format', {exact:true}).click();
+  await page.getByText('What can I upload?', {exact:true}).click();
   await page.getByRole('button', { name: 'See the full technology spend demo', exact: true }).click();
   await page.getByTestId("approved-dashboard").waitFor({ state: "visible" });
   assert.notEqual(await page.locator("#root").innerHTML(), "");

@@ -178,7 +178,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <img src={logo} alt="Cloud & Capital" className="brand-logo" />
-            <div className="leading-tight"><h1 className="brand-title">{report ? "Cloud Cost Guard" : "Cloud+ Cost Guard"}</h1><p className="brand-deck">{report ? <>Your cloud billing dashboard <span>· {report.example ? "Invented example" : "Uploaded data"}</span></> : <>Canonical technology spend decision support <span>· Illustrative</span></>}</p></div>
+            <div className="leading-tight"><h1 className="brand-title">{report ? "Cloud Cost Guard" : "Cloud+ Cost Guard"}</h1><p className="brand-deck">{report ? "Your cloud billing dashboard" : <>Canonical technology spend decision support <span>· Illustrative</span></>}</p></div>
           </div>
           <div className="header-actions">
             <ColorModeToggle />
@@ -201,7 +201,7 @@ export function Dashboard({ report, onReplace, onClear, onExample }) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6" data-testid={report ? "billing-report" : undefined}>
         <div className="trust-strip" data-testid="capability-disclosure">
-          {report ? <><span className="font-medium">{report.example ? "Invented bills, reviewed through the same steps as your own files." : "Your uploaded bill powers this dashboard. No cloud account credentials needed."}</span><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>{report.example ? "Reset example" : "Clear my data"}</button><button onClick={onExample}>Try an example</button></div></> : <>
+          {report ? <><span>Billing data and Lumen questions stay in this browser. Download a copy before reloading.</span><div className="billing-data-actions"><button onClick={onClear}>{report.example ? "Reset example" : "Clear my data"}</button>{!report.example && <button onClick={onExample}>Try an example</button>}</div></> : <>
           <span className="font-medium">Validated CCAC 1.1 illustrative report. No customer accounts, credentials, or production resources are connected.</span>
           <span>Refresh reloads the tracked canonical view; it does not sync cloud accounts.</span>
           <span>Report generated: {model.identity.generated_at}</span>
