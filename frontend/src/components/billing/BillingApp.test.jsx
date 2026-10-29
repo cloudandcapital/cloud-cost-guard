@@ -20,7 +20,7 @@ global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 global.IS_REACT_ACT_ENVIRONMENT = true;
 const fixture = (name) => fs.readFileSync(path.join(__dirname, `../../../public/billing/${name}-example.csv`), 'utf8');
-const button = (label) => [...document.querySelectorAll('button')].find((element) => element.textContent.trim() === label);
+const button = (label) => [...document.querySelectorAll('button')].find((element) => (element.getAttribute('aria-label') || element.textContent).trim() === label);
 let root, host, sampleSpy;
 async function click(element) { expect(element).toBeTruthy(); await act(async () => { element.click(); }); }
 async function choose(text, kind = 'current', name = 'bill.csv', confirmDaily = true) {

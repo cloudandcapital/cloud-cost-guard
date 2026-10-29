@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowDownToLine, FileText, Info, PieChart as PieIcon } from 'lucide-react';
+import { ArrowDownToLine, ArrowRight, FileText, Info, PieChart as PieIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -103,7 +103,7 @@ function BillingChanges({ report }) {
   return <section aria-labelledby="billing-changes-title">
     <div className="billing-section-heading"><h2 id="billing-changes-title">Largest changes</h2><span>Current minus previous</span></div>
     <p className="billing-section-note">Service groups ordered by the size of their movement. An absent service means no records were supplied; it does not establish that a resource was added or removed.</p>
-    <p className="billing-mobile-table-hint">Swipe across the table to see every comparison →</p>
+    <p className="billing-mobile-table-hint">Swipe across the table to see every <span className="billing-hint-ending">comparison <ArrowRight size={12} className="billing-inline-arrow" aria-hidden="true"/></span></p>
     <div className="billing-table-wrap" role="region" aria-label="Uploaded service comparisons" tabIndex={0}><table className="billing-table"><thead><tr><th>Service / provider</th><th>Previous</th><th>Current</th><th>Change</th><th>Coverage</th></tr></thead>
       <tbody>{comparison.drivers.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((driver) => <tr key={driver.key}><th scope="row">{driver.service}<small>{driver.provider}</small></th><td>{cost(driver.previous)}</td><td>{cost(driver.current)}</td><td>{cost(driver.delta)}</td><td>{driver.coverage}</td></tr>)}</tbody>
       <tfoot><tr><th>Total · {currency}</th><td>{cost(previous.net)}</td><td>{cost(current.net)}</td><td>{cost(comparison.delta)}</td><td>Period totals</td></tr></tfoot>
@@ -118,7 +118,7 @@ export function BillingServices({ report }) {
   const cost = (value) => money(value, currency);
   return <section aria-labelledby="billing-services-title">
     <div className="section-heading"><div><div className="eyebrow">Service breakdown</div><h2 id="billing-services-title">Every service, accounted for</h2><p>{current.rows.length.toLocaleString()} counted records across all supplied providers.</p></div></div>
-    <p className="billing-mobile-table-hint">Swipe across the table to see net costs and shares →</p>
+    <p className="billing-mobile-table-hint">Swipe across the table to see net costs and <span className="billing-hint-ending">shares <ArrowRight size={12} className="billing-inline-arrow" aria-hidden="true"/></span></p>
     <div className="billing-table-wrap" role="region" aria-label="Uploaded service costs" tabIndex={0}><table className="billing-table"><thead><tr><th>Service / provider</th><th>Charges</th><th>Credits / adjustments</th><th>Net cost</th><th>Share of charges</th></tr></thead>
       <tbody>{current.services.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((service) => <tr key={service.key}><th scope="row">{service.service}<small>{service.provider}</small></th><td>{cost(service.charges)}</td><td>{cost(service.credits)}</td><td>{cost(service.net)}</td><td>{service.chargeShare === null ? 'Not applicable' : `${service.chargeShare}%`}</td></tr>)}</tbody>
       <tfoot><tr><th>Total · {currency}</th><td>{cost(current.charges)}</td><td>{cost(current.credits)}</td><td>{cost(current.net)}</td><td>{current.charges === '0' ? 'Not applicable' : '100%'}</td></tr></tfoot>

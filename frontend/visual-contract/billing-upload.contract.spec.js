@@ -145,9 +145,9 @@ test.describe('browser-local billing upload experience', () => {
     const template = await page.request.get('/billing/template.csv');
     expect(template.status()).toBe(200);
     expect(await template.text()).toContain('Date,Service,Cost,Currency');
-    await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
+    await page.getByText('What can I upload?', { exact: true }).click();
     await expect(page.getByText('Get your billing records', { exact: true })).toBeVisible();
-    await page.getByText('What can I upload? Export instructions & CSV format', { exact: true }).click();
+    await page.getByText('What can I upload?', { exact: true }).click();
     if (testInfo.project.name !== 'tablet-768x1024') await expect(page).toHaveScreenshot('billing-upload.png', { fullPage: true });
   });
 
@@ -395,7 +395,7 @@ test.describe('browser-local billing upload experience', () => {
     await page.getByLabel('Current billing CSV files', {exact:true}).setInputFiles(csv('current'));
     await page.getByRole('button', {name:'Review my bill',exact:true}).click();
     await expect.poll(() => page.workers().length).toBe(1);
-    await page.getByText('What can I upload? Export instructions & CSV format', {exact:true}).click();
+    await page.getByText('What can I upload?', {exact:true}).click();
     await page.getByRole('button', {name:'See the full technology spend demo',exact:true}).click();
     await expect.poll(() => page.workers().length).toBe(0);
     await page.getByRole('button', {name:'Review my own cloud bill →',exact:true}).click();
