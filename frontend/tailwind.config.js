@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
   	extend: {
+      fontFamily: {
+        sans: ["Jost", "Arial", "sans-serif"],
+        serif: ["Cormorant Garamond", "Georgia", "serif"],
+      },
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

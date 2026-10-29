@@ -41,6 +41,9 @@ async function expectDashboardFonts(page) {
       cormorantAvailable: document.fonts.check('400 16px "Cormorant Garamond"'),
       bodyFamily: getComputedStyle(document.body).fontFamily,
       brandFamily: getComputedStyle(document.querySelector(".brand-title")).fontFamily,
+      totalFamily: getComputedStyle(document.querySelector(".hero-total")).fontFamily,
+      exactFamily: getComputedStyle(document.querySelector(".exact-value")).fontFamily,
+      displayFamilies: [...document.querySelectorAll(".font-brand-serif")].map((element) => getComputedStyle(element).fontFamily),
     };
   });
   expect(fonts.loadedFaces).toContain("Jost");
@@ -49,24 +52,36 @@ async function expectDashboardFonts(page) {
   expect(fonts.cormorantAvailable).toBe(true);
   expect(fonts.bodyFamily.split(",")[0].trim()).toBe("Jost");
   expect(fonts.brandFamily.split(",")[0].trim().replaceAll('"', "")).toBe("Cormorant Garamond");
+  expect(fonts.totalFamily.split(",")[0].trim().replaceAll('"', "")).toBe("Cormorant Garamond");
+  expect(fonts.exactFamily.split(",")[0].trim()).toBe("Jost");
+  for (const family of fonts.displayFamilies) {
+    expect(family.split(",")[0].trim().replaceAll('"', "")).toBe("Cormorant Garamond");
+  }
 }
 
 async function waitForChartsStable(page) {
   let previousSignature = "";
   let stableSamples = 0;
   for (let attempt = 0; attempt < 30; attempt += 1) {
-    const signature = await page.locator("svg.recharts-surface path[d]")
-      .evaluateAll((paths) => paths.map((path) => path.getAttribute("d") || "").join("\n"));
-    if (signature && signature === previousSignature) {
+    const sample = await page.locator("svg.recharts-surface").evaluateAll((surfaces) => ({
+      signature: surfaces.map((surface) => surface.outerHTML).join("\n"),
+      barsReady: surfaces.every((surface) => [...surface.querySelectorAll(".recharts-bar")].every((bar) =>
+        [...bar.querySelectorAll(".recharts-bar-rectangle path, .recharts-bar-rectangle rect")].some((shape) => {
+          const box = shape.getBBox();
+          return box.width > 0 && box.height > 0;
+        }))),
+    }));
+    const { signature } = sample;
+    if (sample.barsReady && signature && signature === previousSignature) {
       stableSamples += 1;
-      if (stableSamples >= 3) return;
+      if (stableSamples >= 5) return;
     } else {
       stableSamples = 0;
       previousSignature = signature;
     }
     await page.waitForTimeout(100);
   }
-  throw new Error("Recharts path geometry did not stabilize before capture");
+  throw new Error("Recharts SVG geometry did not stabilize before capture");
 }
 
 async function openApprovedDashboard(page) {
@@ -90,10 +105,10 @@ async function openApprovedDashboard(page) {
     `,
   });
   await expect(page.locator(".recharts-responsive-container")).toHaveCount(2);
-  // Recharts performs JavaScript-driven drawing after fonts/layout settle even
-  // when CSS animation is disabled. Require three identical path samples so a
-  // partial animation frame cannot become an approved baseline.
+  // Recharts finishes drawing after fonts/layout settle. Require nonzero bars
+  // and five identical SVG samples before approving a baseline.
   await waitForChartsStable(page);
+  await expectRenderedSvgGeometry(page.getByTestId("top-signal-card"), ".recharts-bar-rectangle path", 3);
 }
 
 async function expectNoBrokenDisplayValues(page) {
