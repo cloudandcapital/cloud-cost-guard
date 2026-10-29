@@ -165,3 +165,7 @@ button,input,select,textarea{font-family:inherit}
 .nav-header .header-actions>.ask-claude-btn,.nav-header .header-actions>.export-error{grid-column:1/-1;justify-self:start}
 }
 @media (prefers-reduced-motion:reduce){.ask-claude-panel{transition:none}.ask-claude-dot{animation:none}}
+
+.billing-inline-arrow{display:inline-block;vertical-align:-.125em;flex-shrink:0}
+.billing-hint-ending{white-space:nowrap}
+.billing-sample-banner button{display:inline-flex;align-items:center;gap:4px}
