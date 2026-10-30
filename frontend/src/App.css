@@ -695,3 +695,8 @@ h1{ font-weight:600; } h2{ font-weight:600; }
 .export-menu-item small{ color: var(--brand-muted); font-size:11px; line-height:1.35; }
 .export-error{ max-width:360px; margin:0; color: var(--theme-rose, #991b1b); font-size:11px; line-height:1.35; text-align:right; }
 @media(max-width:639px){ .export-error{ max-width:none; text-align:left; } }
+
+/* The illustrative scope note follows the dark panel so its secondary text stays readable. */
+@media screen {
+  :root[data-color-mode="dark"] .scope-methodology { background: var(--theme-panel, #2D2A27); }
+}
