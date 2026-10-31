@@ -100,7 +100,18 @@ const AskClaude = ({ billingReport = null }) => {
     setError(null);
     setAnnouncement("");
 
-    const presetReply = billingReport ? answerBillingQuestion(billingReport, trimmed) : buildPresetLumenResponse(trimmed);
+    if (billingReport) {
+      let localReply;
+      try { localReply = answerBillingQuestion(billingReport, trimmed); } catch { /* Keep local failures local. */ }
+      if (typeof localReply !== "string" || !localReply.trim()) {
+        localReply = "I couldn't find a local answer for that question. Check this report's totals, coverage and data checks; your question stays in this browser.";
+      }
+      setMessages([...nextMessages, { role: "assistant", content: localReply, source: "preset" }]);
+      setAnnouncement(`Lumen answer: ${toSpokenText(localReply)}`);
+      return;
+    }
+
+    const presetReply = buildPresetLumenResponse(trimmed);
     if (presetReply) {
       setMessages([...nextMessages, { role: "assistant", content: presetReply, source: "preset" }]);
       setAnnouncement(`Lumen answer: ${toSpokenText(presetReply)}`);
