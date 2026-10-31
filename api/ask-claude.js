@@ -24,7 +24,7 @@ const MAX_USER_INPUT_CHARS = 2000;
 const MAX_MESSAGES = 20;
 const ipRequests = new Map();
 
-const RATE_LIMIT_MESSAGE = "Cloud Cost Guard's public demo is limited to 10 Lumen questions per hour. Please come back soon.";
+const RATE_LIMIT_MESSAGE = "Too many Lumen questions from this connection. Please try again later.";
 const SAFETY_FALLBACK = "I couldn't safely validate that explanation against the CCAC 1.1 report. The report remains illustrative and read-only; try a specific canonical finding, metric, or unavailable boundary.";
 const PUBLIC_ERROR = "Lumen is temporarily unavailable.";
 
